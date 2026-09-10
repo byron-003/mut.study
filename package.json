@@ -1,0 +1,30 @@
+{
+  "name": "mut-study-hub",
+  "version": "1.0.0",
+  "description": "MUT Study Hub - Academic Resource Sharing Platform",
+  "main": "server/server.js",
+  "scripts": {
+    "install:client": "cd client && npm install",
+    "install:server": "cd server && npm install",
+    "install:all": "npm run install:server && npm run install:client",
+    "build:client": "cd client && npm run build",
+    "build": "npm run install:all && npm run build:client",
+    "start": "cd server && node server.js",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "dev:admin": "cd admin && npm run dev"
+  },
+  "keywords": [
+    "education",
+    "study",
+    "resources",
+    "university",
+    "mut"
+  ],
+  "author": "MUT Study Hub Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: mut-study-hub
+    env: node
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: |
+      # Install server dependencies
+      cd server && npm install
+      # Install client dependencies and build
+      cd ../client && npm install && npm run build
+    startCommand: cd server && node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      # Add your other environment variables in Render dashboard:
+      # - DATABASE_URL
+      # - JWT_SECRET
+      # - CLOUDINARY_CLOUD_NAME
+      # - CLOUDINARY_API_KEY
+      # - CLOUDINARY_API_SECRET
+      # - RESEND_API_KEY
+      # etc.
