@@ -45,7 +45,7 @@ const TermsPage = () => {
             <div className="space-y-3 text-gray-700">
               <p>To use MUT Study Hub, you must:</p>
               <ul className="list-disc pl-6 space-y-2">
-                <li>Be a current student, faculty member, or authorized affiliate of Mangosuthu University of Technology</li>
+                <li>Be a current student, faculty member, or authorized affiliate of Muranga University of Technology</li>
                 <li>Provide accurate and complete registration information</li>
                 <li>Use a valid institutional email address</li>
                 <li>Be at least 16 years of age</li>
@@ -144,7 +144,7 @@ const TermsPage = () => {
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">11. Governing Law</h2>
             <p className="text-gray-700 leading-relaxed">
-              These Terms of Service are governed by the laws of South Africa. Any disputes shall be resolved in the courts of Durban, KwaZulu-Natal.
+              These Terms of Service are governed by the laws of Kenya. Any disputes shall be resolved in the courts of Muranga County, Kenya.
             </p>
           </section>
 
@@ -155,7 +155,7 @@ const TermsPage = () => {
               <p className="text-gray-700 mb-4">If you have questions about these Terms of Service, please contact us:</p>
               <div className="space-y-2 text-gray-700">
                 <p><strong>Email:</strong> support@mutstudy.ac.za</p>
-                <p><strong>Address:</strong> Mangosuthu University of Technology, Umlazi, Durban, South Africa</p>
+                <p><strong>Address:</strong> Muranga University of Technology, Muranga County, Kenya</p>
               </div>
             </div>
           </section>

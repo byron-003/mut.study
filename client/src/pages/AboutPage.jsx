@@ -35,7 +35,7 @@ const AboutPage = () => {
             <div className="space-y-4">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">Our Mission</h2>
               <p className="text-gray-700 leading-relaxed">
-                MUT Study Hub is a centralized platform designed to help Mangosuthu University of Technology 
+                MUT Study Hub is a centralized platform designed to help Muranga University of Technology 
                 students access and share academic resources seamlessly. We believe in the power of collaborative 
                 learning and aim to make quality educational materials accessible to every student.
               </p>

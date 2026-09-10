@@ -170,7 +170,7 @@ export const sendPasswordResetOTP = async (email, otp, userName) => {
               </p>
             </div>
             <div class="footer">
-              <p><strong>Mangosuthu University of Technology</strong></p>
+              <p><strong>Muranga University of Technology</strong></p>
               <p>This is an automated message, please do not reply to this email.</p>
             </div>
           </div>
@@ -304,7 +304,7 @@ export const sendPasswordResetSuccess = async (email, userName) => {
               </p>
             </div>
             <div class="footer">
-              <p><strong>Mangosuthu University of Technology</strong></p>
+              <p><strong>Muranga University of Technology</strong></p>
             </div>
           </div>
         </body>
@@ -432,7 +432,7 @@ export const sendContactReply = async (email, userName, originalSubject, replyMe
               <p style="margin-top: 30px;">
                 Best regards,<br>
                 <strong>MUT Study Hub Support Team</strong><br>
-                Mangosuthu University of Technology
+                Muranga University of Technology
               </p>
             </div>
             

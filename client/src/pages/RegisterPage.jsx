@@ -403,7 +403,7 @@ const RegisterPage = () => {
                 <h3 className="text-xl font-bold text-gray-900 mb-3">Contact & Support</h3>
                 <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700">
                   <p><strong>Email:</strong> support@mutstudy.ac.za</p>
-                  <p><strong>Location:</strong> Mangosuthu University of Technology, Umlazi, Durban</p>
+                  <p><strong>Location:</strong> Muranga University of Technology, Muranga County, Kenya</p>
                   <p className="mt-2">For detailed information, please visit our full <Link to="/terms" target="_blank" className="text-mut-primary hover:underline">Terms of Service</Link> and <Link to="/privacy" target="_blank" className="text-mut-primary hover:underline">Privacy Policy</Link> pages.</p>
                 </div>
               </section>

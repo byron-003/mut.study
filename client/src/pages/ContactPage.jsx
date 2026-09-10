@@ -79,9 +79,9 @@ const ContactPage = () => {
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-1">Address</h3>
                     <p className="text-gray-600 text-sm">
-                      Mangosuthu University of Technology<br />
-                      Umlazi, Durban<br />
-                      South Africa
+                      Muranga University of Technology<br />
+                      Muranga County<br />
+                      Kenya
                     </p>
                   </div>
                 </div>

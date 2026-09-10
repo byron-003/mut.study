@@ -25,7 +25,7 @@ const Footer = () => {
               </div>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed">
-              Your comprehensive platform for academic resources, collaboration, and success at Mangosuthu University of Technology.
+              Your comprehensive platform for academic resources, collaboration, and success at Muranga University of Technology.
             </p>
             
             {/* Social Links */}
@@ -185,7 +185,7 @@ const Footer = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-white">Address</p>
-                  <p className="text-sm mt-1">Mangosuthu University<br />Umlazi, Durban<br />South Africa</p>
+                  <p className="text-sm mt-1">Muranga University of Technology<br />Muranga County<br />Kenya</p>
                 </div>
               </li>
               <li className="flex items-start gap-3 text-gray-400">

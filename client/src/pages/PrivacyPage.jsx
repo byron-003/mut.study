@@ -113,7 +113,7 @@ const PrivacyPage = () => {
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">With the University</h3>
                 <p className="text-gray-700">
-                  We may share anonymized usage statistics with Mangosuthu University of Technology for educational planning and improvement purposes.
+                  We may share anonymized usage statistics with Muranga University of Technology for educational planning and improvement purposes.
                 </p>
               </div>
 
@@ -202,7 +202,7 @@ const PrivacyPage = () => {
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">9. International Data Transfers</h2>
             <p className="text-gray-700 leading-relaxed">
-              Your information may be stored and processed in South Africa or other countries where our service providers operate. 
+              Your information may be stored and processed in Kenya or other countries where our service providers operate. 
               By using MUT Study Hub, you consent to the transfer of your information to these locations.
             </p>
           </section>
@@ -224,7 +224,7 @@ const PrivacyPage = () => {
               <div className="space-y-2 text-gray-700">
                 <p><strong>Email:</strong> privacy@mutstudy.ac.za</p>
                 <p><strong>Support:</strong> support@mutstudy.ac.za</p>
-                <p><strong>Address:</strong> Mangosuthu University of Technology, Umlazi, Durban, South Africa</p>
+                <p><strong>Address:</strong> Muranga University of Technology, Muranga County, Kenya</p>
               </div>
             </div>
           </section>
