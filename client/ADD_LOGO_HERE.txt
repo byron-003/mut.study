@@ -1,0 +1,33 @@
+📌 HOW TO ADD THE MUT LOGO
+================================
+
+STEP 1: Save your logo image
+-----------------------------
+1. Save the MUT logo you uploaded as "mut-logo.png" (or "mut-logo.jpg")
+2. Place it in this folder: client/public/
+   
+   Full path: C:\Users\oyooo\mut-study-hub\client\public\mut-logo.png
+
+STEP 2: That's it!
+------------------
+The logo is already configured to appear in:
+✅ Navigation header (top of every page)
+✅ Login page
+✅ Registration page
+
+The code automatically looks for: /mut-logo.png
+
+If you use a different name or format, update these files:
+- client/src/components/Navbar.jsx (line ~15)
+- client/src/pages/LoginPage.jsx (line ~21)
+- client/src/pages/RegisterPage.jsx (line ~44)
+
+Replace "/mut-logo.png" with your filename (e.g., "/mut-logo.jpg")
+
+SUPPORTED FORMATS:
+- PNG (recommended - supports transparency)
+- JPG/JPEG
+- WebP
+- GIF
+
+NOTE: The logo will maintain its original quality and format!

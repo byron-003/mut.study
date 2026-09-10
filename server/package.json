@@ -1,0 +1,42 @@
+{
+  "name": "mut-study-hub-server",
+  "version": "1.0.0",
+  "description": "Backend API for MUT Study Hub - Academic Resource Platform",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "db:setup": "node scripts/setupDatabase.js",
+    "db:seed": "node scripts/seedDatabase.js",
+    "db:init": "node scripts/initDatabase.js",
+    "db:update-programs": "node scripts/updateAllPrograms.js",
+    "db:add-academic-year": "node scripts/addAcademicYearColumn.js",
+    "db:add-user-settings": "node scripts/addUserAcademicSettings.js",
+    "db:fix-file-type": "node scripts/fixFileTypeColumn.js",
+    "create-admin": "node scripts/createAdmin.js"
+  },
+  "keywords": [
+    "education",
+    "mut",
+    "study-hub",
+    "api"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "cloudinary": "^1.41.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^8.7.0",
+    "express-validator": "^7.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "multer-storage-cloudinary": "^4.0.0",
+    "pg": "^8.11.3",
+    "resend": "^6.27.0",
+    "socket.io": "^4.8.3"
+  }
+}
