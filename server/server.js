@@ -35,8 +35,12 @@ const io = initializeSocket(server);
 // Middleware
 app.use(cors({
   origin: [
-    process.env.CLIENT_URL || 'http://localhost:5173,  https://philologic-debi-unsophisticatedly.ngrok-free.dev',
-    process.env.ADMIN_URL || 'http://localhost:5174'
+    'https://admin-mutstudy.onrender.com',
+    'https://mut-study.onrender.com',
+    process.env.CLIENT_URL || 'http://localhost:5173',
+    process.env.ADMIN_URL || 'http://localhost:5174',
+    'http://localhost:5173',
+    'http://localhost:5174'
   ],
   credentials: true
 }));
