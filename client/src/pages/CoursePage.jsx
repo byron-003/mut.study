@@ -4,22 +4,22 @@ import { schoolsAPI, resourcesAPI } from '../services/api';
 import { progressAPI } from '../services/progressAPI';
 import { useAuth } from '../utils/authContext';
 import FileViewer from '../components/FileViewer';
-import UploadModal from '../components/UploadModal';
+import AddCourseModal from '../components/AddCourseModal';
 import { 
   BookOpen, FileText, Download, Eye, Clock, CheckCircle, 
   User, ChevronRight, Play, RotateCcw, X, AlertCircle,
-  Video, Image as ImageIcon, File
+  Video, Image as ImageIcon, File, Plus
 } from 'lucide-react';
 
 const CoursePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isClassRep } = useAuth();
   const [course, setCourse] = useState(null);
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [resourcesLoading, setResourcesLoading] = useState(false);
-  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [addCourseModalOpen, setAddCourseModalOpen] = useState(false);
   const [downloadsEnabled, setDownloadsEnabled] = useState(false);
   
   // Progress tracking
@@ -106,7 +106,8 @@ const CoursePage = () => {
   };
 
   const handleUploadSuccess = () => {
-    fetchResources();
+    fetchCourseDetails();
+    navigate('/dashboard'); // Navigate to dashboard after creating course
   };
 
   // Progress tracking functions
@@ -355,15 +356,13 @@ const CoursePage = () => {
                 {course.department} • {course.school}
               </div>
             </div>
-            {isAuthenticated && (
+            {isClassRep && (
               <button
-                onClick={() => setUploadModalOpen(true)}
-                className="btn-primary flex items-center gap-2"
+                onClick={() => setAddCourseModalOpen(true)}
+                className="bg-mut-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Upload Resource
+                <Plus className="w-5 h-5" />
+                Add Course
               </button>
             )}
           </div>
@@ -476,15 +475,6 @@ const CoursePage = () => {
             <p className="text-gray-600 mb-4">
               Be the first to contribute resources for this course!
             </p>
-            {isAuthenticated && (
-              <button
-                onClick={() => setUploadModalOpen(true)}
-                className="bg-mut-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors inline-flex items-center gap-2"
-              >
-                <FileText className="w-5 h-5" />
-                Upload Resource
-              </button>
-            )}
           </div>
         )}
       </div>
@@ -550,11 +540,10 @@ const CoursePage = () => {
         </div>
       )}
 
-      {/* Upload Modal */}
-      <UploadModal
-        isOpen={uploadModalOpen}
-        onClose={() => setUploadModalOpen(false)}
-        courseId={id}
+      {/* Add Course Modal (Class Reps Only) */}
+      <AddCourseModal
+        isOpen={addCourseModalOpen}
+        onClose={() => setAddCourseModalOpen(false)}
         onSuccess={handleUploadSuccess}
       />
     </div>

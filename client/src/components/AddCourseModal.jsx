@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
-import { X, Book, AlertCircle, CheckCircle } from 'lucide-react';
 import { classRepAPI } from '../services/api';
+import { X, BookOpen } from 'lucide-react';
 
 const AddCourseModal = ({ isOpen, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
-    unitCode: '',
-    unitTitle: '',
-    level: '',
-    semester: '',
-    credits: '3'
+    unit_code: '',
+    unit_title: '',
+    level: '1',
+    semester: '1',
+    credits: '3',
+    description: ''
   });
-  
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+
+  const currentYear = new Date().getFullYear();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -21,67 +22,76 @@ const AddCourseModal = ({ isOpen, onClose, onSuccess }) => {
       ...prev,
       [name]: value
     }));
-    setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate required fields
-    if (!formData.unitCode.trim() || !formData.unitTitle.trim()) {
-      setError('Unit code and title are required');
+    if (!formData.unit_code.trim()) {
+      setError('Please enter a unit code');
       return;
     }
 
-    // Validate unit code format (e.g., CSC 2101, MIT 3202)
-    const unitCodePattern = /^[A-Z]{3}\s?\d{4}$/i;
-    if (!unitCodePattern.test(formData.unitCode.trim())) {
-      setError('Unit code must be in format: ABC 1234 (e.g., CSC 2101)');
+    if (!formData.unit_title.trim()) {
+      setError('Please enter a unit title');
       return;
     }
+
+    setSubmitting(true);
+    setError('');
 
     try {
-      setLoading(true);
-      setError('');
-      
-      const payload = {
-        unit_code: formData.unitCode.trim().toUpperCase(),
-        unit_title: formData.unitTitle.trim(),
-        level: formData.level ? parseInt(formData.level) : null,
-        semester: formData.semester ? parseInt(formData.semester) : null,
+      await classRepAPI.createCourse({
+        unit_code: formData.unit_code.trim().toUpperCase(),
+        unit_title: formData.unit_title.trim(),
+        level: parseInt(formData.level),
+        semester: parseInt(formData.semester),
         credits: parseInt(formData.credits)
-      };
-
-      await classRepAPI.createCourse(payload);
+      });
       
-      setSuccess(true);
+      // Reset form
+      setFormData({
+        unit_code: '',
+        unit_title: '',
+        level: '1',
+        semester: '1',
+        credits: '3',
+        description: ''
+      });
+      
+      // Call success callback
+      if (onSuccess) onSuccess();
+      
+      // Show success message
+      alert('Course created successfully! 🎉');
+      
+      // Close modal after a short delay
       setTimeout(() => {
-        onSuccess();
-        handleClose();
-      }, 1500);
+        onClose();
+      }, 500);
     } catch (err) {
-      console.error('Error creating course:', err);
+      console.error('Create course error:', err);
       setError(
+        err.response?.data?.error?.message || 
         err.response?.data?.message || 
-        err.response?.data?.error?.message ||
         'Failed to create course. Please try again.'
       );
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   const handleClose = () => {
-    if (!loading) {
+    if (!submitting) {
       setFormData({
-        unitCode: '',
-        unitTitle: '',
-        level: '',
-        semester: '',
-        credits: '3'
+        unit_code: '',
+        unit_title: '',
+        level: '1',
+        semester: '1',
+        credits: '3',
+        description: ''
       });
       setError('');
-      setSuccess(false);
       onClose();
     }
   };
@@ -100,174 +110,145 @@ const AddCourseModal = ({ isOpen, onClose, onSuccess }) => {
         {/* Modal panel */}
         <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
           <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-            {/* Header */}
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Book className="w-6 h-6 text-green-600" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-mut-primary/10 rounded-lg flex items-center justify-center">
+                  <BookOpen className="w-5 h-5 text-mut-primary" />
+                </div>
                 <h3 className="text-lg font-semibold text-gray-900">
                   Add New Course
                 </h3>
               </div>
               <button
                 onClick={handleClose}
-                disabled={loading}
-                className="text-gray-400 hover:text-gray-500"
+                disabled={submitting}
+                className="text-gray-400 hover:text-gray-500 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
 
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <strong>As a class representative,</strong> you can create courses for your program. 
-                Students will then be able to upload resources to these courses.
-              </p>
-            </div>
-
-            {/* Success Message */}
-            {success && (
-              <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-                <p className="text-sm text-green-800">
-                  Course created successfully!
-                </p>
-              </div>
-            )}
-
-            {/* Error Message */}
             {error && (
-              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
                 <p className="text-sm text-red-800">{error}</p>
               </div>
             )}
 
-            {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Unit Code */}
               <div>
-                <label htmlFor="unitCode" className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Unit Code <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  id="unitCode"
-                  name="unitCode"
-                  value={formData.unitCode}
+                  name="unit_code"
+                  value={formData.unit_code}
                   onChange={handleInputChange}
-                  placeholder="e.g., CSC 2101"
-                  disabled={loading || success}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100 uppercase"
+                  placeholder="e.g., CSE 2101"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-mut-primary focus:border-transparent uppercase"
                   required
+                  disabled={submitting}
                 />
-                <p className="text-xs text-gray-500 mt-1">Format: ABC 1234 (e.g., CSC 2101, MIT 3202)</p>
               </div>
 
               {/* Unit Title */}
               <div>
-                <label htmlFor="unitTitle" className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Unit Title <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  id="unitTitle"
-                  name="unitTitle"
-                  value={formData.unitTitle}
+                  name="unit_title"
+                  value={formData.unit_title}
                   onChange={handleInputChange}
                   placeholder="e.g., Data Structures and Algorithms"
-                  disabled={loading || success}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-mut-primary focus:border-transparent"
                   required
+                  disabled={submitting}
                 />
               </div>
 
-              {/* Level and Semester */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="level" className="block text-sm font-medium text-gray-700 mb-1">
-                    Year of Study
-                  </label>
-                  <select
-                    id="level"
-                    name="level"
-                    value={formData.level}
-                    onChange={handleInputChange}
-                    disabled={loading || success}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
-                  >
-                    <option value="">Select Year</option>
-                    <option value="1">Year 1</option>
-                    <option value="2">Year 2</option>
-                    <option value="3">Year 3</option>
-                    <option value="4">Year 4</option>
-                  </select>
-                </div>
+              {/* Level (Year of Study) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Year of Study <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="level"
+                  value={formData.level}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-mut-primary focus:border-transparent"
+                  required
+                  disabled={submitting}
+                >
+                  <option value="1">Year 1</option>
+                  <option value="2">Year 2</option>
+                  <option value="3">Year 3</option>
+                  <option value="4">Year 4</option>
+                  <option value="5">Year 5</option>
+                </select>
+              </div>
 
-                <div>
-                  <label htmlFor="semester" className="block text-sm font-medium text-gray-700 mb-1">
-                    Semester
-                  </label>
-                  <select
-                    id="semester"
-                    name="semester"
-                    value={formData.semester}
-                    onChange={handleInputChange}
-                    disabled={loading || success}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
-                  >
-                    <option value="">Select Semester</option>
-                    <option value="1">Semester 1</option>
-                    <option value="2">Semester 2</option>
-                  </select>
-                </div>
+              {/* Semester */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Semester <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="semester"
+                  value={formData.semester}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-mut-primary focus:border-transparent"
+                  required
+                  disabled={submitting}
+                >
+                  <option value="1">Semester 1</option>
+                  <option value="2">Semester 2</option>
+                  <option value="3">Semester 3</option>
+                </select>
               </div>
 
               {/* Credits */}
               <div>
-                <label htmlFor="credits" className="block text-sm font-medium text-gray-700 mb-1">
-                  Credits
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Credits <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
-                  id="credits"
                   name="credits"
                   value={formData.credits}
                   onChange={handleInputChange}
                   min="1"
                   max="10"
-                  disabled={loading || success}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-mut-primary focus:border-transparent"
+                  required
+                  disabled={submitting}
                 />
               </div>
 
-              {/* Action Buttons */}
+              {/* Submit Buttons */}
               <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 bg-mut-primary text-white px-4 py-2.5 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? 'Creating...' : 'Create Course'}
+                </button>
                 <button
                   type="button"
                   onClick={handleClose}
-                  disabled={loading}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={submitting}
+                  className="flex-1 bg-gray-100 text-gray-700 px-4 py-2.5 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  disabled={loading || success}
-                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {loading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <Book className="w-4 h-4" />
-                      Create Course
-                    </>
-                  )}
-                </button>
               </div>
+
+              <p className="text-xs text-gray-500 text-center">
+                As a class representative, you can create courses for your program.
+              </p>
             </form>
           </div>
         </div>
