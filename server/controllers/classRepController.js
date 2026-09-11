@@ -31,12 +31,12 @@ export const createCourseAsClassRep = async (req, res, next) => {
       throw new AppError('A course with this unit code already exists in your program', 400);
     }
 
-    // Create course in the class rep's program
+    // Create course in the class rep's program (use academic_year instead of level)
     const result = await query(
-      `INSERT INTO courses (unit_code, unit_title, level, semester, credits, program_id, created_by_class_rep)
+      `INSERT INTO courses (unit_code, unit_title, academic_year, semester, credits, program_id, created_by_class_rep)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING id, unit_code, unit_title, level, semester, credits, program_id, created_at`,
-      [unit_code, unit_title, level || null, semester || null, credits || 3, userProgramId, userId]
+       RETURNING id, unit_code, unit_title, academic_year, semester, credits, program_id, created_at`,
+      [unit_code, unit_title, level || 1, semester || 1, credits || 3, userProgramId, userId]
     );
 
     const course = result.rows[0];
@@ -52,7 +52,7 @@ export const createCourseAsClassRep = async (req, res, next) => {
           id: course.id,
           unitCode: course.unit_code,
           unitTitle: course.unit_title,
-          level: course.level,
+          academicYear: course.academic_year,
           semester: course.semester,
           credits: course.credits,
           programId: course.program_id,
@@ -77,18 +77,18 @@ export const getMyCreatedCourses = async (req, res, next) => {
         c.id, 
         c.unit_code, 
         c.unit_title, 
-        c.level, 
+        c.academic_year, 
         c.semester, 
         c.credits,
         c.program_id,
         c.created_at,
-        p.program_name,
+        p.name as program_name,
         COUNT(r.id) as resource_count
        FROM courses c
        LEFT JOIN programs p ON c.program_id = p.id
-       LEFT JOIN resources r ON r.course_id = c.id
+       LEFT JOIN study_materials r ON r.course_id = c.id
        WHERE c.created_by_class_rep = $1
-       GROUP BY c.id, p.program_name
+       GROUP BY c.id, p.name
        ORDER BY c.created_at DESC`,
       [userId]
     );
@@ -100,7 +100,7 @@ export const getMyCreatedCourses = async (req, res, next) => {
           id: course.id,
           unitCode: course.unit_code,
           unitTitle: course.unit_title,
-          level: course.level,
+          academicYear: course.academic_year,
           semester: course.semester,
           credits: course.credits,
           programId: course.program_id,
