@@ -22,6 +22,16 @@ const CoursePage = () => {
   const [addCourseModalOpen, setAddCourseModalOpen] = useState(false);
   const [downloadsEnabled, setDownloadsEnabled] = useState(false);
   
+  // Category tabs
+  const [activeCategory, setActiveCategory] = useState('all');
+  const categories = [
+    { id: 'all', label: 'All Resources', icon: BookOpen },
+    { id: 'notes', label: 'Lecture Notes', icon: BookOpen },
+    { id: 'assignment', label: 'Assignments', icon: FileText },
+    { id: 'cat', label: 'CATs', icon: FileText },
+    { id: 'practical', label: 'Practicals', icon: File }
+  ];
+  
   // Progress tracking
   const [resourceProgress, setResourceProgress] = useState({});
   
@@ -270,6 +280,8 @@ const CoursePage = () => {
     const icons = {
       notes: BookOpen,
       assignment: FileText,
+      cat: FileText,
+      practical: File,
       pastpaper: File,
       video: Video,
       other: File
@@ -281,8 +293,10 @@ const CoursePage = () => {
     const colors = {
       notes: 'bg-blue-100 text-blue-700',
       assignment: 'bg-orange-100 text-orange-700',
+      cat: 'bg-red-100 text-red-700',
+      practical: 'bg-green-100 text-green-700',
       pastpaper: 'bg-purple-100 text-purple-700',
-      video: 'bg-red-100 text-red-700',
+      video: 'bg-pink-100 text-pink-700',
       other: 'bg-gray-100 text-gray-700'
     };
     return colors[type] || colors.other;
@@ -294,10 +308,17 @@ const CoursePage = () => {
       assignment: 'Assignment',
       pastpaper: 'Past Paper',
       video: 'Video Lecture',
+      cat: 'CAT',
+      practical: 'Practical',
       other: 'Other'
     };
     return labels[type] || type;
   };
+
+  // Filter resources by active category
+  const filteredResources = activeCategory === 'all' 
+    ? resources 
+    : resources.filter(resource => resource.type === activeCategory);
 
   if (loading) {
     return (
@@ -369,15 +390,51 @@ const CoursePage = () => {
         </div>
       </div>
 
+      {/* Category Tabs */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex gap-1 overflow-x-auto py-2">
+            {categories.map((category) => {
+              const IconComponent = category.icon;
+              const count = category.id === 'all' 
+                ? resources.length 
+                : resources.filter(r => r.type === category.id).length;
+              
+              return (
+                <button
+                  key={category.id}
+                  onClick={() => setActiveCategory(category.id)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
+                    activeCategory === category.id
+                      ? 'bg-mut-primary text-white shadow-md'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <IconComponent className="w-4 h-4" />
+                  {category.label}
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                    activeCategory === category.id
+                      ? 'bg-white/20 text-white'
+                      : 'bg-gray-200 text-gray-600'
+                  }`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
       {/* Resources Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {resourcesLoading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-mut-primary"></div>
           </div>
-        ) : resources.length > 0 ? (
+        ) : filteredResources.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {resources.map((resource) => {
+            {filteredResources.map((resource) => {
               const progress = resourceProgress[resource.id];
               const hasProgress = progress && progress.progress > 0;
               const isCompleted = progress && progress.completed;
@@ -470,10 +527,14 @@ const CoursePage = () => {
           <div className="text-center py-12">
             <File className="mx-auto h-16 w-16 text-gray-400 mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              No Resources Available
+              {activeCategory === 'all' 
+                ? 'No Resources Available' 
+                : `No ${categories.find(c => c.id === activeCategory)?.label || 'Resources'} Available`}
             </h3>
             <p className="text-gray-600 mb-4">
-              Be the first to contribute resources for this course!
+              {activeCategory === 'all'
+                ? 'Be the first to contribute resources for this course!'
+                : `No ${categories.find(c => c.id === activeCategory)?.label.toLowerCase()} have been uploaded yet.`}
             </p>
           </div>
         )}
