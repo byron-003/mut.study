@@ -5,11 +5,12 @@ import { progressAPI } from '../services/progressAPI';
 import { useAuth } from '../utils/authContext';
 import { useSocket, useSocketEvent } from '../context/SocketContext';
 import FileViewer from '../components/FileViewer';
+import AddCourseModal from '../components/AddCourseModal';
 import { 
   Search, Upload, FileText, ChevronDown, ChevronRight, 
   Download, Eye, Filter, Calendar, User, BookOpen, 
   Video, Image as ImageIcon, File, X, ExternalLink,
-  Clock, CheckCircle, XCircle, AlertCircle, Play, RotateCcw
+  Clock, CheckCircle, XCircle, AlertCircle, Play, RotateCcw, Plus
 } from 'lucide-react';
 
 // Helper function to get current academic year
@@ -46,7 +47,7 @@ const getAcademicYearOptions = () => {
 };
 
 const DashboardPage = () => {
-  const { user } = useAuth();
+  const { user, isClassRep } = useAuth();
   const navigate = useNavigate();
   
   // Main Data
@@ -64,6 +65,7 @@ const DashboardPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [downloadsEnabled, setDownloadsEnabled] = useState(false); // Track if downloads are enabled by admin
   const [showFilters, setShowFilters] = useState(false); // Filter modal state
+  const [addCourseModalOpen, setAddCourseModalOpen] = useState(false); // Add Course modal state
   
   // File Viewer State
   const [showViewer, setShowViewer] = useState(false);
@@ -655,6 +657,15 @@ const DashboardPage = () => {
                 <span>{userProgram.level}</span>
               </div>
             </div>
+            {isClassRep && (
+              <button
+                onClick={() => setAddCourseModalOpen(true)}
+                className="bg-white text-mut-primary px-6 py-3 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2 font-medium shadow-md"
+              >
+                <Plus className="w-5 h-5" />
+                Add Course
+              </button>
+            )}
           </div>
 
           {/* Search Bar */}
@@ -998,6 +1009,19 @@ const DashboardPage = () => {
           </div>
         </div>
       )}
+
+      {/* Add Course Modal (Class Reps Only) */}
+      <AddCourseModal
+        isOpen={addCourseModalOpen}
+        onClose={() => setAddCourseModalOpen(false)}
+        onSuccess={() => {
+          setAddCourseModalOpen(false);
+          // Refresh courses after adding
+          if (userProgram) {
+            fetchCourses(userProgram.id);
+          }
+        }}
+      />
     </div>
   );
 };

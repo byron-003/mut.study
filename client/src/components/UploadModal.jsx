@@ -1,20 +1,26 @@
 import React, { useState } from 'react';
 import { resourcesAPI } from '../services/api';
-import { getCategoryDisplayName } from '../utils/helpers';
 
 const UploadModal = ({ isOpen, onClose, courseId, onSuccess }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    category: 'notes',
+    type: 'notes',
   });
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState('');
 
-  const categories = ['notes', 'past_paper', 'cat', 'practical_manual', 'quiz'];
-  const maxFileSize = 10 * 1024 * 1024; // 10MB
+  const resourceTypes = [
+    { value: 'notes', label: 'Lecture Notes' },
+    { value: 'assignment', label: 'Assignment' },
+    { value: 'cat', label: 'CAT' },
+    { value: 'practical', label: 'Practical' },
+    { value: 'pastpaper', label: 'Past Paper' },
+    { value: 'other', label: 'Other' }
+  ];
+  const maxFileSize = 50 * 1024 * 1024; // 50MB
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -30,7 +36,7 @@ const UploadModal = ({ isOpen, onClose, courseId, onSuccess }) => {
     if (selectedFile) {
       // Validate file size
       if (selectedFile.size > maxFileSize) {
-        setError('File size must be less than 10MB');
+        setError('File size must be less than 50MB');
         setFile(null);
         return;
       }
@@ -80,7 +86,7 @@ const UploadModal = ({ isOpen, onClose, courseId, onSuccess }) => {
       uploadData.append('courseId', courseId);
       uploadData.append('title', formData.title);
       uploadData.append('description', formData.description);
-      uploadData.append('category', formData.category);
+      uploadData.append('type', formData.type); // Changed from category to type
 
       // Upload with real progress tracking
       await resourcesAPI.uploadResource(uploadData, (progressEvent) => {
@@ -92,7 +98,7 @@ const UploadModal = ({ isOpen, onClose, courseId, onSuccess }) => {
       setFormData({
         title: '',
         description: '',
-        category: 'notes',
+        type: 'notes',
       });
       setFile(null);
       
@@ -117,7 +123,7 @@ const UploadModal = ({ isOpen, onClose, courseId, onSuccess }) => {
       setFormData({
         title: '',
         description: '',
-        category: 'notes',
+        type: 'notes',
       });
       setFile(null);
       setError('');
@@ -142,7 +148,7 @@ const UploadModal = ({ isOpen, onClose, courseId, onSuccess }) => {
           <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
-                Upload Study Material
+                Upload Resource
               </h3>
               <button
                 onClick={handleClose}
@@ -162,21 +168,42 @@ const UploadModal = ({ isOpen, onClose, courseId, onSuccess }) => {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Title */}
+              {/* Topic/Title */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Title <span className="text-red-500">*</span>
+                  Topic <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   name="title"
                   value={formData.title}
                   onChange={handleInputChange}
-                  placeholder="e.g., Database Systems Notes - Chapter 1"
+                  placeholder="e.g., Introduction to Algorithms"
                   className="input-field"
                   required
                   disabled={uploading}
                 />
+              </div>
+
+              {/* Resource Type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Resource Type <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  required
+                  disabled={uploading}
+                >
+                  {resourceTypes.map(type => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Description */}
@@ -193,27 +220,6 @@ const UploadModal = ({ isOpen, onClose, courseId, onSuccess }) => {
                   className="input-field resize-none"
                   disabled={uploading}
                 />
-              </div>
-
-              {/* Category */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Category <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
-                  className="input-field"
-                  required
-                  disabled={uploading}
-                >
-                  {categories.map(cat => (
-                    <option key={cat} value={cat}>
-                      {getCategoryDisplayName(cat)}
-                    </option>
-                  ))}
-                </select>
               </div>
 
               {/* File Upload */}

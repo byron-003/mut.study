@@ -4,7 +4,7 @@ import { schoolsAPI, resourcesAPI } from '../services/api';
 import { progressAPI } from '../services/progressAPI';
 import { useAuth } from '../utils/authContext';
 import FileViewer from '../components/FileViewer';
-import AddCourseModal from '../components/AddCourseModal';
+import UploadModal from '../components/UploadModal';
 import { 
   BookOpen, FileText, Download, Eye, Clock, CheckCircle, 
   User, ChevronRight, Play, RotateCcw, X, AlertCircle,
@@ -19,7 +19,7 @@ const CoursePage = () => {
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [resourcesLoading, setResourcesLoading] = useState(false);
-  const [addCourseModalOpen, setAddCourseModalOpen] = useState(false);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [downloadsEnabled, setDownloadsEnabled] = useState(false);
   
   // Category tabs
@@ -116,8 +116,7 @@ const CoursePage = () => {
   };
 
   const handleUploadSuccess = () => {
-    fetchCourseDetails();
-    navigate('/dashboard'); // Navigate to dashboard after creating course
+    fetchResources(); // Refresh the resource list
   };
 
   // Progress tracking functions
@@ -377,13 +376,13 @@ const CoursePage = () => {
                 {course.department} • {course.school}
               </div>
             </div>
-            {isClassRep && (
+            {isAuthenticated && (
               <button
-                onClick={() => setAddCourseModalOpen(true)}
-                className="bg-mut-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                onClick={() => setUploadModalOpen(true)}
+                className="w-12 h-12 bg-mut-primary text-white rounded-full hover:bg-green-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center"
+                title="Upload Resource"
               >
-                <Plus className="w-5 h-5" />
-                Add Course
+                <Plus className="w-6 h-6" />
               </button>
             )}
           </div>
@@ -601,10 +600,11 @@ const CoursePage = () => {
         </div>
       )}
 
-      {/* Add Course Modal (Class Reps Only) */}
-      <AddCourseModal
-        isOpen={addCourseModalOpen}
-        onClose={() => setAddCourseModalOpen(false)}
+      {/* Upload Resource Modal */}
+      <UploadModal
+        isOpen={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+        courseId={id}
         onSuccess={handleUploadSuccess}
       />
     </div>
