@@ -12,6 +12,39 @@ import {
   Clock, CheckCircle, XCircle, AlertCircle, Play, RotateCcw
 } from 'lucide-react';
 
+// Helper function to get current academic year
+const getCurrentAcademicYear = () => {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1; // 0-indexed
+  
+  // Academic year typically starts in September (month 9)
+  // If we're in Jan-Aug, we're in the second half of the academic year
+  if (currentMonth < 9) {
+    return `${currentYear - 1}/${currentYear}`;
+  } else {
+    return `${currentYear}/${currentYear + 1}`;
+  }
+};
+
+// Generate list of valid academic years (current and past 5 years)
+const getAcademicYearOptions = () => {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  
+  // Determine the current academic year
+  const startYear = currentMonth < 9 ? currentYear - 1 : currentYear;
+  
+  const years = [];
+  for (let i = 0; i <= 5; i++) {
+    const year = startYear - i;
+    years.push(`${year}/${year + 1}`);
+  }
+  
+  return years;
+};
+
 const DashboardPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -23,10 +56,10 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [resourceProgress, setResourceProgress] = useState({}); // Store progress for all resources
   
-  // UI State
+  // UI State - Filters
   const [selectedYear, setSelectedYear] = useState(1);
   const [selectedSemester, setSelectedSemester] = useState(1);
-  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState(getCurrentAcademicYear());
   const [filterType, setFilterType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [downloadsEnabled, setDownloadsEnabled] = useState(false); // Track if downloads are enabled by admin
@@ -621,13 +654,6 @@ const DashboardPage = () => {
                 <span>{userProgram.level}</span>
               </div>
             </div>
-            <button
-              onClick={() => navigate('/my-uploads')}
-              className="bg-white text-mut-primary px-4 py-2 rounded-lg hover:bg-green-50 flex items-center gap-2 font-medium"
-            >
-              <Upload className="w-4 h-4" />
-              Upload Resources
-            </button>
           </div>
 
           {/* Search Bar */}
@@ -637,7 +663,7 @@ const DashboardPage = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search resources by title or description..."
+              placeholder="Search courses by name or code..."
               className="w-full pl-12 pr-4 py-3 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-white"
             />
           </div>
@@ -671,214 +697,143 @@ const DashboardPage = () => {
           </div>
         )}
 
-        {/* Quick Period Info & Filter */}
-        <div className="mb-6 bg-white rounded-lg shadow-md p-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-mut-primary" />
-                <span className="text-sm font-medium text-gray-700">Viewing:</span>
-                <span className="px-3 py-1 bg-mut-primary text-white rounded-full text-sm font-medium">
-                  Year {selectedYear} • Semester {selectedSemester}
-                </span>
-              </div>
-              {user.currentYear && user.currentSemester && (
-                <button
-                  onClick={() => navigate('/profile')}
-                  className="text-sm text-mut-primary hover:text-green-700 font-medium"
-                >
-                  Change Period →
-                </button>
-              )}
+        {/* Filter Section - Clean Dropdown Design */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Academic Year */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Academic Year
+              </label>
+              <select
+                value={selectedAcademicYear}
+                onChange={(e) => setSelectedAcademicYear(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-mut-primary text-gray-900"
+              >
+                {getAcademicYearOptions().map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
             </div>
-            
-            {/* Resource Type Filter */}
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-mut-primary text-sm"
-            >
-              <option value="all">All Resources</option>
-              <option value="notes">Lecture Notes</option>
-              <option value="assignment">Assignments</option>
-              <option value="pastpaper">Past Papers</option>
-              <option value="video">Video Lectures</option>
-            </select>
+
+            {/* Year of Study */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Year of Study
+              </label>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-mut-primary text-gray-900"
+              >
+                <option value="1">Year 1</option>
+                <option value="2">Year 2</option>
+                <option value="3">Year 3</option>
+                <option value="4">Year 4</option>
+                <option value="5">Year 5</option>
+              </select>
+            </div>
+
+            {/* Semester */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Semester
+              </label>
+              <select
+                value={selectedSemester}
+                onChange={(e) => setSelectedSemester(Number(e.target.value))}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-mut-primary text-gray-900"
+              >
+                <option value="1">Semester 1</option>
+                <option value="2">Semester 2</option>
+              </select>
+            </div>
+
+            {/* Resource Type */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Resource Type
+              </label>
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-mut-primary text-gray-900"
+              >
+                <option value="all">All Types</option>
+                <option value="notes">Lecture Notes</option>
+                <option value="assignment">Assignments</option>
+                <option value="pastpaper">Past Papers</option>
+                <option value="video">Videos</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        {/* Main Content - Courses and Resources */}
+        {/* Courses Grid */}
         <div>
           {courses.length === 0 ? (
-              <div className="bg-white rounded-lg shadow-md p-12 text-center">
-                <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  No Courses Available
-                </h3>
-                <p className="text-gray-500">
-                  There are no courses for Year {selectedYear}, Semester {selectedSemester} yet.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {courses.map((course) => {
-                  const courseResources = getResourcesForCourse(course.id);
-                  
-                  return (
-                    <div key={course.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-                      {/* Course Header */}
-                      <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h3 className="text-lg font-bold text-gray-900 mb-1">
-                              {course.unitCode} - {course.unitTitle}
-                            </h3>
-                            <div className="flex items-center gap-3 text-sm text-gray-600">
-                              <span className="px-2 py-1 bg-white rounded text-xs font-medium">
-                                {course.credits} Credits
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <FileText className="w-4 h-4" />
-                                {courseResources.length} Resources
-                              </span>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => navigate(`/course/${course.id}`)}
-                            className="text-mut-primary hover:text-green-700 flex items-center gap-1 text-sm font-medium"
-                          >
-                            View Details
-                            <ExternalLink className="w-4 h-4" />
-                          </button>
+            <div className="bg-white rounded-lg shadow-md p-12 text-center">
+              <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                No Courses Available
+              </h3>
+              <p className="text-gray-600">
+                There are no courses for Year {selectedYear}, Semester {selectedSemester} yet.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {courses.map((course) => {
+                const courseResources = getResourcesForCourse(course.id);
+                const resourceCount = courseResources.length;
+                
+                return (
+                  <div
+                    key={course.id}
+                    className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow overflow-hidden cursor-pointer"
+                    onClick={() => navigate(`/course/${course.id}`)}
+                  >
+                    {/* Course Header */}
+                    <div className="bg-gradient-to-r from-mut-primary to-mut-secondary p-6">
+                      <h3 className="text-xl font-bold text-white mb-2">
+                        {course.unitCode}
+                      </h3>
+                      <p className="text-green-100 text-sm">
+                        {course.unitTitle}
+                      </p>
+                    </div>
+
+                    {/* Course Info */}
+                    <div className="p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <BookOpen className="w-4 h-4" />
+                          <span>{course.credits} Credits</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <FileText className="w-4 h-4" />
+                          <span className="font-semibold">{resourceCount} Resources</span>
                         </div>
                       </div>
 
-                      {/* Resources List */}
-                      <div className="p-6">
-                        {courseResources.length === 0 ? (
-                          <div className="text-center py-8">
-                            <File className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                            <p className="text-gray-500 text-sm">
-                              No resources available for this course yet.
-                            </p>
-                            <button
-                              onClick={() => navigate('/my-uploads')}
-                              className="mt-3 text-mut-primary hover:text-green-700 text-sm font-medium"
-                            >
-                              Be the first to upload
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {courseResources.map((resource) => {
-                              const progress = resourceProgress[resource.id];
-                              const hasProgress = progress && progress.progress > 0;
-                              const isCompleted = progress && progress.completed;
-                              
-                              return (
-                              <div
-                                key={resource.id}
-                                className="border border-gray-200 rounded-lg p-4 hover:border-mut-primary hover:shadow-md transition-all relative"
-                              >
-                                {/* Completion Badge */}
-                                {isCompleted && (
-                                  <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-1">
-                                    <CheckCircle className="w-4 h-4" />
-                                  </div>
-                                )}
-
-                                <div className="flex items-start justify-between mb-3">
-                                  <div className={`p-2 rounded-lg ${getFileTypeColor(resource.type)}`}>
-                                    {getFileIcon(resource.type)}
-                                  </div>
-                                  <span className={`text-xs px-2 py-1 rounded ${getFileTypeColor(resource.type)}`}>
-                                    {getResourceTypeLabel(resource.type)}
-                                  </span>
-                                </div>
-
-                                <h4 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                                  {resource.title}
-                                </h4>
-
-                                {resource.description && (
-                                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                                    {resource.description}
-                                  </p>
-                                )}
-
-                                {/* Progress Bar */}
-                                {hasProgress && (
-                                  <div className="mb-3">
-                                    <div className="flex items-center justify-between text-xs mb-1">
-                                      <span className="text-gray-600">Your Progress</span>
-                                      <span className="font-semibold text-mut-primary">
-                                        {progress.progress}%
-                                      </span>
-                                    </div>
-                                    <div className="w-full bg-gray-200 rounded-full h-1.5">
-                                      <div
-                                        className={`h-1.5 rounded-full transition-all ${
-                                          isCompleted ? 'bg-green-500' : 'bg-mut-primary'
-                                        }`}
-                                        style={{ width: `${progress.progress}%` }}
-                                      ></div>
-                                    </div>
-                                  </div>
-                                )}
-
-                                <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
-                                  <User className="w-3 h-3" />
-                                  <span>{resource.uploadedBy?.name || 'Anonymous'}</span>
-                                  <span>•</span>
-                                  <Clock className="w-3 h-3" />
-                                  <span>{new Date(resource.createdAt).toLocaleDateString()}</span>
-                                  {resource.status && resource.status !== 'approved' && (
-                                    <>
-                                      <span>•</span>
-                                      <span className={`
-                                        px-2 py-0.5 rounded text-xs font-medium
-                                        ${resource.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : ''}
-                                        ${resource.status === 'rejected' ? 'bg-red-100 text-red-700' : ''}
-                                      `}>
-                                        {resource.status === 'pending' && 'Pending Review'}
-                                        {resource.status === 'rejected' && 'Rejected'}
-                                      </span>
-                                    </>
-                                  )}
-                                </div>
-
-                                <div className="flex gap-2">
-                                  <button
-                                    onClick={() => handleViewFile(resource)}
-                                    className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1 transition-colors ${
-                                      hasProgress
-                                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                                        : 'bg-mut-primary hover:bg-green-700 text-white'
-                                    }`}
-                                  >
-                                    {hasProgress ? (
-                                      <>
-                                        <BookOpen className="w-4 h-4" />
-                                        {isCompleted ? 'Read Again' : 'Continue Reading'}
-                                      </>
-                                    ) : (
-                                      <>
-                                        <BookOpen className="w-4 h-4" />
-                                        Read
-                                      </>
-                                    )}
-                                  </button>
-                                </div>
-                              </div>
-                            )})}
-                          </div>
-                        )}
-                      </div>
+                      {/* View Details Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/course/${course.id}`);
+                        }}
+                        className="w-full bg-mut-primary text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                      >
+                        View Details
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
