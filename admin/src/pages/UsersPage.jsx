@@ -3,7 +3,7 @@ import { adminAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Search, Filter, UserCheck, UserX, Edit, ChevronLeft, ChevronRight,
-  Mail, GraduationCap, Calendar, Shield, User
+  Mail, GraduationCap, Calendar, Shield, User, Star
 } from 'lucide-react';
 
 const UsersPage = () => {
@@ -83,6 +83,34 @@ const UsersPage = () => {
     } catch (error) {
       console.error('Error updating user role:', error);
       alert('Failed to update user role');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleClassRepToggle = async (user) => {
+    const newStatus = !user.is_class_rep;
+    const confirmMessage = newStatus
+      ? `Grant ${user.first_name} ${user.last_name} class representative privileges? They will be able to create courses for their program.`
+      : `Revoke class representative privileges from ${user.first_name} ${user.last_name}?`;
+
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      await adminAPI.updateClassRepStatus(user.id, newStatus);
+      
+      // Update local state
+      setUsers(users.map(u => 
+        u.id === user.id ? { ...u, is_class_rep: newStatus } : u
+      ));
+      
+      alert(`Class representative privileges ${newStatus ? 'granted' : 'revoked'} successfully!`);
+    } catch (error) {
+      console.error('Error updating class rep status:', error);
+      alert(error.response?.data?.message || 'Failed to update class rep status');
     } finally {
       setActionLoading(false);
     }
@@ -185,6 +213,9 @@ const UsersPage = () => {
                   Role
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Class Rep
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -198,7 +229,7 @@ const UsersPage = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center">
+                  <td colSpan="8" className="px-6 py-12 text-center">
                     <div className="flex justify-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-admin-primary"></div>
                     </div>
@@ -206,7 +237,7 @@ const UsersPage = () => {
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan="8" className="px-6 py-12 text-center text-gray-500">
                     No users found
                   </td>
                 </tr>
@@ -241,6 +272,16 @@ const UsersPage = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getRoleBadge(user.role)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {user.is_class_rep ? (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                          <Star className="w-3 h-3 fill-current" />
+                          Class Rep
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">No</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${
@@ -279,6 +320,22 @@ const UsersPage = () => {
                         >
                           {user.is_active ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
                         </button>
+
+                        {/* Toggle Class Rep (Admin only, not for admins) */}
+                        {isAdmin && user.role !== 'admin' && (
+                          <button
+                            onClick={() => handleClassRepToggle(user)}
+                            disabled={actionLoading}
+                            className={`p-2 rounded-lg transition-colors ${
+                              user.is_class_rep
+                                ? 'text-yellow-600 hover:bg-yellow-50'
+                                : 'text-gray-600 hover:bg-gray-50'
+                            } disabled:opacity-50`}
+                            title={user.is_class_rep ? 'Revoke Class Rep' : 'Make Class Rep'}
+                          >
+                            <Star className={`w-4 h-4 ${user.is_class_rep ? 'fill-current' : ''}`} />
+                          </button>
+                        )}
 
                         {/* Change Role (Admin only) */}
                         {isAdmin && (

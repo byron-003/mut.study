@@ -21,7 +21,7 @@ export const authenticate = async (req, res, next) => {
 
     // Get user from database
     const result = await query(
-      'SELECT id, email, first_name, last_name, role, program_id, is_active FROM users WHERE id = $1',
+      'SELECT id, email, first_name, last_name, role, program_id, is_active, is_class_rep FROM users WHERE id = $1',
       [decoded.userId]
     );
 
@@ -82,7 +82,7 @@ export const optionalAuth = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const result = await query(
-      'SELECT id, email, first_name, last_name, role, program_id FROM users WHERE id = $1 AND is_active = true',
+      'SELECT id, email, first_name, last_name, role, program_id, is_class_rep FROM users WHERE id = $1 AND is_active = true',
       [decoded.userId]
     );
 
@@ -95,4 +95,19 @@ export const optionalAuth = async (req, res, next) => {
     // If token is invalid, just continue without user
     next();
   }
+};
+
+/**
+ * Check if user is a class representative
+ */
+export const requireClassRep = (req, res, next) => {
+  if (!req.user) {
+    return next(new AppError('Not authenticated', 401));
+  }
+
+  if (!req.user.is_class_rep && req.user.role !== 'admin') {
+    return next(new AppError('Only class representatives can perform this action', 403));
+  }
+
+  next();
 };

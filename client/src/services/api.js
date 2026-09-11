@@ -82,4 +82,10 @@ export const resourcesAPI = {
 // Alias for backward compatibility
 export const resourceAPI = resourcesAPI;
 
+// Class Rep API
+export const classRepAPI = {
+  createCourse: (data) => api.post('/class-rep/courses', data),
+  getMyCourses: () => api.get('/class-rep/courses'),
+};
+
 export default api;

@@ -13,6 +13,7 @@ import passwordResetRoutes from './routes/passwordResetRoutes.js';
 import forumRoutes from './routes/forumRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
 import progressRoutes from './routes/progressRoutes.js';
+import classRepRoutes from './routes/classRepRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { query } from './config/database.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
@@ -27,7 +28,7 @@ async function runMigrations() {
   try {
     console.log('🔄 Checking for pending migrations...');
     
-    // Check if system_settings table exists
+    // Check if system_settings table exists (migration 012)
     const tableCheck = await query(`
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
@@ -37,17 +38,29 @@ async function runMigrations() {
     
     if (!tableCheck.rows[0].exists) {
       console.log('📝 Running downloads setting migration...');
-      
-      // Read and execute migration
       const migrationPath = path.join(__dirname, 'migrations', '012_add_downloads_setting.sql');
       const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
-      
       await query(migrationSQL);
-      
-      console.log('✅ Migration completed successfully!');
-    } else {
-      console.log('✅ All migrations up to date');
+      console.log('✅ Downloads setting migration completed!');
     }
+    
+    // Check if is_class_rep column exists (migration 013)
+    const columnCheck = await query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.columns 
+        WHERE table_name = 'users' AND column_name = 'is_class_rep'
+      );
+    `);
+    
+    if (!columnCheck.rows[0].exists) {
+      console.log('📝 Running class rep role migration...');
+      const migrationPath = path.join(__dirname, 'migrations', '013_add_class_rep_role.sql');
+      const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
+      await query(migrationSQL);
+      console.log('✅ Class rep role migration completed!');
+    }
+    
+    console.log('✅ All migrations up to date');
   } catch (error) {
     console.error('❌ Migration error:', error.message);
     // Don't stop server if migration fails
@@ -103,6 +116,7 @@ app.use('/api/password-reset', passwordResetRoutes);
 app.use('/api/forum', forumRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/progress', progressRoutes);
+app.use('/api/class-rep', classRepRoutes);
 
 // Public settings endpoint
 import { getDownloadsEnabled } from './controllers/adminController.js';

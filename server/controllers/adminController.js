@@ -266,7 +266,7 @@ export const getUsers = async (req, res, next) => {
     const usersResult = await query(
       `SELECT 
         u.id, u.email, u.first_name, u.last_name, u.role, u.is_active, 
-        u.current_year, u.current_semester, u.created_at,
+        u.current_year, u.current_semester, u.created_at, u.is_class_rep,
         p.name as program_name, p.code as program_code
        FROM users u
        LEFT JOIN programs p ON u.program_id = p.id
@@ -349,6 +349,37 @@ export const updateUserRole = async (req, res, next) => {
     res.json({
       status: 'success',
       message: 'User role updated successfully',
+      data: result.rows[0],
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update user class rep status
+ */
+export const updateClassRepStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { isClassRep } = req.body;
+
+    if (typeof isClassRep !== 'boolean') {
+      throw new AppError('isClassRep must be a boolean value', 400);
+    }
+
+    const result = await query(
+      'UPDATE users SET is_class_rep = $1 WHERE id = $2 RETURNING id, email, first_name, last_name, is_class_rep',
+      [isClassRep, id]
+    );
+
+    if (result.rows.length === 0) {
+      throw new AppError('User not found', 404);
+    }
+
+    res.json({
+      status: 'success',
+      message: `User ${isClassRep ? 'granted' : 'revoked'} class representative privileges`,
       data: result.rows[0],
     });
   } catch (error) {

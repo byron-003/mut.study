@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../utils/authContext';
-import { resourcesAPI, schoolsAPI } from '../services/api';
+import { resourcesAPI, schoolsAPI, classRepAPI } from '../services/api';
+import AddCourseModal from '../components/AddCourseModal';
 import { 
   Upload, FileText, Trash2, Edit, Eye, Download, 
   Filter, Search, X, Plus, Save, AlertCircle,
@@ -42,7 +43,7 @@ const getAcademicYearOptions = () => {
 };
 
 const MyUploadsPage = () => {
-  const { user } = useAuth();
+  const { user, isClassRep } = useAuth();
   
   // Data State
   const [uploads, setUploads] = useState([]);
@@ -60,6 +61,7 @@ const MyUploadsPage = () => {
   const [selectedResource, setSelectedResource] = useState(null);
   const [showViewer, setShowViewer] = useState(false);
   const [viewerFile, setViewerFile] = useState(null);
+  const [showAddCourseModal, setShowAddCourseModal] = useState(false);
   
   // Upload Form State
   const [uploadForm, setUploadForm] = useState({
@@ -346,15 +348,28 @@ const MyUploadsPage = () => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">My Uploads</h1>
-              <p className="text-gray-600 mt-1">Manage your uploaded resources</p>
+              <p className="text-gray-600 mt-1">
+                {isClassRep ? 'Manage your uploads and courses' : 'Manage your uploaded resources'}
+              </p>
             </div>
-            <button
-              onClick={() => setShowUploadModal(true)}
-              className="bg-mut-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 flex items-center gap-2 shadow-lg transition-all hover:shadow-xl"
-            >
-              <Plus className="w-5 h-5" />
-              Upload Resource
-            </button>
+            <div className="flex gap-3">
+              {isClassRep && (
+                <button
+                  onClick={() => setShowAddCourseModal(true)}
+                  className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 flex items-center gap-2 shadow-lg transition-all hover:shadow-xl"
+                >
+                  <Book className="w-5 h-5" />
+                  Add Course
+                </button>
+              )}
+              <button
+                onClick={() => setShowUploadModal(true)}
+                className="bg-mut-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 flex items-center gap-2 shadow-lg transition-all hover:shadow-xl"
+              >
+                <Plus className="w-5 h-5" />
+                Upload Resource
+              </button>
+            </div>
           </div>
 
           {/* Stats Cards */}
@@ -978,6 +993,18 @@ const MyUploadsPage = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Add Course Modal (Class Reps only) */}
+      {isClassRep && (
+        <AddCourseModal
+          isOpen={showAddCourseModal}
+          onClose={() => setShowAddCourseModal(false)}
+          onSuccess={() => {
+            // Optionally refresh data or show success message
+            console.log('Course created successfully');
+          }}
+        />
       )}
     </div>
   );

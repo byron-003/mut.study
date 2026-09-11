@@ -109,7 +109,7 @@ export const login = async (req, res, next) => {
 
     // Get user from database
     const result = await query(
-      `SELECT u.id, u.email, u.password_hash, u.first_name, u.last_name, u.role, u.program_id, u.is_active, u.current_year, u.current_semester, u.profile_picture_url,
+      `SELECT u.id, u.email, u.password_hash, u.first_name, u.last_name, u.role, u.program_id, u.is_active, u.current_year, u.current_semester, u.profile_picture_url, u.is_class_rep,
               p.name as program_name, p.code as program_code
        FROM users u
        LEFT JOIN programs p ON u.program_id = p.id
@@ -153,7 +153,8 @@ export const login = async (req, res, next) => {
           programCode: user.program_code,
           currentYear: user.current_year,
           currentSemester: user.current_semester,
-          profilePicture: user.profile_picture_url
+          profilePicture: user.profile_picture_url,
+          isClassRep: user.is_class_rep || false
         },
         token
       }
@@ -169,7 +170,7 @@ export const login = async (req, res, next) => {
 export const getProfile = async (req, res, next) => {
   try {
     const result = await query(
-      `SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.program_id, u.current_year, u.current_semester, u.created_at, u.profile_picture_url,
+      `SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.program_id, u.current_year, u.current_semester, u.created_at, u.profile_picture_url, u.is_class_rep,
               p.name as program_name, p.code as program_code, p.level as program_level,
               d.name as department_name, s.name as school_name
        FROM users u
@@ -205,6 +206,7 @@ export const getProfile = async (req, res, next) => {
           department: user.department_name,
           school: user.school_name
         } : null,
+        isClassRep: user.is_class_rep || false,
         createdAt: user.created_at
       }
     });
