@@ -77,6 +77,11 @@ export const adminAPI = {
   // System settings
   getSettings: () => api.get('/admin/settings'),
   updateSetting: (key, value) => api.put('/admin/settings', { key, value }),
+  
+  // Notifications
+  createNotification: (data) => api.post('/notifications', data),
+  getAllNotifications: (params) => api.get('/notifications/admin/all', { params }),
+  deleteNotification: (id) => api.delete(`/notifications/${id}`),
 };
 
 export default api;

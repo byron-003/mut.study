@@ -12,6 +12,7 @@ import CoursesPage from './pages/CoursesPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import ReportsPage from './pages/ReportsPage';
 import SettingsPage from './pages/SettingsPage';
+import NotificationsPage from './pages/NotificationsPage';
 
 // Protected route wrapper
 const ProtectedRoute = ({ children, requireAdmin = false }) => {
@@ -89,6 +90,11 @@ function AppRoutes() {
         } />
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="reports" element={<ReportsPage />} />
+        <Route path="notifications" element={
+          <ProtectedRoute requireAdmin={true}>
+            <NotificationsPage />
+          </ProtectedRoute>
+        } />
         <Route path="settings" element={
           <ProtectedRoute requireAdmin={true}>
             <SettingsPage />

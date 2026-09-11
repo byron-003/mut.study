@@ -88,4 +88,12 @@ export const classRepAPI = {
   getMyCourses: () => api.get('/class-rep/courses'),
 };
 
+// Notifications API
+export const notificationsAPI = {
+  getNotifications: (params) => api.get('/notifications', { params }),
+  getUnreadCount: () => api.get('/notifications/unread-count'),
+  markAsRead: (id) => api.put(`/notifications/${id}/read`),
+  markAllAsRead: () => api.put('/notifications/read-all'),
+};
+
 export default api;

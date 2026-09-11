@@ -4,6 +4,7 @@ import { schoolsAPI, searchAPI, resourceAPI } from '../services/api';
 import { progressAPI } from '../services/progressAPI';
 import { useAuth } from '../utils/authContext';
 import { useSocket, useSocketEvent } from '../context/SocketContext';
+import FileViewer from '../components/FileViewer';
 import { 
   Search, Upload, FileText, ChevronDown, ChevronRight, 
   Download, Eye, Filter, Calendar, User, BookOpen, 
@@ -844,81 +845,12 @@ const DashboardPage = () => {
 
       {/* File Viewer Modal */}
       {showViewer && viewerFile && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            {/* Viewer Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <div>
-                <h3 className="font-bold text-gray-900">{viewerFile.title}</h3>
-                <p className="text-sm text-gray-600">{getResourceTypeLabel(viewerFile.type)}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                {downloadsEnabled && (
-                  <button
-                    onClick={() => handleDownloadFile(viewerFile)}
-                    className="bg-mut-primary text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
-                  >
-                    <Download className="w-4 h-4" />
-                    Download
-                  </button>
-                )}
-                <button
-                  onClick={closeViewer}
-                  className="bg-gray-100 text-gray-700 p-2 rounded-lg hover:bg-gray-200"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Viewer Content */}
-            <div 
-              ref={viewerContentRef}
-              onScroll={handleViewerScroll}
-              className="flex-1 overflow-auto p-4 bg-gray-50"
-            >
-              {viewerFile.fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                <img
-                  src={viewerFile.fileUrl}
-                  alt={viewerFile.title}
-                  className="max-w-full h-auto mx-auto"
-                />
-              ) : viewerFile.fileUrl.match(/\.(pdf)$/i) ? (
-                <iframe
-                  src={viewerFile.fileUrl}
-                  className="w-full h-full min-h-[600px] border-0"
-                  title={viewerFile.title}
-                />
-              ) : viewerFile.fileUrl.match(/\.(mp4|webm|ogg)$/i) ? (
-                <video
-                  controls
-                  className="max-w-full h-auto mx-auto"
-                  src={viewerFile.fileUrl}
-                >
-                  Your browser does not support the video tag.
-                </video>
-              ) : (
-                <div className="text-center py-12">
-                  <File className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600 mb-4">
-                    Preview not available for this file type.
-                  </p>
-                  {downloadsEnabled ? (
-                    <button
-                      onClick={() => handleDownloadFile(viewerFile)}
-                      className="bg-mut-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 inline-flex items-center gap-2"
-                    >
-                      <Download className="w-5 h-5" />
-                      Download to View
-                    </button>
-                  ) : (
-                    <p className="text-gray-500 text-sm">Downloads are currently disabled by administrator</p>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <FileViewer
+          file={viewerFile}
+          onClose={closeViewer}
+          onDownload={() => handleDownloadFile(viewerFile)}
+          downloadsEnabled={downloadsEnabled}
+        />
       )}
 
       {/* Resume Prompt Modal */}

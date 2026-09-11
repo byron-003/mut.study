@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../utils/authContext';
 import { resourcesAPI, schoolsAPI, classRepAPI } from '../services/api';
 import AddCourseModal from '../components/AddCourseModal';
+import FileViewer from '../components/FileViewer';
 import { 
   Upload, FileText, Trash2, Edit, Eye, Download, 
   Filter, Search, X, Plus, Save, AlertCircle,
@@ -922,77 +923,15 @@ const MyUploadsPage = () => {
 
       {/* File Viewer Modal */}
       {showViewer && viewerFile && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            {/* Viewer Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <div>
-                <h3 className="font-bold text-gray-900">{viewerFile.title}</h3>
-                <p className="text-sm text-gray-600">
-                  {viewerFile.type ? (viewerFile.type.charAt(0).toUpperCase() + viewerFile.type.slice(1)) : 'Document'}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleDownloadFile(viewerFile)}
-                  className="bg-mut-primary text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  Download
-                </button>
-                <button
-                  onClick={() => {
-                    setShowViewer(false);
-                    setViewerFile(null);
-                  }}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Viewer Content */}
-            <div className="flex-1 overflow-auto p-4 bg-gray-50">
-              {viewerFile.fileUrl.match(/\.(pdf)$/i) ? (
-                <iframe
-                  src={viewerFile.fileUrl}
-                  className="w-full h-full min-h-[600px]"
-                  title={viewerFile.title}
-                />
-              ) : viewerFile.fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                <img
-                  src={viewerFile.fileUrl}
-                  alt={viewerFile.title}
-                  className="max-w-full h-auto mx-auto"
-                />
-              ) : viewerFile.fileUrl.match(/\.(mp4|webm|ogg)$/i) ? (
-                <video
-                  src={viewerFile.fileUrl}
-                  controls
-                  className="max-w-full h-auto mx-auto"
-                >
-                  Your browser does not support video playback.
-                </video>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center">
-                  <FileText className="w-16 h-16 text-gray-400 mb-4" />
-                  <p className="text-gray-600 mb-2">Preview not available for this file type</p>
-                  <p className="text-sm text-gray-500 mb-4">
-                    Click the download button to view this file
-                  </p>
-                  <button
-                    onClick={() => handleDownloadFile(viewerFile)}
-                    className="bg-mut-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 inline-flex items-center gap-2"
-                  >
-                    <Download className="w-5 h-5" />
-                    Download File
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <FileViewer
+          file={viewerFile}
+          onClose={() => {
+            setShowViewer(false);
+            setViewerFile(null);
+          }}
+          onDownload={() => handleDownloadFile(viewerFile)}
+          downloadsEnabled={true}
+        />
       )}
 
       {/* Add Course Modal (Class Reps only) */}

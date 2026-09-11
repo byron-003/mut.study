@@ -125,7 +125,6 @@ const UsersPage = () => {
   const getRoleBadge = (role) => {
     const badges = {
       student: { text: 'Student', class: 'bg-blue-100 text-blue-800' },
-      class_rep: { text: 'Class Rep', class: 'bg-green-100 text-green-800' },
       admin: { text: 'Admin', class: 'bg-purple-100 text-purple-800' },
     };
     const badge = badges[role] || badges.student;
@@ -174,7 +173,6 @@ const UsersPage = () => {
             >
               <option value="">All Roles</option>
               <option value="student">Students</option>
-              <option value="class_rep">Class Reps</option>
               <option value="admin">Admins</option>
             </select>
           </div>

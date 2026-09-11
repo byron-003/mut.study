@@ -14,6 +14,7 @@ import forumRoutes from './routes/forumRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
 import progressRoutes from './routes/progressRoutes.js';
 import classRepRoutes from './routes/classRepRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { query } from './config/database.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
@@ -58,6 +59,22 @@ async function runMigrations() {
       const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
       await query(migrationSQL);
       console.log('✅ Class rep role migration completed!');
+    }
+    
+    // Check if notifications table exists (migration 014)
+    const notificationsTableCheck = await query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'notifications'
+      );
+    `);
+    
+    if (!notificationsTableCheck.rows[0].exists) {
+      console.log('📝 Running notifications system migration...');
+      const migrationPath = path.join(__dirname, 'migrations', '014_create_notifications.sql');
+      const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
+      await query(migrationSQL);
+      console.log('✅ Notifications system migration completed!');
     }
     
     console.log('✅ All migrations up to date');
@@ -117,6 +134,7 @@ app.use('/api/forum', forumRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/class-rep', classRepRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Public settings endpoint
 import { getDownloadsEnabled } from './controllers/adminController.js';

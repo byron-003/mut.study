@@ -119,7 +119,7 @@ export const uploadResource = async (req, res, next) => {
         req.file.path,
         req.file.filename,
         req.file.size,
-        req.file.mimetype.substring(0, 50), // Truncate to 50 chars for now
+        req.file.mimetype.substring(0, 100), // Store full MIME type (max 100 chars)
         'pending'
       ]
     );

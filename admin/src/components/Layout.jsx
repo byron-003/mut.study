@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   LayoutDashboard, Users, FileText, BookOpen, GraduationCap,
-  BarChart3, FileSpreadsheet, Settings, LogOut, Menu, X, ChevronDown, Mail
+  BarChart3, FileSpreadsheet, Settings, LogOut, Menu, X, ChevronDown, Mail, Bell
 } from 'lucide-react';
 
 const Layout = () => {
@@ -23,6 +23,7 @@ const Layout = () => {
     { name: 'Users', path: '/users', icon: Users, allowClassRep: true },
     { name: 'Resources', path: '/resources', icon: FileText, allowClassRep: true },
     { name: 'Messages', path: '/messages', icon: Mail, allowClassRep: false },
+    { name: 'Notifications', path: '/notifications', icon: Bell, allowClassRep: false },
     { name: 'Programs', path: '/programs', icon: GraduationCap, allowClassRep: false },
     { name: 'Courses', path: '/courses', icon: BookOpen, allowClassRep: false },
     { name: 'Analytics', path: '/analytics', icon: BarChart3, allowClassRep: true },
