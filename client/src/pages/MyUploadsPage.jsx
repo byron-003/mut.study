@@ -3,6 +3,9 @@ import { useAuth } from '../utils/authContext';
 import { resourcesAPI, schoolsAPI, classRepAPI } from '../services/api';
 import AddCourseModal from '../components/AddCourseModal';
 import FileViewer from '../components/FileViewer';
+import { useAlert, useConfirm } from '../hooks/useAlert';
+import CustomAlert from '../components/CustomAlert';
+import CustomConfirm from '../components/CustomConfirm';
 import { 
   Upload, FileText, Trash2, Edit, Eye, Download, 
   Filter, Search, X, Plus, Save, AlertCircle,
@@ -45,6 +48,8 @@ const getAcademicYearOptions = () => {
 
 const MyUploadsPage = () => {
   const { user, isClassRep } = useAuth();
+  const { alertState, showAlert, closeAlert } = useAlert();
+  const { confirmState, showConfirm } = useConfirm();
   
   // Data State
   const [uploads, setUploads] = useState([]);
@@ -58,7 +63,6 @@ const MyUploadsPage = () => {
   // Modal States
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedResource, setSelectedResource] = useState(null);
   const [showViewer, setShowViewer] = useState(false);
   const [viewerFile, setViewerFile] = useState(null);
@@ -148,7 +152,7 @@ const MyUploadsPage = () => {
       setShowUploadModal(false);
       resetUploadForm();
       
-      alert('Resource uploaded successfully! It will be visible after approval.');
+      showAlert('Success', 'Resource uploaded successfully! It will be visible after approval.', 'success');
     } catch (error) {
       console.error('Error uploading resource:', error);
       setUploadError(error.response?.data?.message || 'Failed to upload resource');
@@ -170,10 +174,10 @@ const MyUploadsPage = () => {
       
       setShowEditModal(false);
       setSelectedResource(null);
-      alert('Resource updated successfully!');
+      showAlert('Success', 'Resource updated successfully!', 'success');
     } catch (error) {
       console.error('Error updating resource:', error);
-      alert(error.response?.data?.message || 'Failed to update resource');
+      showAlert('Error', error.response?.data?.message || 'Failed to update resource', 'error');
     }
   };
 
@@ -181,12 +185,11 @@ const MyUploadsPage = () => {
     try {
       await resourcesAPI.deleteResource(selectedResource.id);
       setUploads(uploads.filter(u => u.id !== selectedResource.id));
-      setShowDeleteConfirm(false);
       setSelectedResource(null);
-      alert('Resource deleted successfully!');
+      showAlert('Success', 'Resource deleted successfully!', 'success');
     } catch (error) {
       console.error('Error deleting resource:', error);
-      alert('Failed to delete resource');
+      showAlert('Error', 'Failed to delete resource', 'error');
     }
   };
 
@@ -200,9 +203,20 @@ const MyUploadsPage = () => {
     setShowEditModal(true);
   };
 
-  const openDeleteConfirm = (resource) => {
+  const openDeleteConfirm = async (resource) => {
     setSelectedResource(resource);
-    setShowDeleteConfirm(true);
+    
+    const confirmed = await showConfirm({
+      title: 'Delete Resource',
+      message: `Are you sure you want to delete "${resource.title}"? This action cannot be undone.`,
+      type: 'danger',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    });
+    
+    if (confirmed) {
+      await handleDelete();
+    }
   };
 
   const handleViewFile = (resource) => {
@@ -230,7 +244,7 @@ const MyUploadsPage = () => {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading file:', error);
-      alert('Failed to download file');
+      showAlert('Error', 'Failed to download file', 'error');
     }
   };
 
@@ -869,42 +883,6 @@ const MyUploadsPage = () => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && selectedResource && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-red-100 rounded-lg">
-                <AlertCircle className="w-6 h-6 text-red-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-gray-900 mb-2">
-                  Delete Resource?
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Are you sure you want to delete "{selectedResource.title}"? This action cannot be undone.
-                </p>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={handleDelete}
-                    className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center justify-center gap-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Delete
-                  </button>
-                  <button
-                    onClick={() => setShowDeleteConfirm(false)}
-                    className="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* File Viewer Modal */}
       {showViewer && viewerFile && (
         <FileViewer
@@ -929,6 +907,9 @@ const MyUploadsPage = () => {
           }}
         />
       )}
+      
+      <CustomAlert {...alertState} onClose={closeAlert} />
+      <CustomConfirm {...confirmState} />
     </div>
   );
 };

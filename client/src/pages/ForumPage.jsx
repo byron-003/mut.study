@@ -3,12 +3,15 @@ import { useAuth } from '../utils/authContext';
 import { useSocketEvent, useSocket } from '../context/SocketContext';
 import { MessageSquare, Plus, Image, ThumbsUp, MessageCircle, X, Upload, AlertCircle } from 'lucide-react';
 import axios from 'axios';
+import { useAlert } from '../hooks/useAlert';
+import CustomAlert from '../components/CustomAlert';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const ForumPage = () => {
   const { user } = useAuth();
   const { joinRoom, leaveRoom, isConnected } = useSocket();
+  const { alertState, showAlert, closeAlert } = useAlert();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -108,7 +111,7 @@ const ForumPage = () => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        alert('Image size should be less than 5MB');
+        showAlert('Warning', 'Image size should be less than 5MB', 'warning');
         return;
       }
       setNewPost({ ...newPost, image: file });
@@ -151,7 +154,7 @@ const ForumPage = () => {
       fetchPosts();
     } catch (error) {
       console.error('Error creating post:', error);
-      alert('Failed to create post. Please try again.');
+      showAlert('Error', 'Failed to create post. Please try again.', 'error');
     }
   };
 
@@ -177,7 +180,7 @@ const ForumPage = () => {
       }
     } catch (error) {
       console.error('Error adding comment:', error);
-      alert('Failed to add comment. Please try again.');
+      showAlert('Error', 'Failed to add comment. Please try again.', 'error');
     }
   };
 
@@ -666,6 +669,8 @@ const ForumPage = () => {
           </div>
         </div>
       )}
+      
+      <CustomAlert {...alertState} onClose={closeAlert} />
     </div>
   );
 };
