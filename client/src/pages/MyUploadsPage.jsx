@@ -363,13 +363,6 @@ const MyUploadsPage = () => {
                   Add Course
                 </button>
               )}
-              <button
-                onClick={() => setShowUploadModal(true)}
-                className="bg-mut-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 flex items-center gap-2 shadow-lg transition-all hover:shadow-xl"
-              >
-                <Plus className="w-5 h-5" />
-                Upload Resource
-              </button>
             </div>
           </div>
 
@@ -480,15 +473,6 @@ const MyUploadsPage = () => {
                 : 'Try adjusting your filters or search query.'
               }
             </p>
-            {uploads.length === 0 && (
-              <button
-                onClick={() => setShowUploadModal(true)}
-                className="bg-mut-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 inline-flex items-center gap-2"
-              >
-                <Plus className="w-5 h-5" />
-                Upload Your First Resource
-              </button>
-            )}
           </div>
         ) : (
           <div className="space-y-4">

@@ -64,6 +64,17 @@ export const AuthProvider = ({ children }) => {
     isClassRep: user?.isClassRep === true || user?.role === 'admin',
   };
 
+  // Debug logging
+  if (user) {
+    console.log('Auth Context - User:', {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      isClassRep: user.isClassRep,
+      computed_isClassRep: value.isClassRep
+    });
+  }
+
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
