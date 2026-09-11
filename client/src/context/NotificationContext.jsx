@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Bell, X, Check, AlertCircle, Info, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 import { useAuth } from '../utils/authContext';
 import axios from 'axios';
+import NotificationViewerModal from '../components/NotificationViewerModal';
 
 const NotificationContext = createContext(null);
 
@@ -14,6 +15,8 @@ export const NotificationBell = () => {
   const [notifications, setNotifications] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   // Fetch unread count
   const fetchUnreadCount = async () => {
@@ -102,6 +105,18 @@ export const NotificationBell = () => {
     }
   }, [showDropdown, isAuthenticated]);
 
+  // Open notification modal
+  const openNotification = async (notification) => {
+    setSelectedNotification(notification);
+    setShowModal(true);
+    setShowDropdown(false);
+    
+    // Mark as read if unread
+    if (!notification.isRead) {
+      await markAsRead(notification.id);
+    }
+  };
+
   if (!isAuthenticated) return null;
 
   const getTypeIcon = (type) => {
@@ -188,7 +203,7 @@ export const NotificationBell = () => {
                       className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer ${
                         !notification.isRead ? 'bg-blue-50' : ''
                       }`}
-                      onClick={() => !notification.isRead && markAsRead(notification.id)}
+                      onClick={() => openNotification(notification)}
                     >
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0 mt-1">
@@ -238,6 +253,13 @@ export const NotificationBell = () => {
           </div>
         </>
       )}
+
+      {/* Notification Viewer Modal */}
+      <NotificationViewerModal
+        notification={selectedNotification}
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+      />
     </div>
   );
 };

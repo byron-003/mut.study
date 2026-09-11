@@ -6,7 +6,7 @@ import { AppError } from '../middleware/errorHandler.js';
  */
 export const createNotification = async (req, res, next) => {
   try {
-    const { title, message, type, targetType, targetProgramId, targetUserId, expiresAt } = req.body;
+    const { title, message, type, targetType, targetProgramId, targetUserId, expiresAt, mediaUrl, mediaType } = req.body;
     const createdBy = req.user.id;
 
     // Validate required fields
@@ -27,6 +27,11 @@ export const createNotification = async (req, res, next) => {
       throw new AppError('Invalid notification type', 400);
     }
 
+    // Validate media type if provided
+    if (mediaType && !['image', 'video'].includes(mediaType)) {
+      throw new AppError('Invalid media type. Must be: image or video', 400);
+    }
+
     // Validate target consistency
     if (targetType === 'program' && !targetProgramId) {
       throw new AppError('Program ID is required when target type is program', 400);
@@ -37,10 +42,10 @@ export const createNotification = async (req, res, next) => {
 
     // Create notification
     const result = await query(
-      `INSERT INTO notifications (title, message, type, target_type, target_program_id, target_user_id, created_by, expires_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING id, title, message, type, target_type, target_program_id, target_user_id, created_at, expires_at`,
-      [title, message, notificationType, targetType, targetProgramId || null, targetUserId || null, createdBy, expiresAt || null]
+      `INSERT INTO notifications (title, message, type, target_type, target_program_id, target_user_id, created_by, expires_at, media_url, media_type)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING id, title, message, type, target_type, target_program_id, target_user_id, created_at, expires_at, media_url, media_type`,
+      [title, message, notificationType, targetType, targetProgramId || null, targetUserId || null, createdBy, expiresAt || null, mediaUrl || null, mediaType || null]
     );
 
     const notification = result.rows[0];
@@ -71,6 +76,8 @@ export const createNotification = async (req, res, next) => {
           targetUserId: notification.target_user_id,
           createdAt: notification.created_at,
           expiresAt: notification.expires_at,
+          mediaUrl: notification.media_url,
+          mediaType: notification.media_type,
           targetCount
         }
       }
@@ -110,7 +117,7 @@ export const getUserNotifications = async (req, res, next) => {
     // Get notifications with read status
     const result = await query(
       `SELECT 
-        n.id, n.title, n.message, n.type, n.target_type, n.created_at,
+        n.id, n.title, n.message, n.type, n.target_type, n.created_at, n.media_url, n.media_type,
         CASE WHEN nr.id IS NOT NULL THEN true ELSE false END as is_read,
         nr.read_at
        FROM notifications n
@@ -143,7 +150,9 @@ export const getUserNotifications = async (req, res, next) => {
           targetType: n.target_type,
           isRead: n.is_read,
           readAt: n.read_at,
-          createdAt: n.created_at
+          createdAt: n.created_at,
+          media_url: n.media_url,
+          media_type: n.media_type
         })),
         pagination: {
           page: parseInt(page),

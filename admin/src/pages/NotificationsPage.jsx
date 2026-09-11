@@ -4,7 +4,7 @@ import { useConfirm } from '../hooks/useAlert';
 import CustomConfirm from '../components/CustomConfirm';
 import { 
   Bell, Send, Plus, Trash2, Users, GraduationCap, User,
-  Info, CheckCircle, AlertTriangle, XCircle, X
+  Info, CheckCircle, AlertTriangle, XCircle, X, Upload, Image, Video
 } from 'lucide-react';
 
 const NotificationsPage = () => {
@@ -19,8 +19,11 @@ const NotificationsPage = () => {
     type: 'info',
     targetType: 'all',
     targetProgramId: '',
-    targetUserId: ''
+    targetUserId: '',
+    mediaFile: null
   });
+  const [mediaPreview, setMediaPreview] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -60,6 +63,44 @@ const NotificationsPage = () => {
     setError('');
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+    
+    if (!isImage && !isVideo) {
+      setError('Please upload an image or video file');
+      return;
+    }
+
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      setError('File size must be less than 10MB');
+      return;
+    }
+
+    setFormData(prev => ({ ...prev, mediaFile: file }));
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setMediaPreview({
+        url: reader.result,
+        type: isImage ? 'image' : 'video'
+      });
+    };
+    reader.readAsDataURL(file);
+    setError('');
+  };
+
+  const removeMedia = () => {
+    setFormData(prev => ({ ...prev, mediaFile: null }));
+    setMediaPreview(null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -77,13 +118,30 @@ const NotificationsPage = () => {
       setSubmitting(true);
       setError('');
       
+      // Upload media if present
+      let mediaUrl = null;
+      let mediaType = null;
+      
+      if (formData.mediaFile) {
+        setUploading(true);
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', formData.mediaFile);
+        
+        const uploadResponse = await adminAPI.uploadFile(uploadFormData);
+        mediaUrl = uploadResponse.data.data.url;
+        mediaType = formData.mediaFile.type.startsWith('image/') ? 'image' : 'video';
+        setUploading(false);
+      }
+      
       const payload = {
         title: formData.title,
         message: formData.message,
         type: formData.type,
         targetType: formData.targetType,
         targetProgramId: formData.targetProgramId || undefined,
-        targetUserId: formData.targetUserId || undefined
+        targetUserId: formData.targetUserId || undefined,
+        mediaUrl,
+        mediaType
       };
 
       const response = await adminAPI.createNotification(payload);
@@ -99,6 +157,7 @@ const NotificationsPage = () => {
       setError(error.response?.data?.message || 'Failed to send notification');
     } finally {
       setSubmitting(false);
+      setUploading(false);
     }
   };
 
@@ -133,8 +192,10 @@ const NotificationsPage = () => {
       type: 'info',
       targetType: 'all',
       targetProgramId: '',
-      targetUserId: ''
+      targetUserId: '',
+      mediaFile: null
     });
+    setMediaPreview(null);
     setError('');
   };
 
@@ -351,6 +412,67 @@ const NotificationsPage = () => {
                       </p>
                     </div>
 
+                    {/* Media Upload */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Attach Media (Optional)
+                      </label>
+                      
+                      {!mediaPreview ? (
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-admin-primary transition-colors">
+                          <input
+                            type="file"
+                            accept="image/*,video/*"
+                            onChange={handleFileChange}
+                            className="hidden"
+                            id="media-upload"
+                            disabled={submitting}
+                          />
+                          <label 
+                            htmlFor="media-upload"
+                            className="cursor-pointer flex flex-col items-center"
+                          >
+                            <div className="flex items-center gap-2 mb-2">
+                              <Image className="w-6 h-6 text-gray-400" />
+                              <Video className="w-6 h-6 text-gray-400" />
+                            </div>
+                            <p className="text-sm text-gray-600 mb-1">
+                              Click to upload image or video
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Supports: JPG, PNG, GIF, MP4, WebM (Max 10MB)
+                            </p>
+                          </label>
+                        </div>
+                      ) : (
+                        <div className="relative border border-gray-300 rounded-lg p-4">
+                          {mediaPreview.type === 'image' ? (
+                            <img
+                              src={mediaPreview.url}
+                              alt="Preview"
+                              className="w-full h-48 object-contain bg-gray-100 rounded"
+                            />
+                          ) : (
+                            <video
+                              src={mediaPreview.url}
+                              controls
+                              className="w-full h-48 object-contain bg-black rounded"
+                            />
+                          )}
+                          <button
+                            type="button"
+                            onClick={removeMedia}
+                            className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 shadow-lg"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                          <p className="text-sm text-gray-600 mt-2 text-center">
+                            {formData.mediaFile?.name} ({(formData.mediaFile?.size / 1024 / 1024).toFixed(2)} MB)
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
                     <div className="grid grid-cols-2 gap-5">
                       {/* Type */}
                       <div>
@@ -448,10 +570,15 @@ const NotificationsPage = () => {
                   </button>
                   <button
                     type="submit"
-                    disabled={submitting}
+                    disabled={submitting || uploading}
                     className="flex-1 px-6 py-3 bg-admin-primary text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2 font-medium shadow-md hover:shadow-lg transition-all"
                   >
-                    {submitting ? (
+                    {uploading ? (
+                      <>
+                        <Upload className="w-5 h-5 animate-bounce" />
+                        Uploading media...
+                      </>
+                    ) : submitting ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                         Sending...
