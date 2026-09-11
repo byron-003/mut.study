@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../services/api';
+import { useAlert, useConfirm } from '../hooks/useAlert';
+import CustomAlert from '../components/CustomAlert';
+import CustomConfirm from '../components/CustomConfirm';
 import {
   Search, Plus, Edit, Trash2, BookOpen, Filter,
   ChevronLeft, ChevronRight, X, FileText
 } from 'lucide-react';
 
 const CoursesPage = () => {
+  const { alertState, showAlert, closeAlert } = useAlert();
+  const { confirmState, showConfirm } = useConfirm();
   const [courses, setCourses] = useState([]);
   const [programs, setPrograms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -121,24 +126,32 @@ const CoursesPage = () => {
       
       if (modalMode === 'create') {
         await adminAPI.createCourse(payload);
-        alert('Course created successfully!');
+        showAlert('Success', 'Course created successfully!', 'success');
       } else {
         await adminAPI.updateCourse(selectedCourse.id, payload);
-        alert('Course updated successfully!');
+        showAlert('Success', 'Course updated successfully!', 'success');
       }
       
       setShowModal(false);
       fetchCourses();
     } catch (error) {
       console.error('Error saving course:', error);
-      alert(error.response?.data?.message || 'Failed to save course');
+      showAlert('Error', error.response?.data?.message || 'Failed to save course', 'error');
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleDelete = async (course) => {
-    if (!window.confirm(`Are you sure you want to delete "${course.unit_code} - ${course.unit_title}"? This action cannot be undone.`)) {
+    const confirmed = await showConfirm({
+      title: 'Delete Course',
+      message: `Are you sure you want to delete "${course.unit_code} - ${course.unit_title}"? This action cannot be undone.`,
+      type: 'danger',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    });
+    
+    if (!confirmed) {
       return;
     }
 
@@ -146,10 +159,10 @@ const CoursesPage = () => {
       setActionLoading(true);
       await adminAPI.deleteCourse(course.id);
       setCourses(courses.filter(c => c.id !== course.id));
-      alert('Course deleted successfully!');
+      showAlert('Success', 'Course deleted successfully!', 'success');
     } catch (error) {
       console.error('Error deleting course:', error);
-      alert(error.response?.data?.message || 'Failed to delete course');
+      showAlert('Error', error.response?.data?.message || 'Failed to delete course', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -532,6 +545,9 @@ const CoursesPage = () => {
           </div>
         </div>
       )}
+      
+      <CustomAlert {...alertState} onClose={closeAlert} />
+      <CustomConfirm {...confirmState} />
     </div>
   );
 };
