@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../services/api';
+import { useConfirm } from '../hooks/useAlert';
+import CustomConfirm from '../components/CustomConfirm';
 import { 
   Bell, Send, Plus, Trash2, Users, GraduationCap, User,
   Info, CheckCircle, AlertTriangle, XCircle, X
 } from 'lucide-react';
 
 const NotificationsPage = () => {
+  const { confirmState, showConfirm } = useConfirm();
   const [notifications, setNotifications] = useState([]);
   const [programs, setPrograms] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -100,7 +103,15 @@ const NotificationsPage = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this notification?')) {
+    const confirmed = await showConfirm({
+      title: 'Delete Notification',
+      message: 'Are you sure you want to delete this notification?',
+      type: 'danger',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    });
+    
+    if (!confirmed) {
       return;
     }
 
@@ -458,6 +469,8 @@ const NotificationsPage = () => {
           </div>
         </div>
       )}
+      
+      <CustomConfirm {...confirmState} />
     </div>
   );
 };

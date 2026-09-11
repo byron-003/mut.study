@@ -1,6 +1,9 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useAlert, useConfirm } from '../hooks/useAlert';
+import CustomAlert from '../components/CustomAlert';
+import CustomConfirm from '../components/CustomConfirm';
 import {
   Search, Filter, UserCheck, UserX, Edit, ChevronLeft, ChevronRight,
   Mail, GraduationCap, Calendar, Shield, User, Star
@@ -8,6 +11,8 @@ import {
 
 const UsersPage = () => {
   const { isAdmin } = useAuth();
+  const { alertState, showAlert, closeAlert } = useAlert();
+  const { confirmState, showConfirm } = useConfirm();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({});
@@ -45,7 +50,15 @@ const UsersPage = () => {
   };
 
   const handleStatusToggle = async (user) => {
-    if (!window.confirm(`Are you sure you want to ${user.is_active ? 'deactivate' : 'activate'} this user?`)) {
+    const confirmed = await showConfirm({
+      title: `${user.is_active ? 'Deactivate' : 'Activate'} User`,
+      message: `Are you sure you want to ${user.is_active ? 'deactivate' : 'activate'} this user?`,
+      type: user.is_active ? 'danger' : 'warning',
+      confirmText: user.is_active ? 'Deactivate' : 'Activate',
+      cancelText: 'Cancel'
+    });
+    
+    if (!confirmed) {
       return;
     }
 
@@ -58,10 +71,10 @@ const UsersPage = () => {
         u.id === user.id ? { ...u, is_active: !u.is_active } : u
       ));
       
-      alert(`User ${!user.is_active ? 'activated' : 'deactivated'} successfully!`);
+      showAlert('Success', `User ${!user.is_active ? 'activated' : 'deactivated'} successfully!`, 'success');
     } catch (error) {
       console.error('Error updating user status:', error);
-      alert('Failed to update user status');
+      showAlert('Error', 'Failed to update user status', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -79,10 +92,10 @@ const UsersPage = () => {
       
       setShowRoleModal(false);
       setSelectedUser(null);
-      alert('User role updated successfully!');
+      showAlert('Success', 'User role updated successfully!', 'success');
     } catch (error) {
       console.error('Error updating user role:', error);
-      alert('Failed to update user role');
+      showAlert('Error', 'Failed to update user role', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -94,7 +107,15 @@ const UsersPage = () => {
       ? `Grant ${user.first_name} ${user.last_name} class representative privileges? They will be able to create courses for their program.`
       : `Revoke class representative privileges from ${user.first_name} ${user.last_name}?`;
 
-    if (!window.confirm(confirmMessage)) {
+    const confirmed = await showConfirm({
+      title: newStatus ? 'Grant Class Rep Status' : 'Revoke Class Rep Status',
+      message: confirmMessage,
+      type: 'warning',
+      confirmText: newStatus ? 'Grant' : 'Revoke',
+      cancelText: 'Cancel'
+    });
+    
+    if (!confirmed) {
       return;
     }
 
@@ -107,10 +128,10 @@ const UsersPage = () => {
         u.id === user.id ? { ...u, is_class_rep: newStatus } : u
       ));
       
-      alert(`Class representative privileges ${newStatus ? 'granted' : 'revoked'} successfully!`);
+      showAlert('Success', `Class representative privileges ${newStatus ? 'granted' : 'revoked'} successfully!`, 'success');
     } catch (error) {
       console.error('Error updating class rep status:', error);
-      alert(error.response?.data?.message || 'Failed to update class rep status');
+      showAlert('Error', error.response?.data?.message || 'Failed to update class rep status', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -456,6 +477,9 @@ const UsersPage = () => {
           </div>
         </div>
       )}
+      
+      <CustomAlert {...alertState} onClose={closeAlert} />
+      <CustomConfirm {...confirmState} />
     </div>
   );
 };

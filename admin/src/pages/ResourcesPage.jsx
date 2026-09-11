@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useAlert, useConfirm } from '../hooks/useAlert';
+import CustomAlert from '../components/CustomAlert';
+import CustomConfirm from '../components/CustomConfirm';
 import {
   Search, Filter, CheckCircle, XCircle, Clock, FileText, Trash2,
   ChevronLeft, ChevronRight, Download, Eye, User, Calendar, Book
@@ -8,6 +11,8 @@ import {
 
 const ResourcesPage = () => {
   const { isAdmin } = useAuth();
+  const { alertState, showAlert, closeAlert } = useAlert();
+  const { confirmState, showConfirm } = useConfirm();
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({});
@@ -50,7 +55,15 @@ const ResourcesPage = () => {
   };
 
   const handleApprove = async (resourceId) => {
-    if (!window.confirm('Are you sure you want to approve this resource?')) {
+    const confirmed = await showConfirm({
+      title: 'Approve Resource',
+      message: 'Are you sure you want to approve this resource?',
+      type: 'warning',
+      confirmText: 'Approve',
+      cancelText: 'Cancel'
+    });
+    
+    if (!confirmed) {
       return;
     }
 
@@ -63,10 +76,10 @@ const ResourcesPage = () => {
         r.id === resourceId ? { ...r, status: 'approved', reviewed_at: new Date() } : r
       ));
       
-      alert('Resource approved successfully!');
+      showAlert('Success', 'Resource approved successfully!', 'success');
     } catch (error) {
       console.error('Error approving resource:', error);
-      alert('Failed to approve resource');
+      showAlert('Error', 'Failed to approve resource', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -74,7 +87,7 @@ const ResourcesPage = () => {
 
   const handleReject = async () => {
     if (!rejectionReason.trim()) {
-      alert('Please provide a rejection reason');
+      showAlert('Warning', 'Please provide a rejection reason', 'warning');
       return;
     }
 
@@ -92,10 +105,10 @@ const ResourcesPage = () => {
       setShowRejectModal(false);
       setRejectionReason('');
       setSelectedResource(null);
-      alert('Resource rejected successfully!');
+      showAlert('Success', 'Resource rejected successfully!', 'success');
     } catch (error) {
       console.error('Error rejecting resource:', error);
-      alert('Failed to reject resource');
+      showAlert('Error', 'Failed to reject resource', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -104,7 +117,15 @@ const ResourcesPage = () => {
   const handleBulkApprove = async () => {
     if (selectedResources.length === 0) return;
     
-    if (!window.confirm(`Approve ${selectedResources.length} selected resources?`)) {
+    const confirmed = await showConfirm({
+      title: 'Bulk Approve',
+      message: `Approve ${selectedResources.length} selected resources?`,
+      type: 'warning',
+      confirmText: 'Approve All',
+      cancelText: 'Cancel'
+    });
+    
+    if (!confirmed) {
       return;
     }
 
@@ -112,10 +133,10 @@ const ResourcesPage = () => {
       setActionLoading(true);
       await adminAPI.bulkApproveResources(selectedResources);
       fetchResources();
-      alert(`${selectedResources.length} resources approved successfully!`);
+      showAlert('Success', `${selectedResources.length} resources approved successfully!`, 'success');
     } catch (error) {
       console.error('Error bulk approving:', error);
-      alert('Failed to approve resources');
+      showAlert('Error', 'Failed to approve resources', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -123,7 +144,7 @@ const ResourcesPage = () => {
 
   const handleBulkReject = async () => {
     if (!rejectionReason.trim()) {
-      alert('Please provide a rejection reason');
+      showAlert('Warning', 'Please provide a rejection reason', 'warning');
       return;
     }
 
@@ -133,17 +154,25 @@ const ResourcesPage = () => {
       fetchResources();
       setShowBulkRejectModal(false);
       setRejectionReason('');
-      alert(`${selectedResources.length} resources rejected successfully!`);
+      showAlert('Success', `${selectedResources.length} resources rejected successfully!`, 'success');
     } catch (error) {
       console.error('Error bulk rejecting:', error);
-      alert('Failed to reject resources');
+      showAlert('Error', 'Failed to reject resources', 'error');
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleDelete = async (resourceId) => {
-    if (!window.confirm('Are you sure you want to delete this resource? This action cannot be undone.')) {
+    const confirmed = await showConfirm({
+      title: 'Delete Resource',
+      message: 'Are you sure you want to delete this resource? This action cannot be undone.',
+      type: 'danger',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    });
+    
+    if (!confirmed) {
       return;
     }
 
@@ -151,10 +180,10 @@ const ResourcesPage = () => {
       setActionLoading(true);
       await adminAPI.deleteResource(resourceId);
       setResources(resources.filter(r => r.id !== resourceId));
-      alert('Resource deleted successfully!');
+      showAlert('Success', 'Resource deleted successfully!', 'success');
     } catch (error) {
       console.error('Error deleting resource:', error);
-      alert('Failed to delete resource');
+      showAlert('Error', 'Failed to delete resource', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -727,6 +756,9 @@ const ResourcesPage = () => {
           </div>
         </div>
       )}
+      
+      <CustomAlert {...alertState} onClose={closeAlert} />
+      <CustomConfirm {...confirmState} />
     </div>
   );
 };

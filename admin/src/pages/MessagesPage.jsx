@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Eye, Reply, Trash2, Archive, MessageSquare, Clock, CheckCircle, Send } from 'lucide-react';
 import axios from 'axios';
+import { useAlert, useConfirm } from '../hooks/useAlert';
+import CustomAlert from '../components/CustomAlert';
+import CustomConfirm from '../components/CustomConfirm';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const MessagesPage = () => {
+  const { alertState, showAlert, closeAlert } = useAlert();
+  const { confirmState, showConfirm } = useConfirm();
   const [messages, setMessages] = useState([]);
   const [stats, setStats] = useState({ unread_count: 0, read_count: 0, replied_count: 0, total_count: 0 });
   const [loading, setLoading] = useState(true);
@@ -76,21 +81,29 @@ const MessagesPage = () => {
         }
       );
 
-      alert('Reply sent successfully!');
+      showAlert('Success', 'Reply sent successfully!', 'success');
       setReplyText('');
       setSelectedMessage(null);
       fetchMessages();
       fetchStats();
     } catch (error) {
       console.error('Error sending reply:', error);
-      alert('Failed to send reply. Please try again.');
+      showAlert('Error', 'Failed to send reply. Please try again.', 'error');
     } finally {
       setSending(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this message?')) return;
+    const confirmed = await showConfirm({
+      title: 'Delete Message',
+      message: 'Are you sure you want to delete this message?',
+      type: 'danger',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    });
+    
+    if (!confirmed) return;
 
     try {
       await axios.delete(`${API_URL}/contact/messages/${id}`, {
@@ -105,7 +118,7 @@ const MessagesPage = () => {
       }
     } catch (error) {
       console.error('Error deleting message:', error);
-      alert('Failed to delete message.');
+      showAlert('Error', 'Failed to delete message.', 'error');
     }
   };
 
@@ -127,7 +140,7 @@ const MessagesPage = () => {
       }
     } catch (error) {
       console.error('Error archiving message:', error);
-      alert('Failed to archive message.');
+      showAlert('Error', 'Failed to archive message.', 'error');
     }
   };
 
@@ -402,6 +415,9 @@ const MessagesPage = () => {
           </div>
         </div>
       )}
+      
+      <CustomAlert {...alertState} onClose={closeAlert} />
+      <CustomConfirm {...confirmState} />
     </div>
   );
 };

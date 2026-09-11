@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../services/api';
+import { useAlert, useConfirm } from '../hooks/useAlert';
+import CustomAlert from '../components/CustomAlert';
+import CustomConfirm from '../components/CustomConfirm';
 import {
   Search, Plus, Edit, Trash2, GraduationCap, BookOpen, Building2,
   ChevronLeft, ChevronRight, X
 } from 'lucide-react';
 
 const ProgramsPage = () => {
+  const { alertState, showAlert, closeAlert } = useAlert();
+  const { confirmState, showConfirm } = useConfirm();
   const [programs, setPrograms] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -109,24 +114,32 @@ const ProgramsPage = () => {
       
       if (modalMode === 'create') {
         await adminAPI.createProgram(formData);
-        alert('Program created successfully!');
+        showAlert('Success', 'Program created successfully!', 'success');
       } else {
         await adminAPI.updateProgram(selectedProgram.id, formData);
-        alert('Program updated successfully!');
+        showAlert('Success', 'Program updated successfully!', 'success');
       }
       
       setShowModal(false);
       fetchPrograms();
     } catch (error) {
       console.error('Error saving program:', error);
-      alert(error.response?.data?.message || 'Failed to save program');
+      showAlert('Error', error.response?.data?.message || 'Failed to save program', 'error');
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleDelete = async (program) => {
-    if (!window.confirm(`Are you sure you want to delete "${program.name}"? This action cannot be undone.`)) {
+    const confirmed = await showConfirm({
+      title: 'Delete Program',
+      message: `Are you sure you want to delete "${program.name}"? This action cannot be undone.`,
+      type: 'danger',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    });
+    
+    if (!confirmed) {
       return;
     }
 
@@ -134,10 +147,10 @@ const ProgramsPage = () => {
       setActionLoading(true);
       await adminAPI.deleteProgram(program.id);
       setPrograms(programs.filter(p => p.id !== program.id));
-      alert('Program deleted successfully!');
+      showAlert('Success', 'Program deleted successfully!', 'success');
     } catch (error) {
       console.error('Error deleting program:', error);
-      alert(error.response?.data?.message || 'Failed to delete program');
+      showAlert('Error', error.response?.data?.message || 'Failed to delete program', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -420,6 +433,9 @@ const ProgramsPage = () => {
           </div>
         </div>
       )}
+      
+      <CustomAlert {...alertState} onClose={closeAlert} />
+      <CustomConfirm {...confirmState} />
     </div>
   );
 };

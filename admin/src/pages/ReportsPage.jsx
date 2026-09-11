@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../services/api';
+import { useAlert } from '../hooks/useAlert';
+import CustomAlert from '../components/CustomAlert';
 import {
   FileText, Download, Calendar, Filter, Users, BookOpen,
   FileBarChart, TrendingUp, Clock, CheckCircle
 } from 'lucide-react';
 
 const ReportsPage = () => {
+  const { alertState, showAlert, closeAlert } = useAlert();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [exportLoading, setExportLoading] = useState(false);
@@ -28,7 +31,7 @@ const ReportsPage = () => {
 
   const exportToCSV = (data, filename) => {
     if (!data || data.length === 0) {
-      alert('No data available to export');
+      showAlert('Warning', 'No data available to export', 'warning');
       return;
     }
 
@@ -82,10 +85,10 @@ const ReportsPage = () => {
       }));
 
       exportToCSV(exportData, 'users_report');
-      alert('Users report exported successfully!');
+      showAlert('Success', 'Users report exported successfully!', 'success');
     } catch (error) {
       console.error('Error generating users report:', error);
-      alert('Failed to generate users report');
+      showAlert('Error', 'Failed to generate users report', 'error');
     } finally {
       setExportLoading(false);
     }
@@ -113,10 +116,10 @@ const ReportsPage = () => {
       }));
 
       exportToCSV(exportData, 'resources_report');
-      alert('Resources report exported successfully!');
+      showAlert('Success', 'Resources report exported successfully!', 'success');
     } catch (error) {
       console.error('Error generating resources report:', error);
-      alert('Failed to generate resources report');
+      showAlert('Error', 'Failed to generate resources report', 'error');
     } finally {
       setExportLoading(false);
     }
@@ -141,10 +144,10 @@ const ReportsPage = () => {
       }));
 
       exportToCSV(exportData, 'programs_report');
-      alert('Programs report exported successfully!');
+      showAlert('Success', 'Programs report exported successfully!', 'success');
     } catch (error) {
       console.error('Error generating programs report:', error);
-      alert('Failed to generate programs report');
+      showAlert('Error', 'Failed to generate programs report', 'error');
     } finally {
       setExportLoading(false);
     }
@@ -170,10 +173,10 @@ const ReportsPage = () => {
       }));
 
       exportToCSV(exportData, 'courses_report');
-      alert('Courses report exported successfully!');
+      showAlert('Success', 'Courses report exported successfully!', 'success');
     } catch (error) {
       console.error('Error generating courses report:', error);
-      alert('Failed to generate courses report');
+      showAlert('Error', 'Failed to generate courses report', 'error');
     } finally {
       setExportLoading(false);
     }
@@ -252,10 +255,10 @@ const ReportsPage = () => {
       ];
 
       exportToCSV(summaryData, 'summary_report');
-      alert('Summary report exported successfully!');
+      showAlert('Success', 'Summary report exported successfully!', 'success');
     } catch (error) {
       console.error('Error generating summary report:', error);
-      alert('Failed to generate summary report');
+      showAlert('Error', 'Failed to generate summary report', 'error');
     } finally {
       setExportLoading(false);
     }
@@ -460,6 +463,8 @@ const ReportsPage = () => {
           </div>
         </div>
       </div>
+      
+      <CustomAlert {...alertState} onClose={closeAlert} />
     </div>
   );
 };
