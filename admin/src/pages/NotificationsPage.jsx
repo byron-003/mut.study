@@ -267,22 +267,27 @@ const NotificationsPage = () => {
             ></div>
 
             {/* Modal panel */}
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
               <form onSubmit={handleSubmit}>
-                <div className="bg-white px-6 pt-6 pb-4">
+                <div className="bg-white px-8 pt-6 pb-6">
                   {/* Header */}
                   <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-2">
-                      <Bell className="w-6 h-6 text-admin-primary" />
-                      <h3 className="text-xl font-semibold text-gray-900">
-                        Create Notification
-                      </h3>
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-admin-primary/10 rounded-lg">
+                        <Bell className="w-6 h-6 text-admin-primary" />
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-gray-900">
+                          Create Notification
+                        </h3>
+                        <p className="text-sm text-gray-600">Send important updates to students</p>
+                      </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => setShowCreateModal(false)}
                       disabled={submitting}
-                      className="text-gray-400 hover:text-gray-500"
+                      className="text-gray-400 hover:text-gray-500 p-2 hover:bg-gray-100 rounded-lg transition-colors"
                     >
                       <X className="w-6 h-6" />
                     </button>
@@ -297,11 +302,11 @@ const NotificationsPage = () => {
                   )}
 
                   {/* Form Fields */}
-                  <div className="space-y-4">
+                  <div className="space-y-5">
                     {/* Title */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Title <span className="text-red-500">*</span>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Notification Title <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -310,68 +315,73 @@ const NotificationsPage = () => {
                         onChange={handleInputChange}
                         placeholder="e.g., Exam Schedule Update"
                         disabled={submitting}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-primary disabled:bg-gray-100"
+                        className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-primary focus:border-transparent disabled:bg-gray-100"
                         required
                       />
                     </div>
 
                     {/* Message */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Message <span className="text-red-500">*</span>
                       </label>
                       <textarea
                         name="message"
                         value={formData.message}
                         onChange={handleInputChange}
-                        placeholder="Enter notification message..."
-                        rows="4"
+                        placeholder="Write your message here... Be clear and concise."
+                        rows="6"
                         disabled={submitting}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-primary disabled:bg-gray-100"
+                        className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-primary focus:border-transparent disabled:bg-gray-100 resize-none"
                         required
                       ></textarea>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {formData.message.length} characters
+                      </p>
                     </div>
 
-                    {/* Type */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Type
-                      </label>
-                      <select
-                        name="type"
-                        value={formData.type}
-                        onChange={handleInputChange}
-                        disabled={submitting}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-primary disabled:bg-gray-100"
-                      >
-                        <option value="info">Info</option>
-                        <option value="success">Success</option>
-                        <option value="warning">Warning</option>
-                        <option value="error">Error</option>
-                      </select>
-                    </div>
+                    <div className="grid grid-cols-2 gap-5">
+                      {/* Type */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Notification Type
+                        </label>
+                        <select
+                          name="type"
+                          value={formData.type}
+                          onChange={handleInputChange}
+                          disabled={submitting}
+                          className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-primary focus:border-transparent disabled:bg-gray-100"
+                        >
+                          <option value="info">ℹ️ Info</option>
+                          <option value="success">✅ Success</option>
+                          <option value="warning">⚠️ Warning</option>
+                          <option value="error">❌ Error</option>
+                        </select>
+                      </div>
 
-                    {/* Target Type */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Send To <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        name="targetType"
-                        value={formData.targetType}
-                        onChange={handleInputChange}
-                        disabled={submitting}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-primary disabled:bg-gray-100"
-                      >
-                        <option value="all">All Students</option>
-                        <option value="program">Specific Program</option>
-                      </select>
+                      {/* Target Type */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Send To <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          name="targetType"
+                          value={formData.targetType}
+                          onChange={handleInputChange}
+                          disabled={submitting}
+                          className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-primary focus:border-transparent disabled:bg-gray-100"
+                        >
+                          <option value="all">👥 All Students</option>
+                          <option value="program">🎓 Specific Program</option>
+                        </select>
+                      </div>
                     </div>
 
                     {/* Program Selection */}
                     {formData.targetType === 'program' && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
                           Select Program <span className="text-red-500">*</span>
                         </label>
                         <select
@@ -379,44 +389,65 @@ const NotificationsPage = () => {
                           value={formData.targetProgramId}
                           onChange={handleInputChange}
                           disabled={submitting}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-primary disabled:bg-gray-100"
+                          className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-primary focus:border-transparent disabled:bg-gray-100 bg-white"
                           required
                         >
-                          <option value="">Select a program</option>
+                          <option value="">Choose a program...</option>
                           {programs.map((program) => (
                             <option key={program.id} value={program.id}>
                               {program.code} - {program.name}
                             </option>
                           ))}
                         </select>
+                        <p className="text-xs text-blue-700 mt-2">
+                          Only students enrolled in this program will receive the notification
+                        </p>
                       </div>
                     )}
+
+                    {/* Preview Box */}
+                    {formData.title || formData.message ? (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Preview</p>
+                        <div className="bg-white border border-gray-200 rounded-lg p-4">
+                          {formData.title && (
+                            <h4 className="font-semibold text-gray-900 mb-1">{formData.title}</h4>
+                          )}
+                          {formData.message && (
+                            <p className="text-sm text-gray-600">{formData.message}</p>
+                          )}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
 
                 {/* Footer */}
-                <div className="bg-gray-50 px-6 py-4 flex gap-3">
+                <div className="bg-gray-50 px-8 py-5 flex gap-4 border-t border-gray-200">
                   <button
                     type="button"
-                    onClick={() => setShowCreateModal(false)}
+                    onClick={() => {
+                      setShowCreateModal(false);
+                      resetForm();
+                    }}
                     disabled={submitting}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+                    className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 disabled:opacity-50 font-medium transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="flex-1 px-4 py-2 bg-admin-primary text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="flex-1 px-6 py-3 bg-admin-primary text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2 font-medium shadow-md hover:shadow-lg transition-all"
                   >
                     {submitting ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                         Sending...
                       </>
                     ) : (
                       <>
-                        <Send className="w-4 h-4" />
+                        <Send className="w-5 h-5" />
                         Send Notification
                       </>
                     )}
