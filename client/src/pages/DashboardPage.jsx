@@ -367,13 +367,21 @@ const DashboardPage = () => {
   };
 
   const closeViewer = async () => {
-    // Save progress before closing
+    // Save progress before closing (if not already at 100%)
     if (viewerFile && sessionStartTime) {
-      const timeSpent = Math.floor((Date.now() - sessionStartTime) / 1000);
-      try {
-        await saveProgress(viewerFile.id, scrollPosition, timeSpent);
-      } catch (error) {
-        console.error('Error saving progress on close:', error);
+      const currentProgressValue = resourceProgress[viewerFile.id]?.progress || 0;
+      
+      if (currentProgressValue < 100) {
+        const timeSpent = Math.floor((Date.now() - sessionStartTime) / 1000);
+        
+        // Calculate progress using smart formula (caps at 95%)
+        const newProgress = calculateProgress(timeSpent, currentProgressValue);
+        
+        try {
+          await saveProgress(viewerFile.id, newProgress, timeSpent);
+        } catch (error) {
+          console.error('Error saving progress on close:', error);
+        }
       }
     }
     
@@ -385,18 +393,18 @@ const DashboardPage = () => {
     setSavedProgress(null);
   };
 
-  const saveProgress = async (resourceId, position, additionalTime = 0) => {
+  const saveProgress = async (resourceId, progressPercentage, additionalTime = 0) => {
     try {
       const timeSpent = sessionStartTime 
         ? Math.floor((Date.now() - sessionStartTime) / 1000) + additionalTime
         : additionalTime;
 
-      // Calculate progress percentage (simplified - assumes scroll-based)
-      const progressPercentage = position ? Math.min(Math.floor(position), 100) : 0;
+      // Cap at 100%
+      const finalProgress = Math.min(progressPercentage, 100);
 
       const response = await progressAPI.updateProgress(resourceId, {
-        progressPercentage,
-        lastPosition: position?.toString() || '0',
+        progressPercentage: finalProgress,
+        lastPosition: finalProgress.toString(),
         timeSpent
       });
 
@@ -408,9 +416,47 @@ const DashboardPage = () => {
         }));
       }
 
-      console.log('📊 Progress saved:', { resourceId, progress: progressPercentage, timeSpent });
+      console.log('📊 Progress saved:', { resourceId, progress: finalProgress, timeSpent });
     } catch (error) {
       console.error('Error saving progress:', error);
+    }
+  };
+
+  // Calculate progress based on time spent (never auto-completes to 100%)
+  const calculateProgress = (timeSpentInSeconds, currentProgress = 0) => {
+    // Logarithmic growth: fast at first, then slower
+    // Formula: 95 * (1 - e^(-timeSpent/600))
+    // This gives smooth progression that caps at 95%
+    
+    const maxAutoProgress = 95; // Never auto-complete to 100%
+    
+    // Use logarithmic formula for gradual increase
+    // 600 seconds (10 minutes) gets you to about 50%
+    // 20 minutes gets you to about 70%
+    // 40 minutes gets you to about 85%
+    const calculatedProgress = maxAutoProgress * (1 - Math.exp(-timeSpentInSeconds / 600));
+    
+    // Round to nearest integer
+    const newProgress = Math.floor(calculatedProgress);
+    
+    // Never decrease progress
+    return Math.max(currentProgress, newProgress);
+  };
+
+  const markAsComplete = async () => {
+    if (!viewerFile) return;
+    
+    try {
+      const timeSpent = sessionStartTime 
+        ? Math.floor((Date.now() - sessionStartTime) / 1000)
+        : 0;
+
+      await saveProgress(viewerFile.id, 100, timeSpent);
+      
+      alert('Resource marked as complete! 🎉');
+    } catch (error) {
+      console.error('Error marking as complete:', error);
+      alert('Failed to mark as complete');
     }
   };
 
@@ -419,28 +465,21 @@ const DashboardPage = () => {
     if (!showViewer || !viewerFile || !sessionStartTime) return;
 
     const interval = setInterval(() => {
-      saveProgress(viewerFile.id, scrollPosition);
+      const currentProgressValue = resourceProgress[viewerFile.id]?.progress || 0;
+      
+      // Only auto-save if not already at 100%
+      if (currentProgressValue < 100) {
+        const timeSpent = Math.floor((Date.now() - sessionStartTime) / 1000);
+        
+        // Calculate progress using smart formula (caps at 95%)
+        const newProgress = calculateProgress(timeSpent, currentProgressValue);
+        
+        saveProgress(viewerFile.id, newProgress);
+      }
     }, 30000); // Save every 30 seconds
 
     return () => clearInterval(interval);
-  }, [showViewer, viewerFile, sessionStartTime, scrollPosition]);
-
-  // Track scroll position in viewer
-  const handleViewerScroll = (e) => {
-    const element = e.target;
-    const scrollPercentage = (element.scrollTop / (element.scrollHeight - element.clientHeight)) * 100;
-    setScrollPosition(Math.min(Math.floor(scrollPercentage), 100));
-  };
-
-  // Restore scroll position after content loads
-  const viewerContentRef = useRef(null);
-  useEffect(() => {
-    if (viewerContentRef.current && scrollPosition > 0 && scrollPosition < 100) {
-      const element = viewerContentRef.current;
-      const scrollTarget = (scrollPosition / 100) * (element.scrollHeight - element.clientHeight);
-      element.scrollTop = scrollTarget;
-    }
-  }, [viewerFile]);
+  }, [showViewer, viewerFile, sessionStartTime, resourceProgress]);
 
   const handleDownloadFile = async (resource) => {
     try {
@@ -849,6 +888,7 @@ const DashboardPage = () => {
           file={viewerFile}
           onClose={closeViewer}
           onDownload={() => handleDownloadFile(viewerFile)}
+          onMarkComplete={markAsComplete}
           downloadsEnabled={downloadsEnabled}
         />
       )}

@@ -1,25 +1,43 @@
 import React, { useState } from 'react';
-import { File, Download, X, AlertCircle } from 'lucide-react';
+import { File, Download, X, AlertCircle, CheckCircle } from 'lucide-react';
 
 /**
  * Universal File Viewer Component
  * Handles PDF, images, videos, and other document types
  * Uses file MIME type instead of URL extension
  */
-const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true }) => {
+const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMarkComplete }) => {
   const [loadError, setLoadError] = useState(false);
+  const [viewDuration, setViewDuration] = useState(0);
 
   if (!file) return null;
 
   const { fileUrl, fileType, title } = file;
+
+  // Track viewing time
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setViewDuration(prev => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Debug logging
   console.log('FileViewer - File info:', {
     title,
     fileUrl,
     fileType,
-    hasFileType: !!fileType
+    hasFileType: !!fileType,
+    viewDuration
   });
+
+  // Format viewing time
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Helper to determine if file can be previewed
   const canPreview = () => {
@@ -48,39 +66,18 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true }) => {
 
     // PDF files
     if (mimeType === 'application/pdf') {
-      // Try Google Docs Viewer as fallback for better compatibility
+      // Use Google Docs Viewer for better compatibility with Cloudinary raw resources
+      // Google Docs Viewer can handle download URLs and display them inline
       const googleDocsUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`;
       
       return (
         <div className="w-full h-full">
-          {!loadError ? (
-            <>
-              {/* Primary: Try direct iframe embed */}
-              <iframe
-                src={fileUrl}
-                className="w-full h-full border-0"
-                title={title}
-                onError={() => {
-                  console.log('Direct PDF embed failed, trying Google Docs Viewer');
-                  setLoadError(true);
-                }}
-              />
-              {/* Fallback: Google Docs Viewer (hidden initially) */}
-              {loadError && (
-                <iframe
-                  src={googleDocsUrl}
-                  className="w-full h-full border-0"
-                  title={title}
-                />
-              )}
-            </>
-          ) : (
-            <iframe
-              src={googleDocsUrl}
-              className="w-full h-full border-0"
-              title={title}
-            />
-          )}
+          <iframe
+            src={googleDocsUrl}
+            className="w-full h-full border-0"
+            title={title}
+            onError={() => setLoadError(true)}
+          />
         </div>
       );
     }
@@ -178,9 +175,23 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true }) => {
         <div className="bg-gray-900 text-white p-4 flex items-center justify-between">
           <div className="flex-1 min-w-0 mr-4">
             <h3 className="text-lg font-semibold truncate">{title}</h3>
-            <p className="text-sm text-gray-400">{getFileTypeName()}</p>
+            <div className="flex items-center gap-3 text-sm text-gray-400">
+              <span>{getFileTypeName()}</span>
+              <span>•</span>
+              <span>Viewing: {formatTime(viewDuration)}</span>
+            </div>
           </div>
           <div className="flex items-center gap-2">
+            {onMarkComplete && (
+              <button
+                onClick={onMarkComplete}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                title="Mark as complete"
+              >
+                <CheckCircle className="w-5 h-5" />
+                <span className="hidden sm:inline">Mark Complete</span>
+              </button>
+            )}
             {downloadsEnabled && onDownload && (
               <button
                 onClick={onDownload}
