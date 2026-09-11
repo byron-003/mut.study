@@ -427,10 +427,13 @@ const UsersPage = () => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-primary"
               >
                 <option value="student">Student</option>
-                <option value="class_rep">Class Representative</option>
                 <option value="admin">Administrator</option>
               </select>
             </div>
+
+            <p className="text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <strong>Note:</strong> To grant class representative privileges, use the star (⭐) button on the user row instead of changing the role.
+            </p>
 
             <div className="flex items-center gap-3">
               <button
