@@ -81,12 +81,23 @@ const UploadModal = ({ isOpen, onClose, courseId, onSuccess }) => {
     setError('');
 
     try {
+      // Map frontend types to backend categories
+      const typeToCategory = {
+        'notes': 'notes',
+        'assignment': 'cat',
+        'cat': 'cat',
+        'practical': 'practical_manual',
+        'pastpaper': 'past_paper',
+        'other': 'notes'
+      };
+
       const uploadData = new FormData();
       uploadData.append('file', file);
       uploadData.append('courseId', courseId);
       uploadData.append('title', formData.title);
       uploadData.append('description', formData.description);
-      uploadData.append('type', formData.type); // Changed from category to type
+      uploadData.append('type', formData.type);
+      uploadData.append('category', typeToCategory[formData.type] || 'notes'); // Map to database category
 
       // Upload with real progress tracking
       await resourcesAPI.uploadResource(uploadData, (progressEvent) => {
