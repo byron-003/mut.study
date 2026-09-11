@@ -759,6 +759,14 @@ const DashboardPage = () => {
                 const courseResources = getResourcesForCourse(course.id);
                 const resourceCount = courseResources.length;
                 
+                // Count new resources (uploaded in last 7 days and not yet viewed by user)
+                const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+                const newResourceCount = courseResources.filter(resource => {
+                  const createdDate = new Date(resource.createdAt);
+                  const hasProgress = resourceProgress[resource.id];
+                  return createdDate > sevenDaysAgo && !hasProgress;
+                }).length;
+                
                 // Calculate overall course progress
                 let totalProgress = 0;
                 let resourcesWithProgress = 0;
@@ -773,63 +781,92 @@ const DashboardPage = () => {
                   ? Math.floor(totalProgress / resourceCount) 
                   : 0;
                 
+                // Get most recent resource activity
+                const sortedResources = [...courseResources].sort((a, b) => 
+                  new Date(b.createdAt) - new Date(a.createdAt)
+                );
+                const latestResource = sortedResources[0];
+                const getTimeAgo = (date) => {
+                  const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+                  if (seconds < 60) return 'Just now';
+                  if (seconds < 3600) return `${Math.floor(seconds / 60)} mins ago`;
+                  if (seconds < 86400) return `${Math.floor(seconds / 3600)} hrs ago`;
+                  return `${Math.floor(seconds / 86400)} days ago`;
+                };
+                
                 return (
                   <div
                     key={course.id}
-                    className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow overflow-hidden cursor-pointer border border-gray-200"
-                    onClick={() => navigate(`/course/${course.id}`)}
+                    className="bg-white rounded-lg shadow-md hover:shadow-xl transition-all overflow-hidden border border-gray-200"
                   >
-                    {/* Course Header */}
-                    <div className="bg-gradient-to-r from-mut-primary to-mut-secondary p-6">
+                    {/* Gradient Header */}
+                    <div className="bg-gradient-to-br from-teal-500 via-teal-600 to-green-600 p-6">
                       <h3 className="text-2xl font-bold text-white mb-2 leading-tight">
                         {course.unitTitle}
                       </h3>
-                      <p className="text-green-100 text-sm font-medium">
+                      <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm text-white text-sm font-semibold rounded">
                         {course.unitCode}
-                      </p>
+                      </span>
                     </div>
 
-                    {/* Course Info */}
-                    <div className="p-6">
-                      {/* Progress Section */}
-                      {overallProgress > 0 && (
-                        <div className="mb-4">
-                          <div className="flex items-center justify-between text-sm mb-2">
-                            <span className="text-gray-600 font-medium">Overall Progress</span>
-                            <span className="text-mut-primary font-bold">{overallProgress}%</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div
-                              className="h-2 rounded-full bg-gradient-to-r from-mut-primary to-green-600 transition-all"
-                              style={{ width: `${overallProgress}%` }}
-                            ></div>
-                          </div>
+                    {/* White Body */}
+                    <div className="p-6 bg-white">
+                      {/* Progress Bar */}
+                      <div className="mb-4">
+                        <div className="flex items-center justify-between text-sm mb-2">
+                          <span className="text-gray-600 font-medium">Course progress bar</span>
+                          <span className="text-gray-900 font-bold">{overallProgress}%</span>
                         </div>
-                      )}
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                          <div
+                            className="h-2.5 rounded-full bg-gradient-to-r from-teal-500 to-green-500 transition-all"
+                            style={{ width: `${overallProgress}%` }}
+                          ></div>
+                        </div>
+                      </div>
 
-                      {/* Course Stats */}
-                      <div className="flex items-center justify-between mb-4 text-sm">
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <BookOpen className="w-4 h-4" />
-                          <span>{course.credits} Credits</span>
+                      {/* Stats */}
+                      <div className="space-y-2 mb-4">
+                        <div className="flex items-center gap-2 text-gray-700">
+                          <BookOpen className="w-5 h-5 text-gray-500" />
+                          <span className="font-medium">{course.credits} Credits</span>
                         </div>
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <FileText className="w-4 h-4" />
-                          <span className="font-semibold">{resourceCount} Resources</span>
+                        <div className="flex items-center gap-2 text-gray-700">
+                          <FileText className="w-5 h-5 text-gray-500" />
+                          <span className="font-medium">
+                            {resourceCount} Resources Available
+                            {newResourceCount > 0 && (
+                              <span className="ml-1 text-orange-600 font-bold">
+                                ({newResourceCount} new)
+                              </span>
+                            )}
+                          </span>
                         </div>
                       </div>
 
                       {/* View Details Button */}
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/course/${course.id}`);
-                        }}
-                        className="w-full bg-mut-primary text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 font-medium"
+                        onClick={() => navigate(`/course/${course.id}`)}
+                        className="w-full bg-teal-100 text-gray-900 py-3 px-4 rounded-lg hover:bg-teal-200 transition-colors flex items-center justify-center gap-2 font-semibold mb-4"
                       >
                         View Details
                         <ChevronRight className="w-5 h-5" />
                       </button>
+
+                      {/* Recent Activity */}
+                      <div className="pt-4 border-t border-gray-200">
+                        <h4 className="text-sm font-semibold text-gray-700 mb-2">Recent Activity</h4>
+                        {latestResource ? (
+                          <div className="flex items-start gap-2 text-sm text-gray-600">
+                            <Clock className="w-4 h-4 mt-0.5 text-gray-400" />
+                            <span>
+                              Last Resource added: {getTimeAgo(latestResource.createdAt)}
+                            </span>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-500">No recent activity</p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
