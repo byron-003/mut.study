@@ -3,11 +3,14 @@ import { useAuth } from '../utils/authContext';
 import { authAPI } from '../services/api';
 import { User, Mail, Book, Calendar, Edit2, Save, X, GraduationCap, School, Camera, Upload, Trash2, AlertCircle } from 'lucide-react';
 import axios from 'axios';
+import { useConfirm } from '../hooks/useAlert';
+import CustomConfirm from '../components/CustomConfirm';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const ProfilePage = () => {
   const { user, updateUser } = useAuth();
+  const { confirmState, showConfirm } = useConfirm();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -105,7 +108,15 @@ const ProfilePage = () => {
   };
 
   const handleDeleteProfilePicture = async () => {
-    if (!confirm('Are you sure you want to delete your profile picture?')) {
+    const confirmed = await showConfirm({
+      title: 'Delete Profile Picture',
+      message: 'Are you sure you want to delete your profile picture?',
+      type: 'danger',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    });
+    
+    if (!confirmed) {
       return;
     }
 
@@ -405,6 +416,8 @@ const ProfilePage = () => {
           </div>
         </div>
       </div>
+      
+      <CustomConfirm {...confirmState} />
     </div>
   );
 };

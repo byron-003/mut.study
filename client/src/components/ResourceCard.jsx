@@ -1,8 +1,12 @@
 import React from 'react';
 import { formatFileSize, formatDate, getCategoryDisplayName, getCategoryColor, getStatusColor } from '../utils/helpers';
 import { resourcesAPI } from '../services/api';
+import { useConfirm } from '../hooks/useAlert';
+import CustomConfirm from './CustomConfirm';
 
 const ResourceCard = ({ resource, onDelete, showStatus = false, showActions = false }) => {
+  const { confirmState, showConfirm } = useConfirm();
+  
   const handleDownload = async () => {
     try {
       // Increment download count
@@ -15,8 +19,16 @@ const ResourceCard = ({ resource, onDelete, showStatus = false, showActions = fa
     }
   };
 
-  const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this resource?')) {
+  const handleDelete = async () => {
+    const confirmed = await showConfirm({
+      title: 'Delete Resource',
+      message: `Are you sure you want to delete "${resource.title}"? This action cannot be undone.`,
+      type: 'danger',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    });
+    
+    if (confirmed) {
       onDelete(resource.id);
     }
   };
@@ -114,6 +126,8 @@ const ResourceCard = ({ resource, onDelete, showStatus = false, showActions = fa
           </button>
         )}
       </div>
+      
+      <CustomConfirm {...confirmState} />
     </div>
   );
 };

@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { resourcesAPI } from '../services/api';
 import { formatFileSize, formatDate, getCategoryDisplayName, getCategoryColor } from '../utils/helpers';
+import { useAlert, useConfirm } from '../hooks/useAlert';
+import CustomAlert from '../components/CustomAlert';
+import CustomConfirm from '../components/CustomConfirm';
 
 const PendingApprovalsPage = () => {
+  const { alertState, showAlert, closeAlert } = useAlert();
+  const { confirmState, showConfirm } = useConfirm();
   const [pendingResources, setPendingResources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
@@ -23,16 +28,24 @@ const PendingApprovalsPage = () => {
   };
 
   const handleApprove = async (id) => {
-    if (!window.confirm('Approve this resource?')) return;
+    const confirmed = await showConfirm({
+      title: 'Approve Resource',
+      message: 'Are you sure you want to approve this resource?',
+      type: 'warning',
+      confirmText: 'Approve',
+      cancelText: 'Cancel'
+    });
+    
+    if (!confirmed) return;
 
     setActionLoading(id);
     try {
       await resourcesAPI.approveResource(id);
       setPendingResources(pendingResources.filter(r => r.id !== id));
-      alert('Resource approved successfully!');
+      showAlert('Success', 'Resource approved successfully!', 'success');
     } catch (error) {
       console.error('Error approving resource:', error);
-      alert('Failed to approve resource');
+      showAlert('Error', 'Failed to approve resource', 'error');
     } finally {
       setActionLoading(null);
     }
@@ -46,10 +59,10 @@ const PendingApprovalsPage = () => {
     try {
       await resourcesAPI.rejectResource(id, reason);
       setPendingResources(pendingResources.filter(r => r.id !== id));
-      alert('Resource rejected');
+      showAlert('Info', 'Resource rejected', 'info');
     } catch (error) {
       console.error('Error rejecting resource:', error);
-      alert('Failed to reject resource');
+      showAlert('Error', 'Failed to reject resource', 'error');
     } finally {
       setActionLoading(null);
     }
@@ -141,6 +154,9 @@ const PendingApprovalsPage = () => {
           </div>
         )}
       </div>
+      
+      <CustomAlert {...alertState} onClose={closeAlert} />
+      <CustomConfirm {...confirmState} />
     </div>
   );
 };
