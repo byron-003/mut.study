@@ -21,6 +21,9 @@ import {
   deleteCourse,
   getDepartments,
   getProgramsDropdown,
+  getSettings,
+  updateSetting,
+  getDownloadsEnabled,
 } from '../controllers/adminController.js';
 import { authenticate, authorize } from '../middleware/authMiddleware.js';
 
@@ -62,5 +65,9 @@ router.delete('/courses/:id', authorize('admin'), deleteCourse);
 // Dropdown data
 router.get('/departments/list', getDepartments);
 router.get('/programs/list', getProgramsDropdown);
+
+// System settings (Admin only)
+router.get('/settings', authorize('admin'), getSettings);
+router.put('/settings', authorize('admin'), updateSetting);
 
 export default router;

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { adminAPI } from '../services/api';
 import {
   Settings, User, Bell, Shield, Database, Mail,
   Info, Save, RefreshCw, AlertTriangle, CheckCircle
@@ -17,6 +18,7 @@ const SettingsPage = () => {
     contactEmail: 'admin@mutstudy.ac.za',
     maxFileSize: 50, // MB
     allowedFileTypes: '.pdf,.doc,.docx,.ppt,.pptx,.zip',
+    downloadsEnabled: true, // Global download control
   });
 
   // Notification Settings
@@ -46,15 +48,46 @@ const SettingsPage = () => {
     moderationQueueLimit: 100,
   });
 
-  const handleSaveSettings = (settingsType) => {
+  const handleSaveSettings = async (settingsType) => {
     setSaveStatus('saving');
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      if (settingsType === 'general') {
+        // Save downloads_enabled setting
+        await adminAPI.updateSetting('downloads_enabled', generalSettings.downloadsEnabled);
+      }
+      
       setSaveStatus('success');
       setTimeout(() => setSaveStatus(null), 3000);
-    }, 1000);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus(null), 3000);
+    }
   };
+
+  // Load settings on mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const response = await adminAPI.getSettings();
+        const settings = response.data.data;
+        
+        if (settings.downloads_enabled) {
+          setGeneralSettings(prev => ({
+            ...prev,
+            downloadsEnabled: settings.downloads_enabled.value
+          }));
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error);
+      }
+    };
+    
+    if (user?.role === 'admin') {
+      loadSettings();
+    }
+  }, [user]);
 
   const tabs = [
     { id: 'general', label: 'General', icon: Settings },
@@ -194,6 +227,30 @@ const SettingsPage = () => {
                   <p className="text-sm text-gray-500 mt-1">
                     Comma-separated list of allowed file extensions
                   </p>
+                </div>
+
+                {/* Downloads Toggle */}
+                <div className="border-t pt-4">
+                  <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900 flex items-center gap-2">
+                        <Shield className="w-5 h-5 text-blue-600" />
+                        Enable Resource Downloads
+                      </p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Control whether students can download resources. When disabled, students can only read/view resources online.
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer ml-4">
+                      <input
+                        type="checkbox"
+                        checked={generalSettings.downloadsEnabled}
+                        onChange={(e) => setGeneralSettings({ ...generalSettings, downloadsEnabled: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-admin-primary"></div>
+                    </label>
+                  </div>
                 </div>
 
                 <button

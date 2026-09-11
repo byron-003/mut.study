@@ -1065,3 +1065,87 @@ export const getProgramsDropdown = async (req, res, next) => {
     next(error);
   }
 };
+
+
+/**
+ * Get system settings
+ */
+export const getSettings = async (req, res, next) => {
+  try {
+    const result = await query('SELECT * FROM system_settings');
+    
+    // Convert to object format
+    const settings = result.rows.reduce((acc, row) => {
+      acc[row.setting_key] = {
+        value: row.setting_value === 'true' ? true : row.setting_value === 'false' ? false : row.setting_value,
+        description: row.description,
+        updated_at: row.updated_at
+      };
+      return acc;
+    }, {});
+
+    res.json({
+      success: true,
+      data: settings
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update system setting
+ */
+export const updateSetting = async (req, res, next) => {
+  try {
+    const { key, value } = req.body;
+    const userId = req.user.id;
+
+    if (!key || value === undefined) {
+      throw new AppError('Setting key and value are required', 400);
+    }
+
+    // Update or insert setting
+    const result = await query(
+      `INSERT INTO system_settings (setting_key, setting_value, updated_by)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (setting_key) 
+       DO UPDATE SET setting_value = $2, updated_by = $3, updated_at = CURRENT_TIMESTAMP
+       RETURNING *`,
+      [key, String(value), userId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Setting updated successfully',
+      data: {
+        key: result.rows[0].setting_key,
+        value: result.rows[0].setting_value === 'true' ? true : result.rows[0].setting_value === 'false' ? false : result.rows[0].setting_value
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get downloads enabled status (public endpoint)
+ */
+export const getDownloadsEnabled = async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT setting_value FROM system_settings WHERE setting_key = 'downloads_enabled'`
+    );
+
+    const enabled = result.rows.length > 0 ? result.rows[0].setting_value === 'true' : true;
+
+    res.json({
+      success: true,
+      data: {
+        downloads_enabled: enabled
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};

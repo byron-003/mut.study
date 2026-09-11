@@ -72,6 +72,10 @@ export const adminAPI = {
   deleteCourse: (id) => api.delete(`/admin/courses/${id}`),
   
   getDepartments: () => api.get('/admin/departments/list'),
+  
+  // System settings
+  getSettings: () => api.get('/admin/settings'),
+  updateSetting: (key, value) => api.put('/admin/settings', { key, value }),
 };
 
 export default api;

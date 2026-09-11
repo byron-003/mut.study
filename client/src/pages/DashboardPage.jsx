@@ -28,6 +28,7 @@ const DashboardPage = () => {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [filterType, setFilterType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [downloadsEnabled, setDownloadsEnabled] = useState(false); // Track if downloads are enabled by admin
   
   // File Viewer State
   const [showViewer, setShowViewer] = useState(false);
@@ -45,6 +46,21 @@ const DashboardPage = () => {
       fetchUserProgram();
     }
   }, [user]);
+
+  // Fetch downloads enabled status
+  useEffect(() => {
+    const fetchDownloadsStatus = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/settings/downloads-enabled`);
+        const data = await response.json();
+        setDownloadsEnabled(data.data.downloads_enabled);
+      } catch (error) {
+        console.error('Error fetching downloads status:', error);
+        setDownloadsEnabled(false); // Default to disabled on error
+      }
+    };
+    fetchDownloadsStatus();
+  }, []);
 
   useEffect(() => {
     if (userProgram) {
@@ -802,13 +818,13 @@ const DashboardPage = () => {
                                   >
                                     {hasProgress ? (
                                       <>
-                                        <Play className="w-4 h-4" />
-                                        {isCompleted ? 'View Again' : 'Continue'}
+                                        <BookOpen className="w-4 h-4" />
+                                        {isCompleted ? 'Read Again' : 'Continue Reading'}
                                       </>
                                     ) : (
                                       <>
-                                        <Eye className="w-4 h-4" />
-                                        Start Reading
+                                        <BookOpen className="w-4 h-4" />
+                                        Read
                                       </>
                                     )}
                                   </button>
@@ -837,13 +853,15 @@ const DashboardPage = () => {
                 <p className="text-sm text-gray-600">{getResourceTypeLabel(viewerFile.type)}</p>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleDownloadFile(viewerFile)}
-                  className="bg-mut-primary text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  Download
-                </button>
+                {downloadsEnabled && (
+                  <button
+                    onClick={() => handleDownloadFile(viewerFile)}
+                    className="bg-mut-primary text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                  </button>
+                )}
                 <button
                   onClick={closeViewer}
                   className="bg-gray-100 text-gray-700 p-2 rounded-lg hover:bg-gray-200"
@@ -885,13 +903,17 @@ const DashboardPage = () => {
                   <p className="text-gray-600 mb-4">
                     Preview not available for this file type.
                   </p>
-                  <button
-                    onClick={() => handleDownloadFile(viewerFile)}
-                    className="bg-mut-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 inline-flex items-center gap-2"
-                  >
-                    <Download className="w-5 h-5" />
-                    Download to View
-                  </button>
+                  {downloadsEnabled ? (
+                    <button
+                      onClick={() => handleDownloadFile(viewerFile)}
+                      className="bg-mut-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 inline-flex items-center gap-2"
+                    >
+                      <Download className="w-5 h-5" />
+                      Download to View
+                    </button>
+                  ) : (
+                    <p className="text-gray-500 text-sm">Downloads are currently disabled by administrator</p>
+                  )}
                 </div>
               )}
             </div>
