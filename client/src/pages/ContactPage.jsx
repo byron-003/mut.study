@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Send, CheckCircle } from 'lucide-react';
+import { useAlert } from '../hooks/useAlert';
+import CustomAlert from '../components/CustomAlert';
 
 const ContactPage = () => {
   const [formData, setFormData] = useState({
@@ -10,6 +12,7 @@ const ContactPage = () => {
   });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { alertState, showAlert, closeAlert } = useAlert();
 
   const handleChange = (e) => {
     setFormData({
@@ -37,11 +40,11 @@ const ContactPage = () => {
         setSubmitted(true);
         setFormData({ name: '', email: '', subject: '', message: '' });
       } else {
-        alert(data.message || 'Failed to send message. Please try again.');
+        showAlert('Error', data.message || 'Failed to send message. Please try again.', 'error');
       }
     } catch (error) {
       console.error('Error submitting message:', error);
-      alert('Failed to send message. Please try again.');
+      showAlert('Error', 'Failed to send message. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -234,6 +237,8 @@ const ContactPage = () => {
           </div>
         </div>
       </div>
+      
+      <CustomAlert {...alertState} onClose={closeAlert} />
     </div>
   );
 };

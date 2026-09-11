@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { classRepAPI } from '../services/api';
 import { X, BookOpen } from 'lucide-react';
+import { useAlert } from '../hooks/useAlert';
+import CustomAlert from './CustomAlert';
 
 const AddCourseModal = ({ isOpen, onClose, onSuccess }) => {
+  const { alertState, showAlert, closeAlert } = useAlert();
   const [formData, setFormData] = useState({
     unit_code: '',
     unit_title: '',
@@ -63,7 +66,7 @@ const AddCourseModal = ({ isOpen, onClose, onSuccess }) => {
       if (onSuccess) onSuccess();
       
       // Show success message
-      alert('Course created successfully! 🎉');
+      showAlert('Success', 'Course created successfully! 🎉', 'success');
       
       // Close modal after a short delay
       setTimeout(() => {
@@ -253,6 +256,8 @@ const AddCourseModal = ({ isOpen, onClose, onSuccess }) => {
           </div>
         </div>
       </div>
+      
+      <CustomAlert {...alertState} onClose={closeAlert} />
     </div>
   );
 };

@@ -6,6 +6,8 @@ import { useAuth } from '../utils/authContext';
 import { useSocket, useSocketEvent } from '../context/SocketContext';
 import FileViewer from '../components/FileViewer';
 import AddCourseModal from '../components/AddCourseModal';
+import { useAlert } from '../hooks/useAlert';
+import CustomAlert from '../components/CustomAlert';
 import { 
   Search, Upload, FileText, ChevronDown, ChevronRight, 
   Download, Eye, Filter, Calendar, User, BookOpen, 
@@ -49,6 +51,7 @@ const getAcademicYearOptions = () => {
 const DashboardPage = () => {
   const { user, isClassRep } = useAuth();
   const navigate = useNavigate();
+  const { alertState, showAlert, closeAlert } = useAlert();
   
   // Main Data
   const [userProgram, setUserProgram] = useState(null);
@@ -489,10 +492,10 @@ const DashboardPage = () => {
 
       await saveProgress(viewerFile.id, 100, timeSpent);
       
-      alert('Resource marked as complete! 🎉');
+      showAlert('Success', 'Resource marked as complete! 🎉', 'success');
     } catch (error) {
       console.error('Error marking as complete:', error);
-      alert('Failed to mark as complete');
+      showAlert('Error', 'Failed to mark as complete', 'error');
     }
   };
 
@@ -1063,6 +1066,8 @@ const DashboardPage = () => {
           }
         }}
       />
+      
+      <CustomAlert {...alertState} onClose={closeAlert} />
     </div>
   );
 };

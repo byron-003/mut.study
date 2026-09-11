@@ -5,6 +5,8 @@ import { progressAPI } from '../services/progressAPI';
 import { useAuth } from '../utils/authContext';
 import FileViewer from '../components/FileViewer';
 import UploadModal from '../components/UploadModal';
+import { useAlert } from '../hooks/useAlert';
+import CustomAlert from '../components/CustomAlert';
 import { 
   BookOpen, FileText, Download, Eye, Clock, CheckCircle, 
   User, ChevronRight, Play, RotateCcw, X, AlertCircle,
@@ -15,6 +17,7 @@ const CoursePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated, user, isClassRep } = useAuth();
+  const { alertState, showAlert, closeAlert } = useAlert();
   const [course, setCourse] = useState(null);
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -163,10 +166,10 @@ const CoursePage = () => {
         : 0;
 
       await saveProgress(viewerFile.id, 100, timeSpent);
-      alert('Resource marked as complete! 🎉');
+      showAlert('Success', 'Resource marked as complete! 🎉', 'success');
     } catch (error) {
       console.error('Error marking as complete:', error);
-      alert('Failed to mark as complete');
+      showAlert('Error', 'Failed to mark as complete', 'error');
     }
   };
 
@@ -607,6 +610,8 @@ const CoursePage = () => {
         courseId={id}
         onSuccess={handleUploadSuccess}
       />
+      
+      <CustomAlert {...alertState} onClose={closeAlert} />
     </div>
   );
 };
