@@ -1180,3 +1180,29 @@ export const getDownloadsEnabled = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * Upload file (for notifications, etc.)
+ */
+export const uploadFile = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      throw new AppError('No file uploaded', 400);
+    }
+
+    // Return file URL
+    res.json({
+      status: 'success',
+      message: 'File uploaded successfully',
+      data: {
+        url: req.file.path,
+        publicId: req.file.filename,
+        resourceType: req.file.resource_type,
+        format: req.file.format,
+        size: req.file.bytes
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};

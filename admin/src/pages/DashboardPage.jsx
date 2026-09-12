@@ -44,11 +44,11 @@ const DashboardPage = () => {
   }
 
   const StatCard = ({ title, value, icon: Icon, color, trend }) => (
-    <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
       <div className="flex items-center justify-between">
         <div className="flex-1">
-          <p className="text-sm text-gray-600 mb-1">{title}</p>
-          <p className="text-3xl font-bold text-gray-900">{value.toLocaleString()}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{title}</p>
+          <p className="text-3xl font-bold text-gray-900 dark:text-white">{value.toLocaleString()}</p>
           {trend && (
             <p className="text-sm text-green-600 mt-2 flex items-center gap-1">
               <TrendingUp className="w-4 h-4" />
@@ -67,8 +67,8 @@ const DashboardPage = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-1">Overview of MUT Study Hub platform</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">Overview of MUT Study Hub platform</p>
       </div>
 
       {/* Main Statistics */}
@@ -103,19 +103,19 @@ const DashboardPage = () => {
 
       {/* Secondary Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-yellow-100 rounded-lg">
               <Clock className="w-6 h-6 text-yellow-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Pending Approval</p>
-              <p className="text-2xl font-bold text-gray-900">{stats?.resourcesByStatus.pending || 0}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Pending Approval</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.resourcesByStatus.pending || 0}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-green-100 rounded-lg">
               <CheckCircle className="w-6 h-6 text-green-600" />

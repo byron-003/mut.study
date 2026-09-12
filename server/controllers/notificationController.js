@@ -6,7 +6,7 @@ import { AppError } from '../middleware/errorHandler.js';
  */
 export const createNotification = async (req, res, next) => {
   try {
-    const { title, message, type, targetType, targetProgramId, targetUserId, expiresAt, mediaUrl, mediaType } = req.body;
+    const { title, message, type, targetType, targetProgramId, targetUserId, expiresAt, mediaUrl, mediaType, linkUrl, linkText } = req.body;
     const createdBy = req.user.id;
 
     // Validate required fields
@@ -32,6 +32,11 @@ export const createNotification = async (req, res, next) => {
       throw new AppError('Invalid media type. Must be: image or video', 400);
     }
 
+    // Validate link consistency
+    if (linkUrl && !linkText) {
+      throw new AppError('Link text is required when link URL is provided', 400);
+    }
+
     // Validate target consistency
     if (targetType === 'program' && !targetProgramId) {
       throw new AppError('Program ID is required when target type is program', 400);
@@ -42,10 +47,10 @@ export const createNotification = async (req, res, next) => {
 
     // Create notification
     const result = await query(
-      `INSERT INTO notifications (title, message, type, target_type, target_program_id, target_user_id, created_by, expires_at, media_url, media_type)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-       RETURNING id, title, message, type, target_type, target_program_id, target_user_id, created_at, expires_at, media_url, media_type`,
-      [title, message, notificationType, targetType, targetProgramId || null, targetUserId || null, createdBy, expiresAt || null, mediaUrl || null, mediaType || null]
+      `INSERT INTO notifications (title, message, type, target_type, target_program_id, target_user_id, created_by, expires_at, media_url, media_type, link_url, link_text)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+       RETURNING id, title, message, type, target_type, target_program_id, target_user_id, created_at, expires_at, media_url, media_type, link_url, link_text`,
+      [title, message, notificationType, targetType, targetProgramId || null, targetUserId || null, createdBy, expiresAt || null, mediaUrl || null, mediaType || null, linkUrl || null, linkText || null]
     );
 
     const notification = result.rows[0];
@@ -117,7 +122,7 @@ export const getUserNotifications = async (req, res, next) => {
     // Get notifications with read status
     const result = await query(
       `SELECT 
-        n.id, n.title, n.message, n.type, n.target_type, n.created_at, n.media_url, n.media_type,
+        n.id, n.title, n.message, n.type, n.target_type, n.created_at, n.media_url, n.media_type, n.link_url, n.link_text,
         CASE WHEN nr.id IS NOT NULL THEN true ELSE false END as is_read,
         nr.read_at
        FROM notifications n
@@ -152,7 +157,9 @@ export const getUserNotifications = async (req, res, next) => {
           readAt: n.read_at,
           createdAt: n.created_at,
           media_url: n.media_url,
-          media_type: n.media_type
+          media_type: n.media_type,
+          link_url: n.link_url,
+          link_text: n.link_text
         })),
         pagination: {
           page: parseInt(page),
@@ -285,6 +292,72 @@ export const markAllAsRead = async (req, res, next) => {
 };
 
 /**
+ * Update notification (Admin only)
+ */
+export const updateNotification = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { title, message, type, expiresAt, mediaUrl, mediaType, linkUrl, linkText } = req.body;
+
+    // Validate required fields
+    if (!title || !message) {
+      throw new AppError('Title and message are required', 400);
+    }
+
+    // Validate type
+    const validTypes = ['info', 'success', 'warning', 'error'];
+    const notificationType = type || 'info';
+    if (!validTypes.includes(notificationType)) {
+      throw new AppError('Invalid notification type', 400);
+    }
+
+    // Validate media type if provided
+    if (mediaType && !['image', 'video'].includes(mediaType)) {
+      throw new AppError('Invalid media type. Must be: image or video', 400);
+    }
+
+    // Validate link consistency
+    if (linkUrl && !linkText) {
+      throw new AppError('Link text is required when link URL is provided', 400);
+    }
+
+    // Check if notification exists
+    const existingNotification = await query(
+      'SELECT id FROM notifications WHERE id = $1',
+      [id]
+    );
+
+    if (existingNotification.rows.length === 0) {
+      throw new AppError('Notification not found', 404);
+    }
+
+    // Update notification (cannot change target_type or target IDs after creation)
+    const result = await query(
+      `UPDATE notifications 
+       SET title = $1, message = $2, type = $3, expires_at = $4, 
+           media_url = $5, media_type = $6, link_url = $7, link_text = $8
+       WHERE id = $9
+       RETURNING id, title, message, type, target_type, target_program_id, target_user_id, 
+                 created_at, expires_at, media_url, media_type, link_url, link_text`,
+      [title, message, notificationType, expiresAt || null, mediaUrl || null, mediaType || null, 
+       linkUrl || null, linkText || null, id]
+    );
+
+    const notification = result.rows[0];
+
+    res.json({
+      status: 'success',
+      message: 'Notification updated successfully',
+      data: {
+        notification
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Delete notification (Admin only)
  */
 export const deleteNotification = async (req, res, next) => {
@@ -330,6 +403,7 @@ export const getAllNotifications = async (req, res, next) => {
       `SELECT 
         n.id, n.title, n.message, n.type, n.target_type, 
         n.target_program_id, n.target_user_id, n.created_at, n.expires_at,
+        n.media_url, n.media_type, n.link_url, n.link_text,
         p.name as program_name,
         u.first_name, u.last_name, u.email as target_email,
         creator.first_name as creator_first_name, creator.last_name as creator_last_name,

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../utils/authContext';
 import { NotificationBell } from '../context/NotificationContext';
+import DarkModeToggle from './DarkModeToggle';
 
 const Navbar = () => {
   const { user, isAuthenticated, isClassRep, logout } = useAuth();
@@ -14,7 +15,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-white shadow-lg sticky top-0 z-50">
+    <nav className="bg-white dark:bg-gray-800 shadow-lg sticky top-0 z-50 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
@@ -25,8 +26,8 @@ const Navbar = () => {
                 className="w-12 h-12 object-contain"
               />
               <div>
-                <h1 className="text-xl font-bold text-gray-900">MUT Study Hub</h1>
-                <p className="text-xs text-gray-500">Academic Resources Portal</p>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">MUT Study Hub</h1>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Academic Resources Portal</p>
               </div>
             </Link>
           </div>
@@ -37,30 +38,39 @@ const Navbar = () => {
               <>
                 <Link
                   to="/forum"
-                  className="text-gray-700 hover:text-mut-primary px-3 py-2 rounded-md text-sm font-medium"
+                  className="text-gray-700 dark:text-gray-300 hover:text-mut-primary dark:hover:text-mut-accent px-3 py-2 rounded-md text-sm font-medium"
                 >
                   Forum
                 </Link>
                 <Link
                   to="/my-uploads"
-                  className="text-gray-700 hover:text-mut-primary px-3 py-2 rounded-md text-sm font-medium"
+                  className="text-gray-700 dark:text-gray-300 hover:text-mut-primary dark:hover:text-mut-accent px-3 py-2 rounded-md text-sm font-medium"
                 >
                   My Uploads
                 </Link>
                 <Link
                   to="/study-history"
-                  className="text-gray-700 hover:text-mut-primary px-3 py-2 rounded-md text-sm font-medium"
+                  className="text-gray-700 dark:text-gray-300 hover:text-mut-primary dark:hover:text-mut-accent px-3 py-2 rounded-md text-sm font-medium"
                 >
                   History
+                </Link>
+                <Link
+                  to="/leaderboard"
+                  className="text-gray-700 dark:text-gray-300 hover:text-mut-primary dark:hover:text-mut-accent px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Leaderboard
                 </Link>
                 {isClassRep && (
                   <Link
                     to="/pending-approvals"
-                    className="text-gray-700 hover:text-mut-primary px-3 py-2 rounded-md text-sm font-medium"
+                    className="text-gray-700 dark:text-gray-300 hover:text-mut-primary dark:hover:text-mut-accent px-3 py-2 rounded-md text-sm font-medium"
                   >
                     Pending Approvals
                   </Link>
                 )}
+                {/* Dark Mode Toggle */}
+                <DarkModeToggle />
+                
                 {/* Notification Bell */}
                 <NotificationBell />
                 <div className="relative group">

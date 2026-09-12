@@ -25,8 +25,10 @@ import {
   getSettings,
   updateSetting,
   getDownloadsEnabled,
+  uploadFile,
 } from '../controllers/adminController.js';
 import { authenticate, authorize } from '../middleware/authMiddleware.js';
+import { upload } from '../config/cloudinary.js';
 
 const router = express.Router();
 
@@ -71,5 +73,8 @@ router.get('/programs/list', getProgramsDropdown);
 // System settings (Admin only)
 router.get('/settings', authorize('admin'), getSettings);
 router.put('/settings', authorize('admin'), updateSetting);
+
+// File upload (for notifications, etc.)
+router.post('/upload', upload.single('file'), uploadFile);
 
 export default router;

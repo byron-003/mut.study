@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useAuth } from '../utils/authContext';
 import { schoolsAPI } from '../services/api';
 import { isValidEmail } from '../utils/helpers';
@@ -17,11 +18,19 @@ const RegisterPage = () => {
   const [filteredPrograms, setFilteredPrograms] = useState([]);
   const [programSearch, setProgramSearch] = useState('');
   const [showProgramDropdown, setShowProgramDropdown] = useState(false);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [termsScrolled, setTermsScrolled] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({
+    hasMinLength: false,
+    hasUppercase: false,
+    hasLowercase: false,
+    hasNumber: false,
+    hasSymbol: false,
+    score: 0
+  });
+  const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -42,6 +51,32 @@ const RegisterPage = () => {
       setFilteredPrograms(programs);
     }
   }, [programSearch, programs]);
+
+  useEffect(() => {
+    // Check password strength
+    const password = formData.password;
+    const hasMinLength = password.length >= 8;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSymbol = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+    
+    let score = 0;
+    if (hasMinLength) score++;
+    if (hasUppercase) score++;
+    if (hasLowercase) score++;
+    if (hasNumber) score++;
+    if (hasSymbol) score++;
+    
+    setPasswordStrength({
+      hasMinLength,
+      hasUppercase,
+      hasLowercase,
+      hasNumber,
+      hasSymbol,
+      score
+    });
+  }, [formData.password]);
 
   const fetchPrograms = async () => {
     try {
@@ -86,35 +121,48 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
 
     if (!isValidEmail(formData.email)) {
-      setError('Please provide a valid email address');
+      toast.error('Please provide a valid email address', { icon: '📧' });
       return;
     }
 
     if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long');
+      toast.error('Password must be at least 8 characters long', { icon: '🔑' });
+      return;
+    }
+
+    if (passwordStrength.score < 3) {
+      toast.error('Password is too weak. Please include at least 3 of: uppercase, lowercase, number, or symbol', { 
+        icon: '⚠️',
+        duration: 5000 
+      });
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      toast.error('Passwords do not match', { icon: '❌' });
       return;
     }
 
     if (!formData.programId) {
-      setError('Please select your program');
+      toast.error('Please select your program', { icon: '📚' });
       return;
     }
 
     if (!agreedToTerms) {
-      setError('You must read and agree to the Terms of Service and Privacy Policy');
+      toast.error('You must read and agree to the Terms of Service and Privacy Policy', { 
+        icon: '📄',
+        duration: 5000 
+      });
       return;
     }
 
     if (!termsScrolled) {
-      setError('Please scroll through the Terms and Privacy Policy before agreeing');
+      toast.error('Please scroll through the Terms and Privacy Policy before agreeing', { 
+        icon: '⬇️',
+        duration: 5000 
+      });
       return;
     }
 
@@ -128,13 +176,31 @@ const RegisterPage = () => {
         lastName: formData.lastName,
         programId: formData.programId || null
       });
-      navigate('/');
+      
+      toast.success('Account created successfully! Redirecting...', {
+        icon: '🎉',
+        duration: 2000,
+      });
+      
+      setTimeout(() => {
+        navigate('/');
+      }, 1000);
     } catch (err) {
       console.error('Registration error:', err);
       if (err.response?.status === 429) {
-        setError(err.response?.data?.message || 'Too many registration attempts. Please try again later.');
+        toast.error(err.response?.data?.message || 'Too many registration attempts. Please try again later.', {
+          icon: '🔒',
+          duration: 6000,
+        });
+      } else if (err.response?.status === 409) {
+        toast.error('This email is already registered. Please login or use a different email.', {
+          icon: '📧',
+          duration: 5000,
+        });
       } else {
-        setError(err.response?.data?.error?.message || 'Registration failed. Please try again.');
+        toast.error(err.response?.data?.error?.message || 'Registration failed. Please try again.', {
+          icon: '❌',
+        });
       }
     } finally {
       setLoading(false);
@@ -142,7 +208,7 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex justify-center mb-6">
@@ -152,24 +218,18 @@ const RegisterPage = () => {
               className="w-24 h-24 object-contain"
             />
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
             Create your account
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
             Already have an account?{' '}
-            <Link to="/login" className="font-medium text-mut-primary hover:text-green-700">
+            <Link to="/login" className="font-medium text-mut-primary hover:text-green-700 dark:text-mut-accent">
               Sign in
             </Link>
           </p>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <p className="text-sm text-red-800">{error}</p>
-            </div>
-          )}
-
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -258,7 +318,7 @@ const RegisterPage = () => {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Password
               </label>
               <input
@@ -268,13 +328,121 @@ const RegisterPage = () => {
                 required
                 value={formData.password}
                 onChange={handleChange}
+                onFocus={() => setShowPasswordRequirements(true)}
                 className="input-field"
-                placeholder="Minimum 8 characters"
+                placeholder="Create a strong password"
               />
+              
+              {/* Password Strength Indicator */}
+              {showPasswordRequirements && formData.password && (
+                <div className="mt-3 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg space-y-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Password Strength:</span>
+                    <span className={`text-sm font-semibold ${
+                      passwordStrength.score <= 2 ? 'text-red-600' :
+                      passwordStrength.score === 3 ? 'text-yellow-600' :
+                      passwordStrength.score === 4 ? 'text-blue-600' :
+                      'text-green-600'
+                    }`}>
+                      {passwordStrength.score <= 2 ? 'Weak' :
+                       passwordStrength.score === 3 ? 'Fair' :
+                       passwordStrength.score === 4 ? 'Good' :
+                       'Strong'}
+                    </span>
+                  </div>
+                  
+                  {/* Strength Bar */}
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div 
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        passwordStrength.score <= 2 ? 'bg-red-500' :
+                        passwordStrength.score === 3 ? 'bg-yellow-500' :
+                        passwordStrength.score === 4 ? 'bg-blue-500' :
+                        'bg-green-500'
+                      }`}
+                      style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
+                    />
+                  </div>
+                  
+                  {/* Requirements Checklist */}
+                  <div className="space-y-2 text-sm">
+                    <div className={`flex items-center gap-2 ${passwordStrength.hasMinLength ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                      {passwordStrength.hasMinLength ? (
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                      <span>At least 8 characters</span>
+                    </div>
+                    
+                    <div className={`flex items-center gap-2 ${passwordStrength.hasUppercase ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                      {passwordStrength.hasUppercase ? (
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                      <span>Uppercase letter (A-Z)</span>
+                    </div>
+                    
+                    <div className={`flex items-center gap-2 ${passwordStrength.hasLowercase ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                      {passwordStrength.hasLowercase ? (
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                      <span>Lowercase letter (a-z)</span>
+                    </div>
+                    
+                    <div className={`flex items-center gap-2 ${passwordStrength.hasNumber ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                      {passwordStrength.hasNumber ? (
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                      <span>Number (0-9)</span>
+                    </div>
+                    
+                    <div className={`flex items-center gap-2 ${passwordStrength.hasSymbol ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                      {passwordStrength.hasSymbol ? (
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                      <span>Special symbol (!@#$%^&*)</span>
+                    </div>
+                  </div>
+                  
+                  {passwordStrength.score < 3 && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                      ⚠️ Include at least 3 requirements for a strong password
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Confirm Password
               </label>
               <input
@@ -286,6 +454,25 @@ const RegisterPage = () => {
                 onChange={handleChange}
                 className="input-field"
               />
+              {formData.confirmPassword && (
+                <div className="mt-2">
+                  {formData.password === formData.confirmPassword ? (
+                    <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      Passwords match
+                    </p>
+                  ) : (
+                    <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                      Passwords do not match
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -329,11 +516,26 @@ const RegisterPage = () => {
 
           <button
             type="submit"
-            disabled={loading || !agreedToTerms || !termsScrolled}
-            className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={loading || !agreedToTerms || !termsScrolled || passwordStrength.score < 3}
+            className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {loading ? 'Creating account...' : 'Create account'}
+            {loading ? (
+              <>
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Creating account...
+              </>
+            ) : (
+              'Create account'
+            )}
           </button>
+
+          {/* Security Info */}
+          <div className="text-center text-xs text-gray-500 dark:text-gray-400 pt-2">
+            <p>🔒 Rate limit: 3 registrations per 15 minutes</p>
+          </div>
         </form>
       </div>
 

@@ -110,6 +110,29 @@ const NotificationViewerModal = ({ notification, isOpen, onClose }) => {
             </p>
           </div>
 
+          {/* Call-to-Action Link */}
+          {notification.link_url && notification.link_text && (
+            <div className="mt-6">
+              <a
+                href={notification.link_url}
+                target={notification.link_url.startsWith('http') ? '_blank' : '_self'}
+                rel={notification.link_url.startsWith('http') ? 'noopener noreferrer' : ''}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-mut-primary text-white rounded-lg font-medium hover:bg-mut-secondary transition-colors shadow-md hover:shadow-lg"
+                onClick={() => {
+                  // If internal link, close modal
+                  if (!notification.link_url.startsWith('http')) {
+                    setTimeout(() => onClose(), 100);
+                  }
+                }}
+              >
+                {notification.link_text}
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </a>
+            </div>
+          )}
+
           {/* Metadata */}
           {notification.created_by_name && (
             <div className="mt-6 pt-6 border-t border-gray-200">

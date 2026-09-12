@@ -3,7 +3,7 @@ import { adminAPI } from '../services/api';
 import { useConfirm } from '../hooks/useAlert';
 import CustomConfirm from '../components/CustomConfirm';
 import { 
-  Bell, Send, Plus, Trash2, Users, GraduationCap, User,
+  Bell, Send, Plus, Trash2, Users, GraduationCap, User, Edit,
   Info, CheckCircle, AlertTriangle, XCircle, X, Upload, Image, Video
 } from 'lucide-react';
 
@@ -13,6 +13,8 @@ const NotificationsPage = () => {
   const [programs, setPrograms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingNotification, setEditingNotification] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     message: '',
@@ -20,7 +22,9 @@ const NotificationsPage = () => {
     targetType: 'all',
     targetProgramId: '',
     targetUserId: '',
-    mediaFile: null
+    mediaFile: null,
+    linkUrl: '',
+    linkText: ''
   });
   const [mediaPreview, setMediaPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -119,8 +123,8 @@ const NotificationsPage = () => {
       setError('');
       
       // Upload media if present
-      let mediaUrl = null;
-      let mediaType = null;
+      let mediaUrl = editingNotification?.media_url || null;
+      let mediaType = editingNotification?.media_type || null;
       
       if (formData.mediaFile) {
         setUploading(true);
@@ -137,28 +141,64 @@ const NotificationsPage = () => {
         title: formData.title,
         message: formData.message,
         type: formData.type,
-        targetType: formData.targetType,
-        targetProgramId: formData.targetProgramId || undefined,
-        targetUserId: formData.targetUserId || undefined,
         mediaUrl,
-        mediaType
+        mediaType,
+        linkUrl: formData.linkUrl || undefined,
+        linkText: formData.linkText || undefined
       };
 
-      const response = await adminAPI.createNotification(payload);
+      if (editingNotification) {
+        // Update existing notification
+        await adminAPI.updateNotification(editingNotification.id, payload);
+        setSuccess('Notification updated successfully');
+        setShowEditModal(false);
+      } else {
+        // Create new notification
+        payload.targetType = formData.targetType;
+        payload.targetProgramId = formData.targetProgramId || undefined;
+        payload.targetUserId = formData.targetUserId || undefined;
+        
+        await adminAPI.createNotification(payload);
+        setSuccess('Notification sent successfully');
+        setShowCreateModal(false);
+      }
       
-      setSuccess(response.data.message);
-      setShowCreateModal(false);
       resetForm();
       fetchNotifications();
       
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
-      console.error('Error creating notification:', error);
-      setError(error.response?.data?.message || 'Failed to send notification');
+      console.error('Error with notification:', error);
+      setError(error.response?.data?.message || `Failed to ${editingNotification ? 'update' : 'send'} notification`);
     } finally {
       setSubmitting(false);
       setUploading(false);
     }
+  };
+
+  const handleEdit = (notification) => {
+    setEditingNotification(notification);
+    setFormData({
+      title: notification.title,
+      message: notification.message,
+      type: notification.type,
+      targetType: notification.target_type,
+      targetProgramId: notification.target_program_id || '',
+      targetUserId: notification.target_user_id || '',
+      mediaFile: null,
+      linkUrl: notification.link_url || '',
+      linkText: notification.link_text || ''
+    });
+    
+    // Set media preview if exists
+    if (notification.media_url) {
+      setMediaPreview({
+        url: notification.media_url,
+        type: notification.media_type
+      });
+    }
+    
+    setShowEditModal(true);
   };
 
   const handleDelete = async (id) => {
@@ -193,10 +233,13 @@ const NotificationsPage = () => {
       targetType: 'all',
       targetProgramId: '',
       targetUserId: '',
-      mediaFile: null
+      mediaFile: null,
+      linkUrl: '',
+      linkText: ''
     });
     setMediaPreview(null);
     setError('');
+    setEditingNotification(null);
   };
 
   const getTypeIcon = (type) => {
@@ -314,13 +357,22 @@ const NotificationsPage = () => {
                     </div>
                   </div>
                   
-                  <button
-                    onClick={() => handleDelete(notification.id)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                    title="Delete notification"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleEdit(notification)}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                      title="Edit notification"
+                    >
+                      <Edit className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(notification.id)}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                      title="Delete notification"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -328,14 +380,20 @@ const NotificationsPage = () => {
         )}
       </div>
 
-      {/* Create Notification Modal */}
-      {showCreateModal && (
+      {/* Create/Edit Notification Modal */}
+      {(showCreateModal || showEditModal) && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             {/* Background overlay */}
             <div
               className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
-              onClick={() => !submitting && setShowCreateModal(false)}
+              onClick={() => {
+                if (!submitting) {
+                  setShowCreateModal(false);
+                  setShowEditModal(false);
+                  resetForm();
+                }
+              }}
             ></div>
 
             {/* Modal panel */}
@@ -350,14 +408,20 @@ const NotificationsPage = () => {
                       </div>
                       <div>
                         <h3 className="text-2xl font-bold text-gray-900">
-                          Create Notification
+                          {editingNotification ? 'Edit Notification' : 'Create Notification'}
                         </h3>
-                        <p className="text-sm text-gray-600">Send important updates to students</p>
+                        <p className="text-sm text-gray-600">
+                          {editingNotification ? 'Update notification details' : 'Send important updates to students'}
+                        </p>
                       </div>
                     </div>
                     <button
                       type="button"
-                      onClick={() => setShowCreateModal(false)}
+                      onClick={() => {
+                        setShowCreateModal(false);
+                        setShowEditModal(false);
+                        resetForm();
+                      }}
                       disabled={submitting}
                       className="text-gray-400 hover:text-gray-500 p-2 hover:bg-gray-100 rounded-lg transition-colors"
                     >
@@ -473,6 +537,63 @@ const NotificationsPage = () => {
                       )}
                     </div>
 
+                    {/* Link Fields */}
+                    <div className="space-y-4 bg-purple-50 border-2 border-purple-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-2xl">🔗</span>
+                        <h4 className="text-sm font-semibold text-gray-700">Call-to-Action Link (Optional)</h4>
+                      </div>
+                      <p className="text-xs text-purple-700 mb-3">
+                        Add a button that redirects students to a specific page (e.g., course page, external resource)
+                      </p>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Link URL
+                        </label>
+                        <input
+                          type="url"
+                          name="linkUrl"
+                          value={formData.linkUrl}
+                          onChange={handleInputChange}
+                          placeholder="https://example.com/course or /course/123"
+                          disabled={submitting}
+                          className="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-primary focus:border-transparent disabled:bg-gray-100"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Use full URL (https://...) or internal path (/course/123)
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Button Text
+                        </label>
+                        <input
+                          type="text"
+                          name="linkText"
+                          value={formData.linkText}
+                          onChange={handleInputChange}
+                          placeholder="e.g., View Course, Learn More, Register Now"
+                          disabled={submitting}
+                          maxLength={100}
+                          className="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-primary focus:border-transparent disabled:bg-gray-100"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          {formData.linkText ? `"${formData.linkText}"` : 'What should the button say?'} (Max 100 characters)
+                        </p>
+                      </div>
+                      
+                      {formData.linkUrl && !formData.linkText && (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded p-2 flex items-start gap-2">
+                          <AlertTriangle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+                          <p className="text-xs text-yellow-800">
+                            Please add button text for the link
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
                     <div className="grid grid-cols-2 gap-5">
                       {/* Type */}
                       <div>
@@ -502,12 +623,17 @@ const NotificationsPage = () => {
                           name="targetType"
                           value={formData.targetType}
                           onChange={handleInputChange}
-                          disabled={submitting}
+                          disabled={submitting || editingNotification}
                           className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-primary focus:border-transparent disabled:bg-gray-100"
                         >
                           <option value="all">👥 All Students</option>
                           <option value="program">🎓 Specific Program</option>
                         </select>
+                        {editingNotification && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            Target audience cannot be changed after creation
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -521,7 +647,7 @@ const NotificationsPage = () => {
                           name="targetProgramId"
                           value={formData.targetProgramId}
                           onChange={handleInputChange}
-                          disabled={submitting}
+                          disabled={submitting || editingNotification}
                           className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-primary focus:border-transparent disabled:bg-gray-100 bg-white"
                           required
                         >
@@ -533,13 +659,16 @@ const NotificationsPage = () => {
                           ))}
                         </select>
                         <p className="text-xs text-blue-700 mt-2">
-                          Only students enrolled in this program will receive the notification
+                          {editingNotification 
+                            ? 'Target program cannot be changed after creation'
+                            : 'Only students enrolled in this program will receive the notification'
+                          }
                         </p>
                       </div>
                     )}
 
                     {/* Preview Box */}
-                    {formData.title || formData.message ? (
+                    {formData.title || formData.message || formData.linkUrl ? (
                       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                         <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Preview</p>
                         <div className="bg-white border border-gray-200 rounded-lg p-4">
@@ -547,7 +676,12 @@ const NotificationsPage = () => {
                             <h4 className="font-semibold text-gray-900 mb-1">{formData.title}</h4>
                           )}
                           {formData.message && (
-                            <p className="text-sm text-gray-600">{formData.message}</p>
+                            <p className="text-sm text-gray-600 mb-3">{formData.message}</p>
+                          )}
+                          {formData.linkUrl && formData.linkText && (
+                            <button className="mt-2 px-4 py-2 bg-admin-primary text-white text-sm rounded-lg hover:bg-green-700 font-medium">
+                              {formData.linkText} →
+                            </button>
                           )}
                         </div>
                       </div>
@@ -581,12 +715,12 @@ const NotificationsPage = () => {
                     ) : submitting ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        Sending...
+                        {editingNotification ? 'Updating...' : 'Sending...'}
                       </>
                     ) : (
                       <>
                         <Send className="w-5 h-5" />
-                        Send Notification
+                        {editingNotification ? 'Update Notification' : 'Send Notification'}
                       </>
                     )}
                   </button>

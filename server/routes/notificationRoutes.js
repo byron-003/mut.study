@@ -6,6 +6,7 @@ import {
   getUnreadCount,
   markAsRead,
   markAllAsRead,
+  updateNotification,
   deleteNotification,
   getAllNotifications
 } from '../controllers/notificationController.js';
@@ -40,6 +41,9 @@ router.post('/', authorize('admin'), createNotification);
 
 // Get all notifications (admin only)
 router.get('/admin/all', authorize('admin'), getAllNotifications);
+
+// Update notification (admin only)
+router.put('/:id', authorize('admin'), updateNotification);
 
 // Delete notification (admin only)
 router.delete('/:id', authorize('admin'), deleteNotification);

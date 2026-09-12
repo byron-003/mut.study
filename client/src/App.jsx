@@ -1,8 +1,10 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './utils/authContext';
 import { SocketProvider } from './context/SocketContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Navbar from './components/Navbar';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
@@ -21,6 +23,7 @@ import ContactPage from './pages/ContactPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 import StudyHistoryPage from './pages/StudyHistoryPage';
+import LeaderboardPage from './pages/LeaderboardPage';
 
 // Protected route wrapper
 const ProtectedRoute = ({ children, requireClassRep = false }) => {
@@ -52,7 +55,7 @@ function AppRoutes() {
   const { isAuthenticated } = useAuth();
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
       <Navbar />
       <Routes>
         {/* Home redirects to dashboard if authenticated */}
@@ -64,6 +67,7 @@ function AppRoutes() {
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />
+        <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/forum" element={
           <ProtectedRoute>
             <ForumPage />
@@ -123,13 +127,54 @@ function AppRoutes() {
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <SocketProvider>
-          <NotificationProvider>
-            <AppRoutes />
-          </NotificationProvider>
-        </SocketProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <SocketProvider>
+            <NotificationProvider>
+              <Toaster 
+                position="top-right"
+                reverseOrder={false}
+                gutter={8}
+                toastOptions={{
+                  // Default options
+                  duration: 4000,
+                  style: {
+                    background: '#fff',
+                    color: '#363636',
+                    padding: '16px',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                  },
+                  // Success
+                  success: {
+                    duration: 3000,
+                    iconTheme: {
+                      primary: '#10b981',
+                      secondary: '#fff',
+                    },
+                  },
+                  // Error
+                  error: {
+                    duration: 5000,
+                    iconTheme: {
+                      primary: '#ef4444',
+                      secondary: '#fff',
+                    },
+                  },
+                  // Loading
+                  loading: {
+                    iconTheme: {
+                      primary: '#3b82f6',
+                      secondary: '#fff',
+                    },
+                  },
+                }}
+              />
+              <AppRoutes />
+            </NotificationProvider>
+          </SocketProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </Router>
   );
 }

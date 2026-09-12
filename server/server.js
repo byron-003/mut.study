@@ -15,6 +15,7 @@ import contactRoutes from './routes/contactRoutes.js';
 import progressRoutes from './routes/progressRoutes.js';
 import classRepRoutes from './routes/classRepRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import ratingReviewRoutes from './routes/ratingReviewRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { query } from './config/database.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
@@ -77,6 +78,54 @@ async function runMigrations() {
       console.log('✅ Notifications system migration completed!');
     }
     
+    // Check if notification media columns exist (migration 015)
+    const mediaColumnCheck = await query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.columns 
+        WHERE table_name = 'notifications' AND column_name = 'media_url'
+      );
+    `);
+    
+    if (!mediaColumnCheck.rows[0].exists) {
+      console.log('📝 Running notification media migration...');
+      const migrationPath = path.join(__dirname, 'migrations', '015_add_notification_media.sql');
+      const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
+      await query(migrationSQL);
+      console.log('✅ Notification media migration completed!');
+    }
+    
+    // Check if notification link columns exist (migration 017)
+    const linkColumnCheck = await query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.columns 
+        WHERE table_name = 'notifications' AND column_name = 'link_url'
+      );
+    `);
+    
+    if (!linkColumnCheck.rows[0].exists) {
+      console.log('📝 Running notification link migration...');
+      const migrationPath = path.join(__dirname, 'migrations', '017_add_notification_link.sql');
+      const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
+      await query(migrationSQL);
+      console.log('✅ Notification link migration completed!');
+    }
+    
+    // Check if ratings and reviews tables exist (migration 016)
+    const ratingsTableCheck = await query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'resource_ratings'
+      );
+    `);
+    
+    if (!ratingsTableCheck.rows[0].exists) {
+      console.log('📝 Running ratings and reviews system migration...');
+      const migrationPath = path.join(__dirname, 'migrations', '016_create_ratings_reviews_postgres.sql');
+      const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
+      await query(migrationSQL);
+      console.log('✅ Ratings and reviews system migration completed!');
+    }
+    
     console.log('✅ All migrations up to date');
   } catch (error) {
     console.error('❌ Migration error:', error.message);
@@ -135,6 +184,7 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/class-rep', classRepRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api', ratingReviewRoutes); // Ratings, reviews, reputation endpoints
 
 // Public settings endpoint
 import { getDownloadsEnabled } from './controllers/adminController.js';

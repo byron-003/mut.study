@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import DarkModeToggle from './DarkModeToggle';
 import {
   LayoutDashboard, Users, FileText, BookOpen, GraduationCap,
   BarChart3, FileSpreadsheet, Settings, LogOut, Menu, X, ChevronDown, Mail, Bell
@@ -36,12 +37,12 @@ const Layout = () => {
     : navItems.filter(item => item.allowClassRep);
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       {/* Sidebar */}
       <aside className={`fixed top-0 left-0 z-40 h-screen transition-transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="h-full w-64 bg-white shadow-lg flex flex-col">
+        <div className="h-full w-64 bg-white dark:bg-gray-800 shadow-lg flex flex-col">
           {/* Logo */}
-          <div className="p-4 border-b border-gray-200">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-2">
               <img 
                 src="/mut-logo.png" 
@@ -49,8 +50,8 @@ const Layout = () => {
                 className="w-10 h-10 object-contain"
               />
               <div>
-                <h1 className="font-bold text-gray-900">MUT Study Hub</h1>
-                <p className="text-xs text-gray-500">Admin Panel</p>
+                <h1 className="font-bold text-gray-900 dark:text-white">MUT Study Hub</h1>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Admin Panel</p>
               </div>
             </div>
           </div>
@@ -69,7 +70,7 @@ const Layout = () => {
                       className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                         isActive
                           ? 'bg-admin-primary text-white shadow-md'
-                          : 'text-gray-700 hover:bg-gray-100'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                       }`}
                     >
                       <Icon className="w-5 h-5" />
@@ -82,27 +83,27 @@ const Layout = () => {
           </nav>
 
           {/* User Info */}
-          <div className="p-4 border-t border-gray-200">
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
             <div className="relative">
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 <div className="w-10 h-10 bg-admin-primary rounded-full flex items-center justify-center text-white font-bold">
                   {user?.firstName?.[0]}{user?.lastName?.[0]}
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="text-sm font-medium text-gray-900">{user?.firstName} {user?.lastName}</p>
-                  <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.firstName} {user?.lastName}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user?.role}</p>
                 </div>
-                <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {userMenuOpen && (
-                <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+                <div className="absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-100 transition-colors text-red-600"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors text-red-600 dark:text-red-400"
                   >
                     <LogOut className="w-4 h-4" />
                     <span className="font-medium">Logout</span>
@@ -117,19 +118,20 @@ const Layout = () => {
       {/* Main Content */}
       <div className={`transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
         {/* Top Bar */}
-        <header className="bg-white shadow-sm sticky top-0 z-30">
+        <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-30">
           <div className="px-4 py-4 flex items-center justify-between">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 rounded-lg hover:bg-gray-100"
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
             >
-              <Menu className="w-6 h-6" />
+              <Menu className="w-6 h-6 dark:text-gray-300" />
             </button>
 
             <div className="flex items-center gap-4">
+              <DarkModeToggle />
               <div className="text-right hidden md:block">
-                <p className="text-sm font-medium text-gray-900">{user?.firstName} {user?.lastName}</p>
-                <p className="text-xs text-gray-500">{user?.email}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.firstName} {user?.lastName}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
               </div>
             </div>
           </div>
