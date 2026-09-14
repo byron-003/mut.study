@@ -44,6 +44,9 @@ export const authAPI = {
   login: (data) => api.post('/auth/login', data),
   getProfile: () => api.get('/auth/profile'),
   updateProfile: (data) => api.put('/auth/profile', data),
+  changePassword: (data) => api.put('/auth/change-password', data),
+  getSettings: () => api.get('/auth/settings'),
+  updateSettings: (data) => api.put('/auth/settings', data),
 };
 
 // Search API
@@ -94,6 +97,68 @@ export const notificationsAPI = {
   getUnreadCount: () => api.get('/notifications/unread-count'),
   markAsRead: (id) => api.put(`/notifications/${id}/read`),
   markAllAsRead: () => api.put('/notifications/read-all'),
+};
+
+// AI Summarization API
+export const aiAPI = {
+  summarizeResource: async (resourceId, fileUrl) => {
+    console.log('📥 CLIENT: Starting file download from:', fileUrl);
+    
+    // Validate fileUrl
+    if (!fileUrl) {
+      throw new Error('File URL is required for summarization');
+    }
+    
+    // Fix Cloudinary URL to get raw file instead of HTML preview
+    let downloadUrl = fileUrl;
+    if (fileUrl.includes('cloudinary.com')) {
+      // Replace /upload/ with /upload/fl_attachment/ to force download
+      downloadUrl = fileUrl.replace('/upload/', '/upload/fl_attachment/');
+      console.log('📥 CLIENT: Converted Cloudinary URL to:', downloadUrl);
+    }
+    
+    // Download file from URL with proper headers
+    const fileResponse = await fetch(downloadUrl, {
+      headers: {
+        'Accept': 'application/pdf,application/octet-stream,*/*'
+      }
+    });
+    console.log(`📥 CLIENT: Fetch response status: ${fileResponse.status}`);
+    console.log(`📥 CLIENT: Content-Type: ${fileResponse.headers.get('Content-Type')}`);
+    console.log(`📥 CLIENT: Content-Length: ${fileResponse.headers.get('Content-Length')} bytes`);
+    
+    const fileBlob = await fileResponse.blob();
+    console.log(`📥 CLIENT: Blob created - size: ${fileBlob.size} bytes, type: ${fileBlob.type}`);
+    
+    // If we got HTML (error page), throw error
+    if (fileBlob.type.includes('text/html') || fileBlob.size < 5000) {
+      console.error('❌ CLIENT: Received HTML or very small file instead of document');
+      throw new Error('Failed to download file - received invalid content. The file URL may be incorrect.');
+    }
+    
+    // Create form data
+    const formData = new FormData();
+    formData.append('resourceId', resourceId);
+    formData.append('file', fileBlob, 'document.pdf');
+    
+    console.log(`📤 CLIENT: FormData created with resourceId: ${resourceId}`);
+    console.log(`📤 CLIENT: File in FormData - name: document.pdf, size: ${fileBlob.size} bytes`);
+    console.log('📤 CLIENT: Sending to server /api/ai/summarize...');
+    
+    // Send to server
+    const response = await api.post('/ai/summarize', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    
+    console.log('✅ CLIENT: Response received from server');
+    return response;
+  },
+  getSummaryHistory: (params) => api.get('/ai/summaries', { params }),
+  getSummaryStats: () => api.get('/ai/summaries/stats'),
+  getSummaryById: (id) => api.get(`/ai/summaries/${id}`),
+  deleteSummary: (id) => api.delete(`/ai/summaries/${id}`),
 };
 
 export default api;

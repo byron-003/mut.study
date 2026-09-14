@@ -1,16 +1,25 @@
 import React, { useState } from 'react';
-import { File, Download, X, AlertCircle, CheckCircle } from 'lucide-react';
+import { File, Download, X, AlertCircle, CheckCircle, Sparkles } from 'lucide-react';
 
 /**
  * Universal File Viewer Component
  * Handles PDF, images, videos, and other document types
  * Uses file MIME type instead of URL extension
  */
-const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMarkComplete }) => {
+const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMarkComplete, onSummarize, advancedFeaturesEnabled = false, isSummarizing = false }) => {
   const [loadError, setLoadError] = useState(false);
   const [viewDuration, setViewDuration] = useState(0);
 
   if (!file) return null;
+
+  // Debug logging
+  console.log('🎬 FileViewer Props:', {
+    hasFile: !!file,
+    advancedFeaturesEnabled,
+    isSummarizing,
+    hasOnSummarize: !!onSummarize,
+    hasOnMarkComplete: !!onMarkComplete
+  });
 
   const { fileUrl, fileType, title } = file;
 
@@ -185,11 +194,31 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
             {onMarkComplete && (
               <button
                 onClick={onMarkComplete}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                 title="Mark as complete"
               >
                 <CheckCircle className="w-5 h-5" />
                 <span className="hidden sm:inline">Mark Complete</span>
+              </button>
+            )}
+            {advancedFeaturesEnabled && onSummarize && (
+              <button
+                onClick={onSummarize}
+                disabled={isSummarizing}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                title={isSummarizing ? "Generating summary..." : "Generate AI summary"}
+              >
+                {isSummarizing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                    <span className="hidden sm:inline">Summarizing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5" />
+                    <span className="hidden sm:inline">Summarize</span>
+                  </>
+                )}
               </button>
             )}
             {downloadsEnabled && onDownload && (

@@ -5,15 +5,21 @@ export const useAlert = () => {
     isOpen: false,
     title: '',
     message: '',
-    type: 'info'
+    type: 'info',
+    showViewButton: false,
+    onView: null,
+    viewButtonText: 'View'
   });
 
-  const showAlert = (title, message, type = 'info') => {
+  const showAlert = (title, message, type = 'info', options = {}) => {
     setAlertState({
       isOpen: true,
       title,
       message,
-      type
+      type,
+      showViewButton: options.showViewButton || false,
+      onView: options.onView || null,
+      viewButtonText: options.viewButtonText || 'View'
     });
   };
 

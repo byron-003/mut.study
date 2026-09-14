@@ -16,6 +16,7 @@ import ProgramPage from './pages/ProgramPage';
 import MyUploadsPage from './pages/MyUploadsPage';
 import PendingApprovalsPage from './pages/PendingApprovalsPage';
 import ProfilePage from './pages/ProfilePage';
+import SettingsPage from './pages/SettingsPage';
 import ProgramsPage from './pages/ProgramsPage';
 import AboutPage from './pages/AboutPage';
 import ForumPage from './pages/ForumPage';
@@ -23,6 +24,7 @@ import ContactPage from './pages/ContactPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 import StudyHistoryPage from './pages/StudyHistoryPage';
+import SummaryHistoryPage from './pages/SummaryHistoryPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 
 // Protected route wrapper
@@ -52,7 +54,19 @@ const GuestRoute = ({ children }) => {
 };
 
 function AppRoutes() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+  
+  // Don't render routes until auth is loaded
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
@@ -114,9 +128,19 @@ function AppRoutes() {
             <ProfilePage />
           </ProtectedRoute>
         } />
+        <Route path="/settings" element={
+          <ProtectedRoute>
+            <SettingsPage />
+          </ProtectedRoute>
+        } />
         <Route path="/study-history" element={
           <ProtectedRoute>
             <StudyHistoryPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/summary-history" element={
+          <ProtectedRoute>
+            <SummaryHistoryPage />
           </ProtectedRoute>
         } />
       </Routes>

@@ -1,0 +1,480 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../utils/authContext';
+import { authAPI } from '../services/api';
+import { useAlert } from '../hooks/useAlert';
+import CustomAlert from '../components/CustomAlert';
+import { 
+  Settings, Lock, Sparkles, Eye, EyeOff, 
+  Save, ArrowLeft, Shield, Zap, CheckCircle, XCircle
+} from 'lucide-react';
+
+const SettingsPage = () => {
+  const { user, updateUser } = useAuth();
+  const navigate = useNavigate();
+  const { alertState, showAlert, closeAlert } = useAlert();
+
+  // Password Change State
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({
+    score: 0,
+    hasUpperCase: false,
+    hasLowerCase: false,
+    hasNumber: false,
+    hasSymbol: false,
+    minLength: false
+  });
+
+  // Advanced Features State
+  const [advancedFeaturesEnabled, setAdvancedFeaturesEnabled] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
+
+  useEffect(() => {
+    fetchUserSettings();
+  }, []);
+
+  // Password strength checker
+  useEffect(() => {
+    const password = passwordData.newPassword;
+    const strength = {
+      hasUpperCase: /[A-Z]/.test(password),
+      hasLowerCase: /[a-z]/.test(password),
+      hasNumber: /[0-9]/.test(password),
+      hasSymbol: /[^A-Za-z0-9]/.test(password),
+      minLength: password.length >= 8
+    };
+
+    const score = Object.values(strength).filter(Boolean).length;
+    setPasswordStrength({ ...strength, score });
+  }, [passwordData.newPassword]);
+
+  const fetchUserSettings = async () => {
+    try {
+      const response = await authAPI.getSettings();
+      setAdvancedFeaturesEnabled(response.data.data.advancedFeaturesEnabled || false);
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+      // If endpoint doesn't exist yet, default to false
+      setAdvancedFeaturesEnabled(false);
+    }
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+
+    // Validation
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      showAlert('Error', 'All password fields are required', 'error');
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      showAlert('Error', 'New passwords do not match', 'error');
+      return;
+    }
+
+    if (passwordData.newPassword.length < 8) {
+      showAlert('Error', 'Password must be at least 8 characters long', 'error');
+      return;
+    }
+
+    if (passwordStrength.score < 4) {
+      showAlert('Warning', 'Please use a stronger password with uppercase, lowercase, numbers, and symbols', 'warning');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await authAPI.changePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      });
+
+      showAlert('Success', 'Password changed successfully!', 'success');
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+    } catch (error) {
+      console.error('Error changing password:', error);
+      showAlert('Error', error.response?.data?.message || 'Failed to change password', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleAdvancedFeatures = async () => {
+    try {
+      setSavingSettings(true);
+      const newValue = !advancedFeaturesEnabled;
+      
+      await authAPI.updateSettings({
+        advancedFeaturesEnabled: newValue
+      });
+
+      setAdvancedFeaturesEnabled(newValue);
+      
+      // Update user context if needed
+      updateUser({ ...user, advancedFeaturesEnabled: newValue });
+
+      showAlert(
+        'Success', 
+        newValue 
+          ? 'Advanced features enabled! AI Summarization is now available.' 
+          : 'Advanced features disabled.', 
+        'success'
+      );
+    } catch (error) {
+      console.error('Error updating settings:', error);
+      showAlert('Error', 'Failed to update settings', 'error');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  const getPasswordStrengthColor = () => {
+    if (passwordStrength.score === 0) return 'bg-gray-300';
+    if (passwordStrength.score <= 2) return 'bg-red-500';
+    if (passwordStrength.score === 3) return 'bg-yellow-500';
+    if (passwordStrength.score === 4) return 'bg-green-400';
+    return 'bg-green-600';
+  };
+
+  const getPasswordStrengthText = () => {
+    if (passwordStrength.score === 0) return 'No password';
+    if (passwordStrength.score <= 2) return 'Weak';
+    if (passwordStrength.score === 3) return 'Good';
+    if (passwordStrength.score === 4) return 'Strong';
+    return 'Very Strong';
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Custom Alert */}
+      <CustomAlert
+        isOpen={alertState.isOpen}
+        type={alertState.type}
+        title={alertState.title}
+        message={alertState.message}
+        onClose={closeAlert}
+      />
+
+      {/* Header */}
+      <div className="bg-gradient-to-r from-mut-primary to-mut-secondary text-white py-6 px-4 shadow-lg">
+        <div className="max-w-4xl mx-auto">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-white hover:text-green-100 mb-4 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Back
+          </button>
+          <div className="flex items-center gap-3">
+            <Settings className="w-8 h-8" />
+            <div>
+              <h1 className="text-3xl font-bold">Settings</h1>
+              <p className="text-green-100 mt-1">Manage your account preferences</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="space-y-6">
+          {/* Advanced Features Section */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+            <div className="bg-gradient-to-r from-purple-500 to-indigo-600 px-6 py-4">
+              <div className="flex items-center gap-3">
+                <Sparkles className="w-6 h-6 text-white" />
+                <div>
+                  <h2 className="text-xl font-bold text-white">Advanced Features</h2>
+                  <p className="text-purple-100 text-sm">Unlock AI-powered study tools</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Zap className="w-5 h-5 text-yellow-500" />
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
+                      AI Summarization
+                    </h3>
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    Enable AI-powered document summarization using Google Gemini. 
+                    Get instant summaries of PDFs, documents, and study materials. 
+                    All summaries are saved in your history for later review.
+                  </p>
+
+                  {advancedFeaturesEnabled && (
+                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-green-800 dark:text-green-200 font-medium">
+                            Advanced Features Active
+                          </p>
+                          <p className="text-green-700 dark:text-green-300 text-sm mt-1">
+                            Look for the "Summarize" button when viewing resources on your dashboard.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-shrink-0">
+                  <button
+                    onClick={handleToggleAdvancedFeatures}
+                    disabled={savingSettings}
+                    className={`relative inline-flex h-8 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
+                      advancedFeaturesEnabled
+                        ? 'bg-purple-600'
+                        : 'bg-gray-200 dark:bg-gray-700'
+                    } ${savingSettings ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        advancedFeaturesEnabled ? 'translate-x-6' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Features List */}
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <CheckCircle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${advancedFeaturesEnabled ? 'text-purple-600' : 'text-gray-400'}`} />
+                  <div>
+                    <p className={`font-medium ${advancedFeaturesEnabled ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                      Document Summarization
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      AI-powered content extraction
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <CheckCircle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${advancedFeaturesEnabled ? 'text-purple-600' : 'text-gray-400'}`} />
+                  <div>
+                    <p className={`font-medium ${advancedFeaturesEnabled ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                      Summary History
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Save and review past summaries
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Password Change Section */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-500 to-cyan-600 px-6 py-4">
+              <div className="flex items-center gap-3">
+                <Lock className="w-6 h-6 text-white" />
+                <div>
+                  <h2 className="text-xl font-bold text-white">Change Password</h2>
+                  <p className="text-blue-100 text-sm">Keep your account secure</p>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handlePasswordChange} className="p-6 space-y-6">
+              {/* Current Password */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Current Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showCurrentPassword ? 'text' : 'password'}
+                    value={passwordData.currentPassword}
+                    onChange={(e) =>
+                      setPasswordData({ ...passwordData, currentPassword: e.target.value })
+                    }
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-mut-primary focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    placeholder="Enter current password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  >
+                    {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* New Password */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  New Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    value={passwordData.newPassword}
+                    onChange={(e) =>
+                      setPasswordData({ ...passwordData, newPassword: e.target.value })
+                    }
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-mut-primary focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    placeholder="Enter new password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  >
+                    {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+
+                {/* Password Strength Indicator */}
+                {passwordData.newPassword && (
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        Password Strength:
+                      </span>
+                      <span className={`text-sm font-medium ${
+                        passwordStrength.score <= 2 ? 'text-red-600' :
+                        passwordStrength.score === 3 ? 'text-yellow-600' :
+                        'text-green-600'
+                      }`}>
+                        {getPasswordStrengthText()}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-3">
+                      <div
+                        className={`h-2 rounded-full transition-all duration-300 ${getPasswordStrengthColor()}`}
+                        style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
+                      />
+                    </div>
+
+                    {/* Requirements Checklist */}
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className={`flex items-center gap-2 ${passwordStrength.minLength ? 'text-green-600' : 'text-gray-500 dark:text-gray-400'}`}>
+                        {passwordStrength.minLength ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                        <span>8+ characters</span>
+                      </div>
+                      <div className={`flex items-center gap-2 ${passwordStrength.hasUpperCase ? 'text-green-600' : 'text-gray-500 dark:text-gray-400'}`}>
+                        {passwordStrength.hasUpperCase ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                        <span>Uppercase letter</span>
+                      </div>
+                      <div className={`flex items-center gap-2 ${passwordStrength.hasLowerCase ? 'text-green-600' : 'text-gray-500 dark:text-gray-400'}`}>
+                        {passwordStrength.hasLowerCase ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                        <span>Lowercase letter</span>
+                      </div>
+                      <div className={`flex items-center gap-2 ${passwordStrength.hasNumber ? 'text-green-600' : 'text-gray-500 dark:text-gray-400'}`}>
+                        {passwordStrength.hasNumber ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                        <span>Number</span>
+                      </div>
+                      <div className={`flex items-center gap-2 col-span-2 ${passwordStrength.hasSymbol ? 'text-green-600' : 'text-gray-500 dark:text-gray-400'}`}>
+                        {passwordStrength.hasSymbol ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                        <span>Special character (!@#$%^&*)</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Confirm Password */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Confirm New Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={passwordData.confirmPassword}
+                    onChange={(e) =>
+                      setPasswordData({ ...passwordData, confirmPassword: e.target.value })
+                    }
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-mut-primary focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    placeholder="Confirm new password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword && (
+                  <p className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                    <XCircle className="w-4 h-4" />
+                    Passwords do not match
+                  </p>
+                )}
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  type="button"
+                  onClick={() => navigate(-1)}
+                  className="px-6 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading || passwordStrength.score < 4}
+                  className="flex items-center gap-2 px-6 py-2.5 bg-mut-primary text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+                >
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-5 h-5" />
+                      Change Password
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Security Notice */}
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-1">
+                  Security Tips
+                </h3>
+                <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1 list-disc list-inside">
+                  <li>Use a unique password you don't use on other websites</li>
+                  <li>Never share your password with anyone</li>
+                  <li>Change your password regularly for better security</li>
+                  <li>Enable advanced features only if you trust the AI service</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default SettingsPage;

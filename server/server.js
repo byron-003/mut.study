@@ -16,6 +16,7 @@ import progressRoutes from './routes/progressRoutes.js';
 import classRepRoutes from './routes/classRepRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import ratingReviewRoutes from './routes/ratingReviewRoutes.js';
+import aiRoutes from './routes/aiRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { query } from './config/database.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
@@ -126,6 +127,22 @@ async function runMigrations() {
       console.log('✅ Ratings and reviews system migration completed!');
     }
     
+    // Check if advanced_features_enabled column exists (migration 018)
+    const advancedFeaturesCheck = await query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.columns 
+        WHERE table_name = 'users' AND column_name = 'advanced_features_enabled'
+      );
+    `);
+    
+    if (!advancedFeaturesCheck.rows[0].exists) {
+      console.log('📝 Running user settings and AI summaries migration...');
+      const migrationPath = path.join(__dirname, 'migrations', '018_add_user_settings_ai_summaries.sql');
+      const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
+      await query(migrationSQL);
+      console.log('✅ User settings and AI summaries migration completed!');
+    }
+    
     console.log('✅ All migrations up to date');
   } catch (error) {
     console.error('❌ Migration error:', error.message);
@@ -184,6 +201,7 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/class-rep', classRepRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/ai', aiRoutes);
 app.use('/api', ratingReviewRoutes); // Ratings, reviews, reputation endpoints
 
 // Public settings endpoint

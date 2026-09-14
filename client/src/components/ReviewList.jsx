@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ThumbsUp, MessageSquare, Edit2, Trash2, Flag, MoreVertical } from 'lucide-react';
 import { useAuth } from '../utils/authContext';
+import { useConfirm } from '../hooks/useConfirm.jsx';
 
 /**
  * ReviewList Component - Display list of reviews with actions
@@ -21,6 +22,7 @@ const ReviewList = ({
 }) => {
   const { user } = useAuth();
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [ConfirmDialog, confirm] = useConfirm();
 
   if (loading) {
     return (
@@ -157,8 +159,15 @@ const ReviewList = ({
 
                         {isOwnReview && onDelete && (
                           <button
-                            onClick={() => {
-                              if (window.confirm('Are you sure you want to delete this review?')) {
+                            onClick={async () => {
+                              const isConfirmed = await confirm({
+                                title: 'Delete Review',
+                                message: 'Are you sure you want to delete this review? This action cannot be undone.',
+                                confirmText: 'Delete',
+                                cancelText: 'Cancel',
+                                type: 'danger'
+                              });
+                              if (isConfirmed) {
                                 onDelete(review.id);
                               }
                               setOpenMenuId(null);
@@ -173,8 +182,15 @@ const ReviewList = ({
 
                         {!isOwnReview && onReport && (
                           <button
-                            onClick={() => {
-                              if (window.confirm('Report this review as inappropriate?')) {
+                            onClick={async () => {
+                              const isConfirmed = await confirm({
+                                title: 'Report Review',
+                                message: 'Are you sure you want to report this review as inappropriate? Our team will review it.',
+                                confirmText: 'Report',
+                                cancelText: 'Cancel',
+                                type: 'warning'
+                              });
+                              if (isConfirmed) {
                                 onReport(review.id);
                               }
                               setOpenMenuId(null);
@@ -230,6 +246,9 @@ const ReviewList = ({
           </div>
         );
       })}
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog />
     </div>
   );
 };

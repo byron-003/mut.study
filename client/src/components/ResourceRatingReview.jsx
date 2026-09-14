@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Star, MessageSquare, ChevronDown } from 'lucide-react';
 import { useAuth } from '../utils/authContext';
+import { useAlert } from '../hooks/useAlert';
+import CustomAlert from './CustomAlert';
 import StarRating from './StarRating';
 import RatingStats from './RatingStats';
 import ReviewForm from './ReviewForm';
@@ -24,6 +26,7 @@ import {
  */
 const ResourceRatingReview = ({ resourceId, isOpen, onClose }) => {
   const { user, isAuthenticated } = useAuth();
+  const { alertState, showAlert, closeAlert } = useAlert();
   
   // Rating state
   const [ratingStats, setRatingStats] = useState(null);
@@ -88,7 +91,7 @@ const ResourceRatingReview = ({ resourceId, isOpen, onClose }) => {
 
   const handleRatingChange = async (rating) => {
     if (!isAuthenticated) {
-      alert('Please login to rate resources');
+      showAlert('Login Required', 'Please login to rate resources', 'warning');
       return;
     }
 
@@ -97,9 +100,10 @@ const ResourceRatingReview = ({ resourceId, isOpen, onClose }) => {
       await addOrUpdateRating(resourceId, rating);
       setUserRating(rating);
       await loadRatings(); // Reload to get updated stats
+      showAlert('Success', 'Rating submitted successfully', 'success');
     } catch (error) {
       console.error('Error submitting rating:', error);
-      alert(error.response?.data?.message || 'Failed to submit rating');
+      showAlert('Error', error.response?.data?.message || 'Failed to submit rating', 'error');
     } finally {
       setIsSubmittingRating(false);
     }
@@ -112,9 +116,11 @@ const ResourceRatingReview = ({ resourceId, isOpen, onClose }) => {
       if (editingReview) {
         // Update existing review
         await updateReview(editingReview.id, reviewText);
+        showAlert('Success', 'Review updated successfully', 'success');
       } else {
         // Add new review
         await addReview(resourceId, reviewText);
+        showAlert('Success', 'Review submitted successfully', 'success');
       }
       
       // Reload reviews
@@ -123,7 +129,7 @@ const ResourceRatingReview = ({ resourceId, isOpen, onClose }) => {
       setEditingReview(null);
     } catch (error) {
       console.error('Error submitting review:', error);
-      alert(error.response?.data?.message || 'Failed to submit review');
+      showAlert('Error', error.response?.data?.message || 'Failed to submit review', 'error');
     } finally {
       setIsSubmittingReview(false);
     }
@@ -138,9 +144,10 @@ const ResourceRatingReview = ({ resourceId, isOpen, onClose }) => {
     try {
       await deleteReview(reviewId);
       await loadReviews(0, sortBy);
+      showAlert('Success', 'Review deleted successfully', 'success');
     } catch (error) {
       console.error('Error deleting review:', error);
-      alert(error.response?.data?.message || 'Failed to delete review');
+      showAlert('Error', error.response?.data?.message || 'Failed to delete review', 'error');
     }
   };
 
@@ -163,17 +170,17 @@ const ResourceRatingReview = ({ resourceId, isOpen, onClose }) => {
       );
     } catch (error) {
       console.error('Error marking review helpful:', error);
-      alert(error.response?.data?.message || 'Failed to mark review as helpful');
+      showAlert('Error', error.response?.data?.message || 'Failed to mark review as helpful', 'error');
     }
   };
 
   const handleReportReview = async (reviewId) => {
     try {
       await reportReview(reviewId);
-      alert('Review reported successfully. Our team will review it.');
+      showAlert('Success', 'Review reported successfully. Our team will review it.', 'success');
     } catch (error) {
       console.error('Error reporting review:', error);
-      alert(error.response?.data?.message || 'Failed to report review');
+      showAlert('Error', error.response?.data?.message || 'Failed to report review', 'error');
     }
   };
 
@@ -189,7 +196,17 @@ const ResourceRatingReview = ({ resourceId, isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <>
+      {/* Custom Alert */}
+      <CustomAlert
+        isOpen={alertState.isOpen}
+        type={alertState.type}
+        title={alertState.title}
+        message={alertState.message}
+        onClose={closeAlert}
+      />
+
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-900 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
         {/* Header */}
         <div className="bg-gradient-to-r from-mut-primary to-mut-secondary p-6 flex items-center justify-between">
@@ -344,6 +361,7 @@ const ResourceRatingReview = ({ resourceId, isOpen, onClose }) => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

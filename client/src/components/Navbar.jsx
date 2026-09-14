@@ -3,15 +3,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../utils/authContext';
 import { NotificationBell } from '../context/NotificationContext';
 import DarkModeToggle from './DarkModeToggle';
+import { Menu, Settings, LogOut, User as UserIcon } from 'lucide-react';
 
 const Navbar = () => {
   const { user, isAuthenticated, isClassRep, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
     navigate('/');
+    setProfileDropdownOpen(false);
   };
 
   return (
@@ -55,6 +58,12 @@ const Navbar = () => {
                   History
                 </Link>
                 <Link
+                  to="/summary-history"
+                  className="text-gray-700 dark:text-gray-300 hover:text-mut-primary dark:hover:text-mut-accent px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  AI Summaries
+                </Link>
+                <Link
                   to="/leaderboard"
                   className="text-gray-700 dark:text-gray-300 hover:text-mut-primary dark:hover:text-mut-accent px-3 py-2 rounded-md text-sm font-medium"
                 >
@@ -73,8 +82,10 @@ const Navbar = () => {
                 
                 {/* Notification Bell */}
                 <NotificationBell />
+                
+                {/* Profile Dropdown - Desktop */}
                 <div className="relative group">
-                  <button className="flex items-center space-x-2 text-gray-700 hover:text-mut-primary px-3 py-2 rounded-md text-sm font-medium">
+                  <button className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-mut-primary px-3 py-2 rounded-md text-sm font-medium">
                     {user?.profilePicture ? (
                       <img
                         src={user.profilePicture}
@@ -88,19 +99,28 @@ const Navbar = () => {
                         </span>
                       </div>
                     )}
-                    <span>{user?.firstName} {user?.lastName}</span>
+                    <span className="dark:text-white">{user?.firstName} {user?.lastName}</span>
                   </button>
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block z-50">
+                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 hidden group-hover:block z-50 border border-gray-200 dark:border-gray-700">
                     <Link
                       to="/profile"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                     >
-                      Profile
+                      <UserIcon className="w-4 h-4" />
+                      My Profile
+                    </Link>
+                    <Link
+                      to="/settings"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <Settings className="w-4 h-4" />
+                      Settings
                     </Link>
                     <button
                       onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                     >
+                      <LogOut className="w-4 h-4" />
                       Logout
                     </button>
                   </div>
@@ -150,28 +170,69 @@ const Navbar = () => {
           <div className="md:hidden flex items-center space-x-3">
             {isAuthenticated && (
               <>
+                {/* Hamburger Menu - Left side on mobile */}
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="text-gray-700 dark:text-gray-300 hover:text-mut-primary p-2 order-first -ml-2"
+                  aria-label="Toggle menu"
+                >
+                  <Menu className="h-6 w-6" />
+                </button>
+                
                 {/* Notification Bell - Mobile */}
                 <NotificationBell />
                 
-                {/* Profile Picture - Mobile */}
-                <button
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="flex items-center"
-                >
-                  {user?.profilePicture ? (
-                    <img
-                      src={user.profilePicture}
-                      alt="Profile"
-                      className="w-8 h-8 rounded-full object-cover border-2 border-mut-primary"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 bg-mut-primary rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm font-semibold">
-                        {user?.firstName?.[0]}{user?.lastName?.[0]}
-                      </span>
+                {/* Profile Picture - Mobile with Dropdown */}
+                <div className="relative">
+                  <button
+                    onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                    className="flex items-center"
+                    aria-label="Profile menu"
+                  >
+                    {user?.profilePicture ? (
+                      <img
+                        src={user.profilePicture}
+                        alt="Profile"
+                        className="w-8 h-8 rounded-full object-cover border-2 border-mut-primary"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 bg-mut-primary rounded-full flex items-center justify-center">
+                        <span className="text-white text-sm font-semibold">
+                          {user?.firstName?.[0]}{user?.lastName?.[0]}
+                        </span>
+                      </div>
+                    )}
+                  </button>
+                  
+                  {/* Profile Dropdown - Mobile */}
+                  {profileDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 z-50 border border-gray-200 dark:border-gray-700">
+                      <Link
+                        to="/profile"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        onClick={() => setProfileDropdownOpen(false)}
+                      >
+                        <UserIcon className="w-4 h-4" />
+                        My Profile
+                      </Link>
+                      <Link
+                        to="/settings"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        onClick={() => setProfileDropdownOpen(false)}
+                      >
+                        <Settings className="w-4 h-4" />
+                        Settings
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Logout
+                      </button>
                     </div>
                   )}
-                </button>
+                </div>
               </>
             )}
             {!isAuthenticated && (
@@ -202,80 +263,89 @@ const Navbar = () => {
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white border-t border-gray-200">
+        <div className="md:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
           <div className="px-2 pt-2 pb-3 space-y-1">
             {isAuthenticated ? (
               <>
-                <div className="px-3 py-2 text-sm font-medium text-gray-900">
-                  {user?.firstName} {user?.lastName}
-                </div>
+                <Link
+                  to="/dashboard"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
                 <Link
                   to="/forum"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Forum
                 </Link>
                 <Link
                   to="/my-uploads"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   My Uploads
                 </Link>
+                <Link
+                  to="/study-history"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  History
+                </Link>
+                <Link
+                  to="/summary-history"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  AI Summaries
+                </Link>
+                <Link
+                  to="/leaderboard"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Leaderboard
+                </Link>
                 {isClassRep && (
                   <Link
                     to="/pending-approvals"
-                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Pending Approvals
                   </Link>
                 )}
-                <Link
-                  to="/profile"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Profile
-                </Link>
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100"
-                >
-                  Logout
-                </button>
               </>
             ) : (
               <>
                 <Link
                   to="/programs"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Programs
                 </Link>
                 <Link
                   to="/about"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   About
                 </Link>
                 <Link
                   to="/contact"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Contact
                 </Link>
-                <div className="border-t border-gray-200 mt-2 pt-2">
+                <div className="border-t border-gray-200 dark:border-gray-700 mt-2 pt-2">
                   <Link
                     to="/login"
-                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Login

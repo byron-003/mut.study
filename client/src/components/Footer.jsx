@@ -241,8 +241,8 @@ const Footer = () => {
         </div>
       </div>
 
-      {/* Decorative Elements */}
-      <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-mut-primary via-green-400 to-mut-secondary"></div>
+      {/* Decorative Bottom Border */}
+      <div className="w-full h-1 bg-gradient-to-r from-mut-primary via-green-400 to-mut-secondary"></div>
     </footer>
   );
 };

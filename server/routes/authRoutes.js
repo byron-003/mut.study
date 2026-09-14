@@ -2,7 +2,17 @@ import express from 'express';
 import multer from 'multer';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import cloudinary from '../config/cloudinary.js';
-import { register, login, getProfile, updateProfile, uploadProfilePicture, deleteProfilePicture } from '../controllers/authController.js';
+import { 
+  register, 
+  login, 
+  getProfile, 
+  updateProfile, 
+  uploadProfilePicture, 
+  deleteProfilePicture,
+  changePassword,
+  getSettings,
+  updateSettings
+} from '../controllers/authController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
 import { loginLimiter, registerLimiter } from '../middleware/rateLimiter.js';
 
@@ -45,5 +55,10 @@ router.get('/profile', authenticate, getProfile);
 router.put('/profile', authenticate, updateProfile);
 router.post('/profile/picture', authenticate, upload.single('profilePicture'), uploadProfilePicture);
 router.delete('/profile/picture', authenticate, deleteProfilePicture);
+
+// Password and settings routes
+router.put('/change-password', authenticate, changePassword);
+router.get('/settings', authenticate, getSettings);
+router.put('/settings', authenticate, updateSettings);
 
 export default router;

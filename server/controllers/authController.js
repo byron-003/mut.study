@@ -412,3 +412,125 @@ export const deleteProfilePicture = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * Change password
+ */
+export const changePassword = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { currentPassword, newPassword } = req.body;
+
+    // Validate required fields
+    if (!currentPassword || !newPassword) {
+      throw new AppError('Current password and new password are required', 400);
+    }
+
+    // Validate new password strength
+    if (newPassword.length < 8) {
+      throw new AppError('New password must be at least 8 characters long', 400);
+    }
+
+    // Get current user with password
+    const result = await query(
+      'SELECT id, password_hash FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      throw new AppError('User not found', 404);
+    }
+
+    const user = result.rows[0];
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!isPasswordValid) {
+      throw new AppError('Current password is incorrect', 401);
+    }
+
+    // Check if new password is same as current
+    const isSamePassword = await bcrypt.compare(newPassword, user.password_hash);
+    if (isSamePassword) {
+      throw new AppError('New password must be different from current password', 400);
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    await query(
+      'UPDATE users SET password_hash = $1 WHERE id = $2',
+      [hashedPassword, userId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get user settings
+ */
+export const getSettings = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+    const result = await query(
+      'SELECT advanced_features_enabled FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      throw new AppError('User not found', 404);
+    }
+
+    res.json({
+      success: true,
+      data: {
+        advancedFeaturesEnabled: result.rows[0].advanced_features_enabled || false
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update user settings
+ */
+export const updateSettings = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { advancedFeaturesEnabled } = req.body;
+
+    // Validate input
+    if (typeof advancedFeaturesEnabled !== 'boolean') {
+      throw new AppError('advancedFeaturesEnabled must be a boolean value', 400);
+    }
+
+    // Update settings
+    const result = await query(
+      'UPDATE users SET advanced_features_enabled = $1 WHERE id = $2 RETURNING advanced_features_enabled',
+      [advancedFeaturesEnabled, userId]
+    );
+
+    if (result.rows.length === 0) {
+      throw new AppError('User not found', 404);
+    }
+
+    res.json({
+      success: true,
+      message: 'Settings updated successfully',
+      data: {
+        advancedFeaturesEnabled: result.rows[0].advanced_features_enabled
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};

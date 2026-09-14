@@ -1,7 +1,16 @@
 import React from 'react';
-import { CheckCircle, AlertTriangle, XCircle, Info, X } from 'lucide-react';
+import { CheckCircle, AlertTriangle, XCircle, Info, X, Eye } from 'lucide-react';
 
-const CustomAlert = ({ isOpen, onClose, title, message, type = 'info' }) => {
+const CustomAlert = ({ 
+  isOpen, 
+  onClose, 
+  title, 
+  message, 
+  type = 'info',
+  showViewButton = false,
+  onView = null,
+  viewButtonText = 'View'
+}) => {
   if (!isOpen) return null;
 
   const types = {
@@ -69,7 +78,25 @@ const CustomAlert = ({ isOpen, onClose, title, message, type = 'info' }) => {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-gray-50 flex justify-end">
+        <div className="px-6 py-4 bg-gray-50 flex justify-between items-center">
+          {/* View Button (Left) */}
+          {showViewButton && onView && (
+            <button
+              onClick={() => {
+                onView();
+                onClose();
+              }}
+              className="flex items-center gap-2 px-5 py-2.5 text-purple-600 bg-white border border-purple-300 rounded-lg font-medium hover:bg-purple-50 transition-colors shadow-sm"
+            >
+              <Eye className="w-4 h-4" />
+              {viewButtonText}
+            </button>
+          )}
+          
+          {/* Spacer if no view button */}
+          {!showViewButton && <div></div>}
+          
+          {/* OK Button (Right) */}
           <button
             onClick={onClose}
             className={`${config.buttonColor} text-white px-6 py-2.5 rounded-lg font-medium transition-colors shadow-md`}
