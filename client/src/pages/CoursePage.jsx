@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { schoolsAPI, resourcesAPI, aiAPI, authAPI } from '../services/api';
+import { schoolsAPI, resourcesAPI, authAPI } from '../services/api';
 import { progressAPI } from '../services/progressAPI';
 import { useAuth } from '../utils/authContext';
 import FileViewer from '../components/FileViewer';
@@ -44,36 +44,10 @@ const CoursePage = () => {
   const [sessionStartTime, setSessionStartTime] = useState(null);
   const [showResumePrompt, setShowResumePrompt] = useState(false);
   const [savedProgress, setSavedProgress] = useState(null);
-  
-  // AI Summarization State
-  const [isSummarizing, setIsSummarizing] = useState(false);
-  const [advancedFeaturesEnabled, setAdvancedFeaturesEnabled] = useState(false);
 
   useEffect(() => {
     fetchCourseDetails();
-    fetchAdvancedFeatures();
   }, [id]);
-  
-  // Fetch advanced features status
-  const fetchAdvancedFeatures = async () => {
-    if (!user) return;
-    
-    try {
-      const response = await authAPI.getSettings();
-      const isEnabled = response.data.data.advancedFeaturesEnabled || false;
-      setAdvancedFeaturesEnabled(isEnabled);
-    } catch (error) {
-      console.error('Error fetching advanced features:', error);
-      setAdvancedFeaturesEnabled(false);
-    }
-  };
-
-  // Re-fetch advanced features when opening viewer
-  useEffect(() => {
-    if (showViewer && user) {
-      fetchAdvancedFeatures();
-    }
-  }, [showViewer, user]);
 
   useEffect(() => {
     fetchResources();
@@ -196,57 +170,6 @@ const CoursePage = () => {
     } catch (error) {
       console.error('Error marking as complete:', error);
       showAlert('Error', 'Failed to mark as complete', 'error');
-    }
-  };
-
-  // Handle AI Summarization
-  const handleSummarize = async () => {
-    if (!viewerFile) {
-      console.error('❌ No viewerFile available');
-      return;
-    }
-    
-    console.log('📄 ===== SUMMARIZATION START =====');
-    console.log('📄 viewerFile object:', viewerFile);
-    console.log('📄 File ID:', viewerFile.id);
-    console.log('📄 File title:', viewerFile.title);
-    console.log('📄 File type:', viewerFile.fileType || viewerFile.file_type);
-    console.log('📎 fileUrl:', viewerFile.fileUrl);
-    console.log('📎 file_url:', viewerFile.file_url);
-    console.log('📎 All keys:', Object.keys(viewerFile));
-    console.log('📄 ================================');
-    
-    // Use fileUrl (camelCase) or file_url (snake_case), whichever is available
-    const fileUrl = viewerFile.fileUrl || viewerFile.file_url || viewerFile.file_path || viewerFile.url;
-    
-    if (!fileUrl) {
-      showAlert('Error', 'File URL not found. Cannot generate summary.', 'error');
-      return;
-    }
-    
-    try {
-      setIsSummarizing(true);
-      const response = await aiAPI.summarizeResource(viewerFile.id, fileUrl);
-      
-      if (response.data.success) {
-        const isNew = response.data.data.isNew;
-        showAlert(
-          isNew ? 'Summary Generated!' : 'Existing Summary',
-          `${isNew ? 'AI has generated a summary for this resource.' : 'Using your recent summary.'}\n\nView in AI Summaries page.`,
-          'success'
-        );
-      }
-    } catch (error) {
-      console.error('Error generating summary:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to generate summary';
-      
-      if (errorMessage.includes('not enabled')) {
-        showAlert('Feature Not Enabled', 'Please enable Advanced Features in Settings.', 'warning');
-      } else {
-        showAlert('Error', errorMessage, 'error');
-      }
-    } finally {
-      setIsSummarizing(false);
     }
   };
 
@@ -626,9 +549,6 @@ const CoursePage = () => {
           onClose={closeViewer}
           onDownload={() => handleDownloadFile(viewerFile)}
           onMarkComplete={markAsComplete}
-          onSummarize={handleSummarize}
-          advancedFeaturesEnabled={advancedFeaturesEnabled}
-          isSummarizing={isSummarizing}
           downloadsEnabled={downloadsEnabled}
         />
       )}

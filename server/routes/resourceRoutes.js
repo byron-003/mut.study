@@ -11,15 +11,15 @@ import {
   updateResource
 } from '../controllers/resourceController.js';
 import { authenticate, authorize } from '../middleware/authMiddleware.js';
-import { upload } from '../config/cloudinary.js';
+import { upload, checkFileSize } from '../config/cloudinary.js';
 
 const router = express.Router();
 
 // Protected routes - require authentication (including viewing resources)
 router.get('/course/:courseId', authenticate, getResourcesByCourse);
 
-// Upload routes
-router.post('/upload', authenticate, (req, res, next) => {
+// Upload routes - check file size dynamically before upload
+router.post('/upload', authenticate, checkFileSize, (req, res, next) => {
   upload.single('file')(req, res, (err) => {
     if (err) {
       // Multer or Cloudinary error

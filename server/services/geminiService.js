@@ -753,6 +753,85 @@ export const generateSummaryWithExtraction = async (options) => {
 };
 
 /**
+ * Format and organize user-submitted text content using Gemini AI
+ * Makes raw text look professional and well-structured
+ */
+export const formatTextContent = async (textContent, title, description) => {
+  try {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new AppError('Gemini API key is not configured', 500);
+    }
+
+    console.log(`🤖 Formatting text content for: ${title}`);
+
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+
+    const prompt = `You are an expert academic content editor and formatter. You've been given raw text content submitted by a student that needs to be professionally formatted and organized.
+
+**Original Title:** ${title}
+${description ? `**Description:** ${description}` : ''}
+
+**Raw Content:**
+${textContent}
+
+**YOUR TASK:**
+Transform this raw text into a beautifully formatted, professional study document with the following structure:
+
+1. **Title & Overview** (if not clear in original)
+2. **Main Topics** - Organize content into logical main topics with ## headings
+3. **Subtopics** - Break down main topics into subtopics with ### headings
+4. **Key Points** - Use bullet points (-) for important points
+5. **Definitions** - Highlight key terms with **bold**
+6. **Formulas** - Format any mathematical expressions as LaTeX: $formula$ for inline, $$formula$$ for display
+7. **Examples** - Use > blockquotes for examples
+8. **Summary** - End with a brief summary if the content is substantial
+
+**FORMATTING RULES:**
+- Use Markdown formatting (##, ###, **, -, >, etc.)
+- Organize content logically (introduction → main content → conclusion)
+- Improve grammar and spelling without changing meaning
+- Add structure where there is none
+- Make it look like a professional textbook or study guide
+- Remove any offensive language or inappropriate content
+- Keep the same language as the original (don't translate)
+- If content is too short, just format it well without adding extra topics
+
+**CONTENT SAFETY:**
+- Remove any profanity, hate speech, or offensive language
+- Flag if content violates academic integrity (e.g., just copied answers)
+- Ensure content is appropriate for academic use
+
+**OUTPUT FORMAT:**
+Return ONLY the formatted Markdown content. Do not include explanations or meta-commentary.`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const formattedText = response.text();
+
+    console.log(`✅ Text formatted successfully (${formattedText.length} chars)`);
+
+    return {
+      formattedText,
+      success: true,
+      model: GEMINI_MODEL
+    };
+
+  } catch (error) {
+    console.error('❌ Text formatting error:', error);
+    
+    if (error.message?.includes('API_KEY')) {
+      throw new AppError('Invalid Gemini API key configuration', 500);
+    }
+    
+    if (error.message?.includes('QUOTA')) {
+      throw new AppError('AI service quota exceeded. Please try again later.', 429);
+    }
+
+    throw new AppError(error.message || 'Failed to format text', 500);
+  }
+};
+
+/**
  * Test Gemini API connection
  */
 export const testGeminiConnection = async () => {

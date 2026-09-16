@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAlert, useConfirm } from '../hooks/useAlert';
 import CustomAlert from '../components/CustomAlert';
 import CustomConfirm from '../components/CustomConfirm';
+import TextResourceModal from '../components/TextResourceModal';
 import {
   Search, Filter, CheckCircle, XCircle, Clock, FileText, Trash2,
   ChevronLeft, ChevronRight, Download, Eye, User, Calendar, Book
@@ -197,7 +198,14 @@ const ResourcesPage = () => {
 
   const openDetailsModal = (resource) => {
     setSelectedResource(resource);
-    setShowDetailsModal(true);
+    // Check if it's a text resource
+    if (resource.content_type === 'text' || resource.contentType === 'text') {
+      // Text resources use TextResourceModal
+      setShowDetailsModal(true);
+    } else {
+      // File resources use regular details modal
+      setShowDetailsModal(true);
+    }
   };
 
   const toggleSelectAll = () => {
@@ -423,10 +431,21 @@ const ResourcesPage = () => {
                           <FileText className="w-5 h-5 text-gray-600" />
                         </div>
                         <div className="flex-1">
-                          <p className="font-medium text-gray-900">{resource.title}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-gray-900">{resource.title}</p>
+                            {(resource.content_type === 'text' || resource.contentType === 'text') && (
+                              <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded">
+                                TEXT
+                              </span>
+                            )}
+                          </div>
                           <p className="text-sm text-gray-500 line-clamp-1">{resource.description}</p>
                           <div className="flex items-center gap-3 mt-1">
-                            <span className="text-xs text-gray-400">{formatFileSize(resource.file_size)}</span>
+                            {resource.file_size ? (
+                              <span className="text-xs text-gray-400">{formatFileSize(resource.file_size)}</span>
+                            ) : (
+                              <span className="text-xs text-gray-400">Text Content</span>
+                            )}
                             {resource.academic_year && (
                               <span className="text-xs text-gray-400">{resource.academic_year}</span>
                             )}
@@ -652,10 +671,27 @@ const ResourcesPage = () => {
         </div>
       )}
 
-      {/* Details Modal */}
+      {/* Details Modal - Conditional based on resource type */}
       {showDetailsModal && selectedResource && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+        selectedResource.content_type === 'text' || selectedResource.contentType === 'text' ? (
+          <TextResourceModal
+            resource={selectedResource}
+            onClose={() => {
+              setShowDetailsModal(false);
+              setSelectedResource(null);
+            }}
+            onUpdate={(updatedResource) => {
+              // Update in local state
+              setResources(resources.map(r => 
+                r.id === updatedResource.id ? updatedResource : r
+              ));
+            }}
+            showAlert={showAlert}
+          />
+        ) : (
+          /* Regular File Resource Details Modal */
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-start justify-between mb-6">
               <h3 className="text-xl font-bold text-gray-900">Resource Details</h3>
               <button
@@ -755,6 +791,7 @@ const ResourcesPage = () => {
             </div>
           </div>
         </div>
+        )
       )}
       
       <CustomAlert {...alertState} onClose={closeAlert} />

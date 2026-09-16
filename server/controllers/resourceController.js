@@ -8,12 +8,19 @@ import { emitToCourse, emitToUser, emitToRole } from '../config/socket.js';
  */
 export const uploadResource = async (req, res, next) => {
   try {
-    const { title, description, type, unitCode, unitName, yearOfStudy, semester, academicYear, courseId, category } = req.body;
+    const { title, description, type, unitCode, unitName, yearOfStudy, semester, academicYear, courseId, category, textContent, isTextContent } = req.body;
     const uploaderId = req.user.id;
 
-    // Validate file upload
-    if (!req.file) {
+    // Check if this is text content or file upload
+    const isText = isTextContent === 'true' || isTextContent === true;
+
+    // Validate: either file or text content required
+    if (!isText && !req.file) {
       throw new AppError('No file uploaded', 400);
+    }
+
+    if (isText && (!textContent || !textContent.trim())) {
+      throw new AppError('Text content is required', 400);
     }
 
     // Validate title
@@ -107,20 +114,22 @@ export const uploadResource = async (req, res, next) => {
     // Insert study material
     const result = await query(
       `INSERT INTO study_materials 
-       (course_id, uploader_id, title, description, category, file_url, cloudinary_public_id, file_size, file_type, status) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+       (course_id, uploader_id, title, description, category, file_url, cloudinary_public_id, file_size, file_type, status, content_type, text_content) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
        RETURNING *`,
       [
         finalCourseId,
         uploaderId,
         title,
         description || null,
-        category,
-        req.file.path,
-        req.file.filename,
-        req.file.size,
-        req.file.mimetype.substring(0, 100), // Store full MIME type (max 100 chars)
-        'pending'
+        finalCategory,
+        isText ? null : req.file.path,
+        isText ? `text_${Date.now()}_${Math.random().toString(36).substring(7)}` : req.file.filename,
+        isText ? null : req.file.size,
+        isText ? 'text/html' : req.file.mimetype.substring(0, 100),
+        'pending',
+        isText ? 'text' : 'file',
+        isText ? textContent : null
       ]
     );
 
@@ -514,7 +523,7 @@ export const deleteResource = async (req, res, next) => {
 
     // Get resource details
     const resourceCheck = await query(
-      'SELECT id, uploader_id, cloudinary_public_id FROM study_materials WHERE id = $1',
+      'SELECT id, uploader_id, cloudinary_public_id, content_type FROM study_materials WHERE id = $1',
       [id]
     );
 
@@ -532,12 +541,14 @@ export const deleteResource = async (req, res, next) => {
     // Delete from database
     await query('DELETE FROM study_materials WHERE id = $1', [id]);
 
-    // Delete from Cloudinary
-    try {
-      await deleteFromCloudinary(resource.cloudinary_public_id);
-    } catch (deleteError) {
-      console.error('Error deleting file from Cloudinary:', deleteError);
-      // Continue even if Cloudinary deletion fails
+    // Delete from Cloudinary (only if it's a file, not text content)
+    if (resource.content_type === 'file' && resource.cloudinary_public_id && !resource.cloudinary_public_id.startsWith('text_')) {
+      try {
+        await deleteFromCloudinary(resource.cloudinary_public_id);
+      } catch (deleteError) {
+        console.error('Error deleting file from Cloudinary:', deleteError);
+        // Continue even if Cloudinary deletion fails
+      }
     }
 
     res.json({
@@ -672,7 +683,7 @@ export const updateResource = async (req, res, next) => {
     }
 
     if (type !== undefined) {
-      updates.push(`type = $${paramCount++}`);
+      updates.push(`category = $${paramCount++}`);
       values.push(type);
     }
 

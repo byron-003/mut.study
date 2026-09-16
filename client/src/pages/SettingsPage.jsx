@@ -32,8 +32,6 @@ const SettingsPage = () => {
     minLength: false
   });
 
-  // Advanced Features State
-  const [advancedFeaturesEnabled, setAdvancedFeaturesEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
 
@@ -57,14 +55,7 @@ const SettingsPage = () => {
   }, [passwordData.newPassword]);
 
   const fetchUserSettings = async () => {
-    try {
-      const response = await authAPI.getSettings();
-      setAdvancedFeaturesEnabled(response.data.data.advancedFeaturesEnabled || false);
-    } catch (error) {
-      console.error('Error fetching settings:', error);
-      // If endpoint doesn't exist yet, default to false
-      setAdvancedFeaturesEnabled(false);
-    }
+    // Placeholder for future settings
   };
 
   const handlePasswordChange = async (e) => {
@@ -109,35 +100,6 @@ const SettingsPage = () => {
       showAlert('Error', error.response?.data?.message || 'Failed to change password', 'error');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleToggleAdvancedFeatures = async () => {
-    try {
-      setSavingSettings(true);
-      const newValue = !advancedFeaturesEnabled;
-      
-      await authAPI.updateSettings({
-        advancedFeaturesEnabled: newValue
-      });
-
-      setAdvancedFeaturesEnabled(newValue);
-      
-      // Update user context if needed
-      updateUser({ ...user, advancedFeaturesEnabled: newValue });
-
-      showAlert(
-        'Success', 
-        newValue 
-          ? 'Advanced features enabled! AI Summarization is now available.' 
-          : 'Advanced features disabled.', 
-        'success'
-      );
-    } catch (error) {
-      console.error('Error updating settings:', error);
-      showAlert('Error', 'Failed to update settings', 'error');
-    } finally {
-      setSavingSettings(false);
     }
   };
 
@@ -190,98 +152,6 @@ const SettingsPage = () => {
 
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="space-y-6">
-          {/* Advanced Features Section */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-            <div className="bg-gradient-to-r from-purple-500 to-indigo-600 px-6 py-4">
-              <div className="flex items-center gap-3">
-                <Sparkles className="w-6 h-6 text-white" />
-                <div>
-                  <h2 className="text-xl font-bold text-white">Advanced Features</h2>
-                  <p className="text-purple-100 text-sm">Unlock AI-powered study tools</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Zap className="w-5 h-5 text-yellow-500" />
-                    <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
-                      AI Summarization
-                    </h3>
-                  </div>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">
-                    Enable AI-powered document summarization using Google Gemini. 
-                    Get instant summaries of PDFs, documents, and study materials. 
-                    All summaries are saved in your history for later review.
-                  </p>
-
-                  {advancedFeaturesEnabled && (
-                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                      <div className="flex items-start gap-2">
-                        <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-green-800 dark:text-green-200 font-medium">
-                            Advanced Features Active
-                          </p>
-                          <p className="text-green-700 dark:text-green-300 text-sm mt-1">
-                            Look for the "Summarize" button when viewing resources on your dashboard.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex-shrink-0">
-                  <button
-                    onClick={handleToggleAdvancedFeatures}
-                    disabled={savingSettings}
-                    className={`relative inline-flex h-8 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
-                      advancedFeaturesEnabled
-                        ? 'bg-purple-600'
-                        : 'bg-gray-200 dark:bg-gray-700'
-                    } ${savingSettings ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                        advancedFeaturesEnabled ? 'translate-x-6' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
-                </div>
-              </div>
-
-              {/* Features List */}
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <CheckCircle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${advancedFeaturesEnabled ? 'text-purple-600' : 'text-gray-400'}`} />
-                  <div>
-                    <p className={`font-medium ${advancedFeaturesEnabled ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
-                      Document Summarization
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      AI-powered content extraction
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <CheckCircle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${advancedFeaturesEnabled ? 'text-purple-600' : 'text-gray-400'}`} />
-                  <div>
-                    <p className={`font-medium ${advancedFeaturesEnabled ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
-                      Summary History
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Save and review past summaries
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Password Change Section */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
             <div className="bg-gradient-to-r from-blue-500 to-cyan-600 px-6 py-4">
@@ -466,7 +336,6 @@ const SettingsPage = () => {
                   <li>Use a unique password you don't use on other websites</li>
                   <li>Never share your password with anyone</li>
                   <li>Change your password regularly for better security</li>
-                  <li>Enable advanced features only if you trust the AI service</li>
                 </ul>
               </div>
             </div>

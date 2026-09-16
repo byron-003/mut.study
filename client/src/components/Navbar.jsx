@@ -58,12 +58,6 @@ const Navbar = () => {
                   History
                 </Link>
                 <Link
-                  to="/summary-history"
-                  className="text-gray-700 dark:text-gray-300 hover:text-mut-primary dark:hover:text-mut-accent px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  AI Summaries
-                </Link>
-                <Link
                   to="/leaderboard"
                   className="text-gray-700 dark:text-gray-300 hover:text-mut-primary dark:hover:text-mut-accent px-3 py-2 rounded-md text-sm font-medium"
                 >
@@ -294,13 +288,6 @@ const Navbar = () => {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   History
-                </Link>
-                <Link
-                  to="/summary-history"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  AI Summaries
                 </Link>
                 <Link
                   to="/leaderboard"

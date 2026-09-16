@@ -2,6 +2,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import multer from 'multer';
 import dotenv from 'dotenv';
+import { query } from './database.js';
 
 dotenv.config();
 
@@ -11,6 +12,42 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
+
+// Get max file size from database or environment variable
+const getMaxFileSize = async () => {
+  try {
+    const result = await query(
+      `SELECT setting_value FROM system_settings WHERE setting_key = 'max_file_size'`
+    );
+    
+    if (result.rows.length > 0) {
+      const sizeFromDb = parseInt(result.rows[0].setting_value);
+      console.log(`📏 Max file size from database: ${(sizeFromDb / 1024 / 1024).toFixed(2)}MB`);
+      return sizeFromDb;
+    }
+  } catch (error) {
+    console.warn('Could not fetch max_file_size from database, using environment variable');
+  }
+  
+  // Fallback to environment variable
+  const sizeFromEnv = parseInt(process.env.MAX_FILE_SIZE) || 52428800; // 50MB default
+  console.log(`📏 Max file size from .env: ${(sizeFromEnv / 1024 / 1024).toFixed(2)}MB`);
+  return sizeFromEnv;
+};
+
+// Cache the max file size (updated every 5 minutes)
+let cachedMaxFileSize = parseInt(process.env.MAX_FILE_SIZE) || 52428800;
+let lastFetchTime = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+const getCachedMaxFileSize = async () => {
+  const now = Date.now();
+  if (now - lastFetchTime > CACHE_DURATION) {
+    cachedMaxFileSize = await getMaxFileSize();
+    lastFetchTime = now;
+  }
+  return cachedMaxFileSize;
+};
 
 // Configure Cloudinary storage for Multer
 const storage = new CloudinaryStorage({
@@ -43,11 +80,11 @@ const storage = new CloudinaryStorage({
   }
 });
 
-// Configure Multer middleware
+// Configure Multer middleware with dynamic file size checking
 export const upload = multer({
   storage: storage,
   limits: {
-    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 10485760 // 10MB default
+    fileSize: cachedMaxFileSize // Initial value from cache
   },
   fileFilter: (req, file, cb) => {
     // Comprehensive list of allowed MIME types for study materials
@@ -57,6 +94,7 @@ export const upload = multer({
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'text/plain',
+      'text/html', // For user-created text content
       'application/rtf',
       'application/vnd.oasis.opendocument.text',
       // Presentations
@@ -105,6 +143,22 @@ export const upload = multer({
     }
   }
 });
+
+// Middleware to dynamically check file size before upload
+export const checkFileSize = async (req, res, next) => {
+  try {
+    // Update cached max file size
+    const maxFileSize = await getCachedMaxFileSize();
+    
+    // Update multer's limits
+    upload.limits.fileSize = maxFileSize;
+    
+    next();
+  } catch (error) {
+    console.error('Error checking file size limit:', error);
+    next(); // Continue with cached value
+  }
+};
 
 /**
  * Delete file from Cloudinary

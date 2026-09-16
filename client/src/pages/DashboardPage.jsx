@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { schoolsAPI, searchAPI, resourceAPI, aiAPI, authAPI } from '../services/api';
+import { schoolsAPI, searchAPI, resourceAPI, authAPI } from '../services/api';
 import { progressAPI } from '../services/progressAPI';
 import { useAuth } from '../utils/authContext';
 import { useSocket, useSocketEvent } from '../context/SocketContext';
 import FileViewer from '../components/FileViewer';
+import TextViewer from '../components/TextViewer';
 import AddCourseModal from '../components/AddCourseModal';
 import { useAlert } from '../hooks/useAlert';
 import { useConfirm } from '../hooks/useConfirm.jsx';
@@ -82,10 +83,6 @@ const DashboardPage = () => {
   const [scrollPosition, setScrollPosition] = useState(0);
   const [showResumePrompt, setShowResumePrompt] = useState(false);
   const [savedProgress, setSavedProgress] = useState(null);
-  
-  // AI Summarization State
-  const [isSummarizing, setIsSummarizing] = useState(false);
-  const [advancedFeaturesEnabled, setAdvancedFeaturesEnabled] = useState(false);
 
   useEffect(() => {
     if (user && user.programId) {
@@ -505,101 +502,6 @@ const DashboardPage = () => {
     }
   };
 
-  // Handle AI Summarization
-  const handleSummarize = async () => {
-    if (!viewerFile) return;
-    
-    try {
-      setIsSummarizing(true);
-      console.log('📄 ===== SUMMARIZATION START =====');
-      console.log('📄 viewerFile object:', viewerFile);
-      console.log('📄 File ID:', viewerFile.id);
-      console.log('📄 File title:', viewerFile.title);
-      console.log('📄 File type:', viewerFile.fileType || viewerFile.file_type);
-      console.log('📎 fileUrl:', viewerFile.fileUrl);
-      console.log('📎 file_url:', viewerFile.file_url);
-      console.log('📎 All keys:', Object.keys(viewerFile));
-      console.log('📄 ================================');
-      
-      // Use fileUrl (camelCase) or file_url (snake_case), whichever is available
-      const fileUrl = viewerFile.fileUrl || viewerFile.file_url || viewerFile.file_path || viewerFile.url;
-      
-      if (!fileUrl) {
-        showAlert('Error', 'File URL not found. Cannot generate summary.', 'error');
-        return;
-      }
-      
-      const response = await aiAPI.summarizeResource(viewerFile.id, fileUrl);
-      
-      if (response.data.success) {
-        const summary = response.data.data.summary;
-        const isNew = response.data.data.isNew;
-        
-        // Show summary in alert with View button
-        showAlert(
-          isNew ? 'Summary Generated!' : 'Existing Summary',
-          `${isNew ? 'AI has generated a summary for this resource.' : 'Using your recent summary from the last 24 hours.'}`,
-          'success',
-          {
-            showViewButton: true,
-            viewButtonText: 'View Summaries',
-            onView: () => {
-              navigate('/summary-history');
-            }
-          }
-        );
-      }
-    } catch (error) {
-      console.error('Error generating summary:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to generate summary';
-      
-      if (errorMessage.includes('not enabled')) {
-        showAlert('Feature Not Enabled', 'Please enable Advanced Features in Settings to use AI Summarization.', 'warning');
-      } else {
-        showAlert('Error', errorMessage, 'error');
-      }
-    } finally {
-      setIsSummarizing(false);
-    }
-  };
-
-  // Fetch advanced features status
-  useEffect(() => {
-    const fetchAdvancedFeatures = async () => {
-      try {
-        const response = await authAPI.getSettings();
-        const isEnabled = response.data.data.advancedFeaturesEnabled || false;
-        setAdvancedFeaturesEnabled(isEnabled);
-        console.log('✨ Advanced features status:', isEnabled);
-      } catch (error) {
-        console.error('Error fetching advanced features status:', error);
-        setAdvancedFeaturesEnabled(false);
-      }
-    };
-    
-    if (user) {
-      fetchAdvancedFeatures();
-    }
-  }, [user]);
-
-  // Re-fetch advanced features when opening viewer (to catch any changes)
-  useEffect(() => {
-    const refetchAdvancedFeatures = async () => {
-      if (!showViewer || !user) return;
-      
-      try {
-        const response = await authAPI.getSettings();
-        const isEnabled = response.data.data.advancedFeaturesEnabled || false;
-        setAdvancedFeaturesEnabled(isEnabled);
-        console.log('🔄 Refreshed advanced features status:', isEnabled);
-      } catch (error) {
-        console.error('Error refreshing advanced features:', error);
-      }
-    };
-    
-    refetchAdvancedFeatures();
-  }, [showViewer, user]);
-
   // Auto-save progress every 30 seconds
   useEffect(() => {
     if (!showViewer || !viewerFile || !sessionStartTime) return;
@@ -980,18 +882,23 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* File Viewer Modal */}
+      {/* File/Text Viewer Modal - Conditional based on content type */}
       {showViewer && viewerFile && (
-        <FileViewer
-          file={viewerFile}
-          onClose={closeViewer}
-          onDownload={() => handleDownloadFile(viewerFile)}
-          onMarkComplete={markAsComplete}
-          onSummarize={handleSummarize}
-          advancedFeaturesEnabled={advancedFeaturesEnabled}
-          isSummarizing={isSummarizing}
-          downloadsEnabled={downloadsEnabled}
-        />
+        viewerFile.content_type === 'text' || viewerFile.contentType === 'text' ? (
+          <TextViewer
+            resource={viewerFile}
+            onClose={closeViewer}
+            onMarkComplete={markAsComplete}
+          />
+        ) : (
+          <FileViewer
+            file={viewerFile}
+            onClose={closeViewer}
+            onDownload={() => handleDownloadFile(viewerFile)}
+            onMarkComplete={markAsComplete}
+            downloadsEnabled={downloadsEnabled}
+          />
+        )
       )}
 
       {/* Resume Prompt Modal */}

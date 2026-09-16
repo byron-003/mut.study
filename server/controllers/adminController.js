@@ -1182,6 +1182,32 @@ export const getDownloadsEnabled = async (req, res, next) => {
 };
 
 /**
+ * Get max file size setting (public endpoint)
+ */
+export const getMaxFileSize = async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT setting_value FROM system_settings WHERE setting_key = 'max_file_size'`
+    );
+
+    // Default to 10MB if not set
+    const maxFileSize = result.rows.length > 0 
+      ? parseInt(result.rows[0].setting_value) 
+      : parseInt(process.env.MAX_FILE_SIZE) || 10485760;
+
+    res.json({
+      success: true,
+      data: {
+        max_file_size: maxFileSize,
+        max_file_size_mb: (maxFileSize / 1024 / 1024).toFixed(2)
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Upload file (for notifications, etc.)
  */
 export const uploadFile = async (req, res, next) => {
@@ -1202,6 +1228,120 @@ export const uploadFile = async (req, res, next) => {
         size: req.file.bytes
       }
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Format text content using AI (for text-based resources)
+ */
+export const formatTextContent = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { formatTextContent: formatTextFunc } = await import('../services/geminiService.js');
+
+    // Get the resource
+    const resourceResult = await query(
+      `SELECT id, title, description, text_content, content_type 
+       FROM study_materials 
+       WHERE id = $1`,
+      [id]
+    );
+
+    if (resourceResult.rows.length === 0) {
+      throw new AppError('Resource not found', 404);
+    }
+
+    const resource = resourceResult.rows[0];
+
+    // Validate it's a text resource
+    if (resource.content_type !== 'text') {
+      throw new AppError('This resource is not a text resource', 400);
+    }
+
+    if (!resource.text_content || resource.text_content.trim().length === 0) {
+      throw new AppError('No text content to format', 400);
+    }
+
+    // Format using AI
+    const result = await formatTextFunc(
+      resource.text_content,
+      resource.title,
+      resource.description
+    );
+
+    // Update the resource with formatted content (don't auto-approve)
+    await query(
+      `UPDATE study_materials 
+       SET text_content = $1,
+           updated_at = NOW()
+       WHERE id = $2`,
+      [result.formattedText, id]
+    );
+
+    res.json({
+      success: true,
+      message: 'Text content formatted successfully',
+      data: {
+        id,
+        formattedText: result.formattedText,
+        model: result.model
+      }
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update text content (for manual editing by admin)
+ */
+export const updateTextContent = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { textContent } = req.body;
+
+    if (!textContent || textContent.trim().length === 0) {
+      throw new AppError('Text content is required', 400);
+    }
+
+    // Get the resource
+    const resourceResult = await query(
+      `SELECT id, content_type 
+       FROM study_materials 
+       WHERE id = $1`,
+      [id]
+    );
+
+    if (resourceResult.rows.length === 0) {
+      throw new AppError('Resource not found', 404);
+    }
+
+    const resource = resourceResult.rows[0];
+
+    // Validate it's a text resource
+    if (resource.content_type !== 'text') {
+      throw new AppError('This resource is not a text resource', 400);
+    }
+
+    // Update the text content
+    const result = await query(
+      `UPDATE study_materials 
+       SET text_content = $1,
+           updated_at = NOW()
+       WHERE id = $2
+       RETURNING id, title, text_content`,
+      [textContent, id]
+    );
+
+    res.json({
+      success: true,
+      message: 'Text content updated successfully',
+      data: result.rows[0]
+    });
+
   } catch (error) {
     next(error);
   }

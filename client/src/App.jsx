@@ -24,7 +24,6 @@ import ContactPage from './pages/ContactPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 import StudyHistoryPage from './pages/StudyHistoryPage';
-import SummaryHistoryPage from './pages/SummaryHistoryPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 
 // Protected route wrapper
@@ -136,11 +135,6 @@ function AppRoutes() {
         <Route path="/study-history" element={
           <ProtectedRoute>
             <StudyHistoryPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/summary-history" element={
-          <ProtectedRoute>
-            <SummaryHistoryPage />
           </ProtectedRoute>
         } />
       </Routes>

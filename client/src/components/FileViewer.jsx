@@ -1,27 +1,19 @@
 import React, { useState } from 'react';
-import { File, Download, X, AlertCircle, CheckCircle, Sparkles } from 'lucide-react';
+import { Download, X, AlertCircle, CheckCircle, Search, Star, ZoomIn, ZoomOut, ChevronUp, ChevronDown } from 'lucide-react';
 
 /**
- * Universal File Viewer Component
- * Handles PDF, images, videos, and other document types
- * Uses file MIME type instead of URL extension
+ * WhatsApp-style File Viewer Component
+ * Clean, modern UI with action buttons and controls
  */
-const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMarkComplete, onSummarize, advancedFeaturesEnabled = false, isSummarizing = false }) => {
+const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMarkComplete }) => {
   const [loadError, setLoadError] = useState(false);
   const [viewDuration, setViewDuration] = useState(0);
+  const [zoom, setZoom] = useState(100);
+  const [currentPage, setCurrentPage] = useState(1);
 
   if (!file) return null;
 
-  // Debug logging
-  console.log('🎬 FileViewer Props:', {
-    hasFile: !!file,
-    advancedFeaturesEnabled,
-    isSummarizing,
-    hasOnSummarize: !!onSummarize,
-    hasOnMarkComplete: !!onMarkComplete
-  });
-
-  const { fileUrl, fileType, title } = file;
+  const { fileUrl, fileType, title, createdAt } = file;
 
   // Track viewing time
   React.useEffect(() => {
@@ -32,20 +24,19 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
     return () => clearInterval(interval);
   }, []);
 
-  // Debug logging
-  console.log('FileViewer - File info:', {
-    title,
-    fileUrl,
-    fileType,
-    hasFileType: !!fileType,
-    viewDuration
-  });
-
-  // Format viewing time
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  // Format date like WhatsApp (e.g., "13/09/2026 at 8:06 pm")
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'pm' : 'am';
+    const hour12 = hours % 12 || 12;
+    
+    return `${day}/${month}/${year} at ${hour12}:${minutes} ${ampm}`;
   };
 
   // Helper to determine if file can be previewed
@@ -75,12 +66,10 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
 
     // PDF files
     if (mimeType === 'application/pdf') {
-      // Use Google Docs Viewer for better compatibility with Cloudinary raw resources
-      // Google Docs Viewer can handle download URLs and display them inline
       const googleDocsUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`;
       
       return (
-        <div className="w-full h-full">
+        <div className="w-full h-full bg-white">
           <iframe
             src={googleDocsUrl}
             className="w-full h-full border-0"
@@ -94,11 +83,12 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
     // Image files
     if (mimeType.startsWith('image/')) {
       return (
-        <div className="flex items-center justify-center h-full p-4">
+        <div className="flex items-center justify-center h-full p-8 bg-white">
           <img
             src={fileUrl}
             alt={title}
-            className="max-w-full max-h-full object-contain"
+            className="max-w-full max-h-full object-contain shadow-lg"
+            style={{ transform: `scale(${zoom / 100})` }}
             onError={() => setLoadError(true)}
           />
         </div>
@@ -108,11 +98,11 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
     // Video files
     if (mimeType.startsWith('video/')) {
       return (
-        <div className="flex items-center justify-center h-full p-4">
+        <div className="flex items-center justify-center h-full p-8 bg-white">
           <video
             src={fileUrl}
             controls
-            className="max-w-full max-h-full"
+            className="max-w-full max-h-full shadow-lg"
             onError={() => setLoadError(true)}
           >
             Your browser does not support the video tag.
@@ -124,7 +114,7 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
     // Text files
     if (mimeType === 'text/plain') {
       return (
-        <div className="h-full p-4 overflow-auto">
+        <div className="h-full p-8 overflow-auto bg-white">
           <iframe
             src={fileUrl}
             className="w-full h-full border-0 bg-white"
@@ -144,20 +134,18 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
       mimeType === 'application/vnd.ms-excel' ||
       mimeType === 'application/vnd.ms-powerpoint'
     ) {
-      // Use Microsoft Office Online Viewer
       const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}`;
       
       return (
         <iframe
           src={officeViewerUrl}
-          className="w-full h-full border-0"
+          className="w-full h-full border-0 bg-white"
           title={title}
           onError={() => setLoadError(true)}
         />
       );
     }
 
-    // Unsupported file types
     return null;
   };
 
@@ -165,128 +153,176 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
   const getFileTypeName = () => {
     const mimeType = fileType?.toLowerCase() || '';
     
-    if (mimeType === 'application/pdf') return 'PDF Document';
+    if (mimeType === 'application/pdf') return 'PDF';
     if (mimeType.startsWith('image/')) return 'Image';
     if (mimeType.startsWith('video/')) return 'Video';
-    if (mimeType.includes('wordprocessing')) return 'Word Document';
-    if (mimeType.includes('spreadsheet')) return 'Excel Spreadsheet';
-    if (mimeType.includes('presentation')) return 'PowerPoint Presentation';
-    if (mimeType === 'application/zip') return 'ZIP Archive';
-    if (mimeType.startsWith('text/')) return 'Text File';
+    if (mimeType.includes('wordprocessing')) return 'Word';
+    if (mimeType.includes('spreadsheet')) return 'Excel';
+    if (mimeType.includes('presentation')) return 'PowerPoint';
     
     return 'Document';
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-90">
+    <div className="fixed inset-0 z-50 bg-gray-200">
       <div className="h-full flex flex-col">
-        {/* Header */}
-        <div className="bg-gray-900 text-white p-4 flex items-center justify-between">
-          <div className="flex-1 min-w-0 mr-4">
-            <h3 className="text-lg font-semibold truncate">{title}</h3>
-            <div className="flex items-center gap-3 text-sm text-gray-400">
-              <span>{getFileTypeName()}</span>
-              <span>•</span>
-              <span>Viewing: {formatTime(viewDuration)}</span>
+        {/* Header - WhatsApp Style */}
+        <div className="bg-white shadow-sm border-b border-gray-200">
+          <div className="px-4 py-3 flex items-center justify-between">
+            {/* Left: File Info */}
+            <div className="flex-1 min-w-0 mr-4">
+              <h3 className="text-base font-medium text-gray-900 truncate">
+                {title}
+              </h3>
+              <p className="text-xs text-gray-500">
+                {formatDate(createdAt)}
+              </p>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {onMarkComplete && (
+
+            {/* Right: Action Buttons */}
+            <div className="flex items-center gap-1">
+              {/* Mark Complete Button */}
+              {onMarkComplete && (
+                <button
+                  onClick={onMarkComplete}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  title="Mark as complete"
+                >
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                </button>
+              )}
+
+              {/* Search Button */}
               <button
-                onClick={onMarkComplete}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                title="Mark as complete"
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                title="Search in document"
               >
-                <CheckCircle className="w-5 h-5" />
-                <span className="hidden sm:inline">Mark Complete</span>
+                <Search className="w-5 h-5 text-gray-700" />
               </button>
-            )}
-            {advancedFeaturesEnabled && onSummarize && (
+
+              {/* Star Button */}
               <button
-                onClick={onSummarize}
-                disabled={isSummarizing}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-                title={isSummarizing ? "Generating summary..." : "Generate AI summary"}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                title="Add to favorites"
               >
-                {isSummarizing ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
-                    <span className="hidden sm:inline">Summarizing...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-5 h-5" />
-                    <span className="hidden sm:inline">Summarize</span>
-                  </>
-                )}
+                <Star className="w-5 h-5 text-gray-700" />
               </button>
-            )}
-            {downloadsEnabled && onDownload && (
+
+              {/* Download Button - Only visible if admin enables downloads */}
+              {downloadsEnabled && onDownload && (
+                <button
+                  onClick={onDownload}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  title="Download"
+                >
+                  <Download className="w-5 h-5 text-gray-700" />
+                </button>
+              )}
+
+              {/* Close Button */}
               <button
-                onClick={onDownload}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
-                title="Download file"
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors ml-2"
+                title="Close"
               >
-                <Download className="w-5 h-5" />
-                <span className="hidden sm:inline">Download</span>
+                <X className="w-5 h-5 text-gray-700" />
               </button>
-            )}
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-              title="Close viewer"
-            >
-              <X className="w-6 h-6" />
-            </button>
+            </div>
           </div>
         </div>
 
-        {/* Viewer Content */}
-        <div className="flex-1 overflow-hidden bg-gray-100">
-          {loadError ? (
-            <div className="flex flex-col items-center justify-center h-full text-center p-8">
-              <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
-              <p className="text-gray-700 text-lg font-semibold mb-2">
-                Unable to load file preview
-              </p>
-              <p className="text-gray-600 mb-6">
-                There was an error loading the preview. Please download the file to view it.
-              </p>
-              {downloadsEnabled && onDownload && (
-                <button
-                  onClick={onDownload}
-                  className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-                >
-                  <Download className="w-5 h-5" />
-                  Download File
-                </button>
-              )}
-            </div>
-          ) : canPreview() ? (
-            renderViewer()
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full text-center p-8">
-              <File className="w-16 h-16 text-gray-400 mb-4" />
-              <p className="text-gray-700 text-lg font-semibold mb-2">
-                Preview not available
-              </p>
-              <p className="text-gray-600 mb-2">
-                This file type ({getFileTypeName()}) cannot be previewed in the browser.
-              </p>
-              {!downloadsEnabled && (
-                <p className="text-sm text-gray-500 mb-6">
-                  Downloads are currently disabled by the administrator.
+        {/* Main Content Area */}
+        <div className="flex-1 relative overflow-hidden">
+          {/* Document Viewer */}
+          <div className="absolute inset-0">
+            {loadError ? (
+              <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-white">
+                <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
+                <p className="text-gray-900 text-lg font-semibold mb-2">
+                  Unable to load file preview
                 </p>
-              )}
-              {downloadsEnabled && onDownload && (
-                <button
-                  onClick={onDownload}
-                  className="mt-4 flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-                >
-                  <Download className="w-5 h-5" />
-                  Download to View
-                </button>
-              )}
+                <p className="text-gray-600 mb-6">
+                  There was an error loading the preview. Please download the file to view it.
+                </p>
+                {downloadsEnabled && onDownload && (
+                  <button
+                    onClick={onDownload}
+                    className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                  >
+                    <Download className="w-5 h-5" />
+                    Download File
+                  </button>
+                )}
+              </div>
+            ) : canPreview() ? (
+              renderViewer()
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-white">
+                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                  <span className="text-3xl font-bold text-gray-400">{getFileTypeName()}</span>
+                </div>
+                <p className="text-gray-900 text-lg font-semibold mb-2">
+                  Preview not available
+                </p>
+                <p className="text-gray-600 mb-6">
+                  This file type cannot be previewed in the browser.
+                </p>
+                {downloadsEnabled && onDownload && (
+                  <button
+                    onClick={onDownload}
+                    className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                  >
+                    <Download className="w-5 h-5" />
+                    Download to View
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Page Navigation (Right Side) - Only for PDFs */}
+          {fileType?.toLowerCase() === 'application/pdf' && !loadError && (
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 bg-white shadow-lg rounded-lg p-2">
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                className="p-2 hover:bg-gray-100 rounded transition-colors"
+                title="Previous page"
+              >
+                <ChevronUp className="w-4 h-4 text-gray-700" />
+              </button>
+              <div className="text-xs text-center text-gray-600 py-2">
+                {currentPage}
+              </div>
+              <button
+                onClick={() => setCurrentPage(currentPage + 1)}
+                className="p-2 hover:bg-gray-100 rounded transition-colors"
+                title="Next page"
+              >
+                <ChevronDown className="w-4 h-4 text-gray-700" />
+              </button>
+            </div>
+          )}
+
+          {/* Zoom Controls (Bottom Center) */}
+          {canPreview() && !loadError && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white shadow-lg rounded-lg px-3 py-2">
+              <button
+                onClick={() => setZoom(Math.max(25, zoom - 25))}
+                className="p-1 hover:bg-gray-100 rounded transition-colors"
+                title="Zoom out"
+              >
+                <ZoomOut className="w-4 h-4 text-gray-700" />
+              </button>
+              <span className="text-sm text-gray-700 font-medium min-w-[3rem] text-center">
+                {zoom}%
+              </span>
+              <button
+                onClick={() => setZoom(Math.min(200, zoom + 25))}
+                className="p-1 hover:bg-gray-100 rounded transition-colors"
+                title="Zoom in"
+              >
+                <ZoomIn className="w-4 h-4 text-gray-700" />
+              </button>
             </div>
           )}
         </div>

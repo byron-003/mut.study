@@ -61,6 +61,10 @@ export const adminAPI = {
   bulkApproveResources: (ids) => api.post('/admin/resources/bulk-approve', { ids }),
   bulkRejectResources: (ids, reason) => api.post('/admin/resources/bulk-reject', { ids, reason }),
   
+  // Text content management
+  formatTextContent: (id) => api.post(`/admin/resources/${id}/format-text`),
+  updateTextContent: (id, textContent) => api.put(`/admin/resources/${id}/text-content`, { textContent }),
+  
   getPrograms: (params) => api.get('/admin/programs', { params }),
   createProgram: (data) => api.post('/admin/programs', data),
   updateProgram: (id, data) => api.put(`/admin/programs/${id}`, data),
