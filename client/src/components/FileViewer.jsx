@@ -1,25 +1,124 @@
-import React, { useState } from 'react';
-import { Download, X, AlertCircle, CheckCircle, Search, Star } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Download, X, AlertCircle, CheckCircle, Search, Star, BookOpen } from 'lucide-react';
+import { progressAPI } from '../services/api';
 
 /**
- * WhatsApp-style File Viewer Component
- * Clean, modern UI with action buttons and controls
+ * WhatsApp-style File Viewer Component with Page Tracking
+ * Clean, modern UI with action buttons and progress tracking
  */
-const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMarkComplete }) => {
+const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMarkComplete, savedProgress }) => {
   const [loadError, setLoadError] = useState(false);
   const [viewDuration, setViewDuration] = useState(0);
+  const [currentPage, setCurrentPage] = useState(savedProgress?.currentPage || 1);
+  const [totalPages, setTotalPages] = useState(savedProgress?.totalPages || null);
+  const [isTracking, setIsTracking] = useState(false);
+  const iframeRef = useRef(null);
+  const progressTimerRef = useRef(null);
 
   if (!file) return null;
 
-  const { fileUrl, fileType, title, createdAt } = file;
+  const { fileUrl, fileType, title, createdAt, id: resourceId } = file;
 
   // Track viewing time
-  React.useEffect(() => {
+  useEffect(() => {
     const interval = setInterval(() => {
       setViewDuration(prev => prev + 1);
     }, 1000);
 
     return () => clearInterval(interval);
+  }, []);
+
+  // Auto-save progress every 10 seconds
+  useEffect(() => {
+    if (!resourceId || !isTracking) return;
+
+    progressTimerRef.current = setInterval(() => {
+      saveProgress();
+    }, 10000); // Save every 10 seconds
+
+    return () => {
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+        saveProgress(); // Save on unmount
+      }
+    };
+  }, [resourceId, currentPage, totalPages, viewDuration, isTracking]);
+
+  // Save progress to backend
+  const saveProgress = async () => {
+    if (!resourceId) return;
+
+    try {
+      if (totalPages) {
+        // Page-based tracking for documents
+        await progressAPI.updateProgress(resourceId, {
+          currentPage,
+          totalPages,
+          timeSpent: 10, // Increment by 10 seconds
+          lastPosition: `page_${currentPage}`
+        });
+      } else {
+        // Percentage-based tracking for other files
+        await progressAPI.updateProgress(resourceId, {
+          progressPercentage: Math.min(100, Math.floor((viewDuration / 300) * 100)), // 5 mins = 100%
+          timeSpent: 10,
+          lastPosition: `time_${viewDuration}`
+        });
+      }
+    } catch (error) {
+      console.error('Error saving progress:', error);
+    }
+  };
+
+  // Detect PDF pages using PDF.js
+  useEffect(() => {
+    const loadPdfJs = async () => {
+      const mimeType = fileType?.toLowerCase() || '';
+      
+      if (mimeType !== 'application/pdf' || !resourceId) return;
+
+      try {
+        // Build proxy URL for PDF loading
+        const proxyUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/files/view/${resourceId}`;
+        
+        // Dynamically import PDF.js
+        const pdfjsLib = await import('pdfjs-dist');
+        
+        // Use local worker file (copied to public directory)
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+
+        // Load the PDF from our proxy
+        const loadingTask = pdfjsLib.getDocument({
+          url: proxyUrl,
+          isEvalSupported: false
+        });
+        const pdf = await loadingTask.promise;
+        
+        setTotalPages(pdf.numPages);
+        setIsTracking(true);
+        
+        console.log(`PDF loaded: ${pdf.numPages} pages`);
+      } catch (error) {
+        console.error('Error loading PDF:', error);
+        // Fall back to iframe tracking
+        setIsTracking(true);
+      }
+    };
+
+    loadPdfJs();
+  }, [fileUrl, fileType, resourceId]);
+
+  // Listen for page changes in Google Docs Viewer (if possible via URL hash)
+  useEffect(() => {
+    const handleMessage = (event) => {
+      // Try to capture page changes from iframe
+      if (event.data && event.data.page) {
+        setCurrentPage(event.data.page);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
   }, []);
 
   // Format date like WhatsApp (e.g., "13/09/2026 at 8:06 pm")
@@ -58,18 +157,42 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
     return previewableTypes.includes(fileType.toLowerCase());
   };
 
+  // Build Google Docs Viewer URL with page parameter
+  const buildViewerUrl = () => {
+    const mimeType = fileType?.toLowerCase() || '';
+    
+    if (mimeType === 'application/pdf') {
+      // Use our proxy endpoint that serves files inline
+      const proxyUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/files/view/${resourceId}`;
+      
+      // Use Google Docs Viewer with our proxy URL
+      let url = `https://docs.google.com/viewer?url=${encodeURIComponent(proxyUrl)}&embedded=true`;
+      
+      // Try to add page number (not all viewers support this)
+      if (savedProgress?.currentPage && savedProgress.currentPage > 1) {
+        url += `#page=${savedProgress.currentPage}`;
+      }
+      
+      return url;
+    }
+    
+    return null;
+  };
+
   // Render appropriate viewer based on file type
   const renderViewer = () => {
     const mimeType = fileType?.toLowerCase() || '';
+    const proxyUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/files/view/${resourceId}`;
 
     // PDF files
     if (mimeType === 'application/pdf') {
-      const googleDocsUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`;
+      const viewerUrl = buildViewerUrl();
       
       return (
         <div className="w-full h-full bg-white">
           <iframe
-            src={googleDocsUrl}
+            ref={iframeRef}
+            src={viewerUrl}
             className="w-full h-full border-0"
             title={title}
             onError={() => setLoadError(true)}
@@ -83,7 +206,7 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
       return (
         <div className="flex items-center justify-center h-full p-8 bg-white">
           <img
-            src={fileUrl}
+            src={proxyUrl}
             alt={title}
             className="max-w-full max-h-full object-contain shadow-lg"
             onError={() => setLoadError(true)}
@@ -97,7 +220,7 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
       return (
         <div className="flex items-center justify-center h-full p-8 bg-white">
           <video
-            src={fileUrl}
+            src={proxyUrl}
             controls
             className="max-w-full max-h-full shadow-lg"
             onError={() => setLoadError(true)}
@@ -113,7 +236,7 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
       return (
         <div className="h-full p-8 overflow-auto bg-white">
           <iframe
-            src={fileUrl}
+            src={proxyUrl}
             className="w-full h-full border-0 bg-white"
             title={title}
             onError={() => setLoadError(true)}
@@ -131,7 +254,7 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
       mimeType === 'application/vnd.ms-excel' ||
       mimeType === 'application/vnd.ms-powerpoint'
     ) {
-      const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}`;
+      const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(proxyUrl)}`;
       
       return (
         <iframe
@@ -160,6 +283,11 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
     return 'Document';
   };
 
+  // Calculate progress percentage
+  const progressPercentage = totalPages 
+    ? Math.min(100, Math.round((currentPage / totalPages) * 100))
+    : savedProgress?.progress || 0;
+
   return (
     <div className="fixed inset-0 z-50 bg-gray-200">
       <div className="h-full flex flex-col">
@@ -171,9 +299,15 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
               <h3 className="text-base font-medium text-gray-900 truncate">
                 {title}
               </h3>
-              <p className="text-xs text-gray-500">
-                {formatDate(createdAt)}
-              </p>
+              <div className="flex items-center gap-3 text-xs text-gray-500">
+                <span>{formatDate(createdAt)}</span>
+                {totalPages && (
+                  <span className="flex items-center gap-1">
+                    <BookOpen className="w-3 h-3" />
+                    Page {currentPage} of {totalPages} ({progressPercentage}%)
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Right: Action Buttons */}
@@ -226,6 +360,18 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
               </button>
             </div>
           </div>
+
+          {/* Progress Bar */}
+          {isTracking && totalPages && (
+            <div className="px-4 pb-2">
+              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                <div
+                  className="bg-purple-600 h-1.5 rounded-full transition-all duration-300"
+                  style={{ width: `${progressPercentage}%` }}
+                ></div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Main Content Area */}

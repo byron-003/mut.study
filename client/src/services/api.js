@@ -105,4 +105,15 @@ export const notificationsAPI = {
   markAllAsRead: () => api.put('/notifications/read-all'),
 };
 
+// Progress Tracking API
+export const progressAPI = {
+  updateProgress: (resourceId, data) => api.post(`/progress/${resourceId}/update`, data),
+  getProgress: (resourceId) => api.get(`/progress/${resourceId}`),
+  getStudyHistory: (params) => api.get('/progress/history', { params }),
+  getStudyStats: () => api.get('/progress/stats'),
+  markAsCompleted: (resourceId) => api.post(`/progress/${resourceId}/complete`),
+  startSession: (resourceId) => api.post(`/progress/${resourceId}/session/start`),
+  endSession: (sessionId, data) => api.put(`/progress/session/${sessionId}/end`, data),
+};
+
 export default api;

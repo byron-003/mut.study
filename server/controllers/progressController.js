@@ -8,11 +8,11 @@ import { emitToUser } from '../config/socket.js';
 export const updateProgress = async (req, res, next) => {
   try {
     const { resourceId } = req.params;
-    const { progressPercentage, lastPosition, timeSpent } = req.body;
+    const { progressPercentage, lastPosition, timeSpent, currentPage, totalPages } = req.body;
     const userId = req.user.id;
 
-    // Validate progress percentage
-    if (progressPercentage < 0 || progressPercentage > 100) {
+    // Validate progress percentage if provided
+    if (progressPercentage !== undefined && (progressPercentage < 0 || progressPercentage > 100)) {
       throw new AppError('Progress percentage must be between 0 and 100', 400);
     }
 
@@ -26,25 +26,50 @@ export const updateProgress = async (req, res, next) => {
 
     if (existingProgress.rows.length > 0) {
       // Update existing progress
-      result = await query(
-        `UPDATE study_progress 
-         SET progress_percentage = $1, 
-             last_position = $2, 
-             time_spent = COALESCE(time_spent, 0) + $3,
-             last_accessed = CURRENT_TIMESTAMP
-         WHERE user_id = $4 AND resource_id = $5
-         RETURNING *`,
-        [progressPercentage, lastPosition, timeSpent || 0, userId, resourceId]
-      );
+      // If pages are provided, use them; otherwise use progressPercentage
+      if (currentPage !== undefined && totalPages !== undefined) {
+        result = await query(
+          `UPDATE study_progress 
+           SET current_page = $1,
+               total_pages = $2,
+               last_position = $3, 
+               time_spent = COALESCE(time_spent, 0) + $4,
+               last_accessed = CURRENT_TIMESTAMP
+           WHERE user_id = $5 AND resource_id = $6
+           RETURNING *`,
+          [currentPage, totalPages, lastPosition, timeSpent || 0, userId, resourceId]
+        );
+      } else {
+        result = await query(
+          `UPDATE study_progress 
+           SET progress_percentage = $1, 
+               last_position = $2, 
+               time_spent = COALESCE(time_spent, 0) + $3,
+               last_accessed = CURRENT_TIMESTAMP
+           WHERE user_id = $4 AND resource_id = $5
+           RETURNING *`,
+          [progressPercentage, lastPosition, timeSpent || 0, userId, resourceId]
+        );
+      }
     } else {
       // Create new progress record
-      result = await query(
-        `INSERT INTO study_progress 
-         (user_id, resource_id, progress_percentage, last_position, time_spent)
-         VALUES ($1, $2, $3, $4, $5)
-         RETURNING *`,
-        [userId, resourceId, progressPercentage, lastPosition, timeSpent || 0]
-      );
+      if (currentPage !== undefined && totalPages !== undefined) {
+        result = await query(
+          `INSERT INTO study_progress 
+           (user_id, resource_id, current_page, total_pages, last_position, time_spent)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           RETURNING *`,
+          [userId, resourceId, currentPage, totalPages, lastPosition, timeSpent || 0]
+        );
+      } else {
+        result = await query(
+          `INSERT INTO study_progress 
+           (user_id, resource_id, progress_percentage, last_position, time_spent)
+           VALUES ($1, $2, $3, $4, $5)
+           RETURNING *`,
+          [userId, resourceId, progressPercentage, lastPosition, timeSpent || 0]
+        );
+      }
     }
 
     // Update study streak
@@ -55,6 +80,8 @@ export const updateProgress = async (req, res, next) => {
       emitToUser(userId, 'progress:updated', {
         resourceId: parseInt(resourceId),
         progress: result.rows[0].progress_percentage,
+        currentPage: result.rows[0].current_page,
+        totalPages: result.rows[0].total_pages,
         completed: result.rows[0].completed
       });
     } catch (socketError) {
@@ -68,6 +95,8 @@ export const updateProgress = async (req, res, next) => {
         id: result.rows[0].id,
         resourceId: result.rows[0].resource_id,
         progress: result.rows[0].progress_percentage,
+        currentPage: result.rows[0].current_page,
+        totalPages: result.rows[0].total_pages,
         lastPosition: result.rows[0].last_position,
         timeSpent: result.rows[0].time_spent,
         completed: result.rows[0].completed,
@@ -113,6 +142,8 @@ export const getProgress = async (req, res, next) => {
         resourceTitle: result.rows[0].resource_title,
         resourceType: result.rows[0].resource_type,
         progress: result.rows[0].progress_percentage,
+        currentPage: result.rows[0].current_page,
+        totalPages: result.rows[0].total_pages,
         lastPosition: result.rows[0].last_position,
         timeSpent: result.rows[0].time_spent,
         completed: result.rows[0].completed,

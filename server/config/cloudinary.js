@@ -74,6 +74,8 @@ const storage = new CloudinaryStorage({
       resource_type: resourceType,
       public_id: `${originalName}_${timestamp}`,
       format: format,
+      // Set flags for inline viewing instead of download
+      flags: 'attachment:false',
       // Allow any file type for raw resources
       allowedFormats: resourceType === 'raw' ? undefined : null,
     };
@@ -190,6 +192,47 @@ export const getFileInfo = async (publicId) => {
     console.error('Error getting file info from Cloudinary:', error);
     throw error;
   }
+};
+
+/**
+ * Generate a viewing URL (inline, not download)
+ * @param {string} publicId - Cloudinary public ID
+ * @param {string} resourceType - Resource type (raw, image, video)
+ * @returns {string} URL for inline viewing
+ */
+export const getViewUrl = (publicId, resourceType = 'raw') => {
+  if (!publicId) return null;
+  
+  // For raw files (documents), use fl_attachment flag set to false for inline viewing
+  if (resourceType === 'raw') {
+    return cloudinary.url(publicId, {
+      resource_type: 'raw',
+      flags: 'attachment:false',
+      secure: true
+    });
+  }
+  
+  // For images and videos, standard URL is fine
+  return cloudinary.url(publicId, {
+    resource_type: resourceType,
+    secure: true
+  });
+};
+
+/**
+ * Generate a download URL (with attachment header)
+ * @param {string} publicId - Cloudinary public ID
+ * @param {string} resourceType - Resource type (raw, image, video)
+ * @returns {string} URL for downloading
+ */
+export const getDownloadUrl = (publicId, resourceType = 'raw') => {
+  if (!publicId) return null;
+  
+  return cloudinary.url(publicId, {
+    resource_type: resourceType,
+    flags: 'attachment',
+    secure: true
+  });
 };
 
 export default cloudinary;

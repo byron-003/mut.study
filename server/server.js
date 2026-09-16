@@ -15,6 +15,7 @@ import contactRoutes from './routes/contactRoutes.js';
 import progressRoutes from './routes/progressRoutes.js';
 import classRepRoutes from './routes/classRepRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import fileProxyRoutes from './routes/fileProxyRoutes.js';
 import ratingReviewRoutes from './routes/ratingReviewRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -203,6 +204,7 @@ app.use('/api/class-rep', classRepRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api', ratingReviewRoutes); // Ratings, reviews, reputation endpoints
+app.use('/api/files', fileProxyRoutes); // File viewing and download proxy
 
 // Public settings endpoint
 import { getDownloadsEnabled } from './controllers/adminController.js';

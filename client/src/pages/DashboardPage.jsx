@@ -525,6 +525,26 @@ const DashboardPage = () => {
 
   const handleDownloadFile = async (resource) => {
     try {
+      // Use the proxy download endpoint
+      const downloadUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/files/download/${resource.id}`;
+      
+      // Get auth token
+      const token = localStorage.getItem('token');
+      
+      // Fetch the file with authentication
+      const response = await fetch(downloadUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Download failed');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      
       // Extract filename from URL or use title
       const urlParts = resource.fileUrl.split('/');
       const cloudinaryFilename = urlParts[urlParts.length - 1];
@@ -562,10 +582,6 @@ const DashboardPage = () => {
       const sanitizedTitle = resource.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
       const filename = extension ? `${sanitizedTitle}.${extension}` : sanitizedTitle;
       
-      // Fetch the file and trigger download
-      const response = await fetch(resource.fileUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.download = filename;
