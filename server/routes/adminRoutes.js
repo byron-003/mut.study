@@ -27,8 +27,6 @@ import {
   getDownloadsEnabled,
   getMaxFileSize,
   uploadFile,
-  formatTextContent,
-  updateTextContent,
 } from '../controllers/adminController.js';
 import { authenticate, authorize } from '../middleware/authMiddleware.js';
 import { upload } from '../config/cloudinary.js';
@@ -60,10 +58,6 @@ router.put('/resources/:id/reject', rejectResource);
 router.delete('/resources/:id', authorize('admin'), deleteResource); // Only admins can delete
 router.post('/resources/bulk-approve', bulkApproveResources);
 router.post('/resources/bulk-reject', bulkRejectResources);
-
-// Text content management (for text-based resources)
-router.post('/resources/:id/format-text', formatTextContent); // AI format text
-router.put('/resources/:id/text-content', updateTextContent); // Manual edit text
 
 // Program management (Admin only)
 router.get('/programs', authorize('admin'), getPrograms);

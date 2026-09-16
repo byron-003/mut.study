@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, X, AlertCircle, CheckCircle, Search, Star, ZoomIn, ZoomOut, ChevronUp, ChevronDown } from 'lucide-react';
+import { Download, X, AlertCircle, CheckCircle, Search, Star } from 'lucide-react';
 
 /**
  * WhatsApp-style File Viewer Component
@@ -8,8 +8,6 @@ import { Download, X, AlertCircle, CheckCircle, Search, Star, ZoomIn, ZoomOut, C
 const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMarkComplete }) => {
   const [loadError, setLoadError] = useState(false);
   const [viewDuration, setViewDuration] = useState(0);
-  const [zoom, setZoom] = useState(100);
-  const [currentPage, setCurrentPage] = useState(1);
 
   if (!file) return null;
 
@@ -88,7 +86,6 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
             src={fileUrl}
             alt={title}
             className="max-w-full max-h-full object-contain shadow-lg"
-            style={{ transform: `scale(${zoom / 100})` }}
             onError={() => setLoadError(true)}
           />
         </div>
@@ -279,52 +276,6 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
               </div>
             )}
           </div>
-
-          {/* Page Navigation (Right Side) - Only for PDFs */}
-          {fileType?.toLowerCase() === 'application/pdf' && !loadError && (
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 bg-white shadow-lg rounded-lg p-2">
-              <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                className="p-2 hover:bg-gray-100 rounded transition-colors"
-                title="Previous page"
-              >
-                <ChevronUp className="w-4 h-4 text-gray-700" />
-              </button>
-              <div className="text-xs text-center text-gray-600 py-2">
-                {currentPage}
-              </div>
-              <button
-                onClick={() => setCurrentPage(currentPage + 1)}
-                className="p-2 hover:bg-gray-100 rounded transition-colors"
-                title="Next page"
-              >
-                <ChevronDown className="w-4 h-4 text-gray-700" />
-              </button>
-            </div>
-          )}
-
-          {/* Zoom Controls (Bottom Center) */}
-          {canPreview() && !loadError && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white shadow-lg rounded-lg px-3 py-2">
-              <button
-                onClick={() => setZoom(Math.max(25, zoom - 25))}
-                className="p-1 hover:bg-gray-100 rounded transition-colors"
-                title="Zoom out"
-              >
-                <ZoomOut className="w-4 h-4 text-gray-700" />
-              </button>
-              <span className="text-sm text-gray-700 font-medium min-w-[3rem] text-center">
-                {zoom}%
-              </span>
-              <button
-                onClick={() => setZoom(Math.min(200, zoom + 25))}
-                className="p-1 hover:bg-gray-100 rounded transition-colors"
-                title="Zoom in"
-              >
-                <ZoomIn className="w-4 h-4 text-gray-700" />
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </div>
