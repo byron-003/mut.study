@@ -70,7 +70,7 @@ const StarRating = ({
                 transition-colors duration-150
                 ${star <= displayValue 
                   ? 'fill-yellow-400 text-yellow-400' 
-                  : 'fill-gray-200 text-gray-300 dark:fill-gray-600 dark:text-gray-600'
+                  : 'fill-gray-200 text-gray-300  '
                 }
               `}
             />
@@ -79,7 +79,7 @@ const StarRating = ({
       </div>
       
       {showValue && (
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 ml-1">
+        <span className="text-sm font-medium text-gray-700  ml-1">
           {displayValue > 0 ? displayValue.toFixed(1) : '0.0'}
         </span>
       )}

@@ -32,6 +32,8 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
   const pdfDocRef = useRef(null);
   const renderPageRef = useRef(null);
   const pageZoomRef = useRef(1);
+  const fitScaleRef = useRef(null);
+  const firstPageWidthRef = useRef(null);
 
   if (!file) return null;
 
@@ -102,6 +104,8 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
         const proxyUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/files/view/${resourceId}`;
         
         setPdfLoading(true);
+        fitScaleRef.current = null;
+        firstPageWidthRef.current = null;
 
         // Dynamically import PDF.js
         const pdfjsLib = await import('pdfjs-dist');
@@ -115,6 +119,14 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
           isEvalSupported: false
         });
         const pdf = await loadingTask.promise;
+
+        // Remember the document's page width so every page renders at the same scale
+        try {
+          const firstPage = await pdf.getPage(1);
+          firstPageWidthRef.current = firstPage.getViewport({ scale: 1 }).width;
+        } catch (error) {
+          console.warn('Could not read first page dimensions:', error);
+        }
         
         pdfDocRef.current = pdf;
         setPdfDoc(pdf);
@@ -146,9 +158,21 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
       const page = await pdf.getPage(pageNum);
 
       const baseViewport = page.getViewport({ scale: 1 });
-      const containerWidth = canvas.parentElement?.clientWidth || 800;
-      const fitScale = Math.max(containerWidth / baseViewport.width, MIN_PAGE_SCALE);
-      const scale = fitScale * pageZoomRef.current;
+
+      // Compute the document-wide fit scale once so every page renders uniformly
+      if (fitScaleRef.current == null) {
+        const container = scrollContainerRef.current;
+        const containerWidth = container?.clientWidth || 800;
+        const referenceWidth = firstPageWidthRef.current || baseViewport.width;
+        const isSmallScreen = !window.matchMedia('(min-width: 1024px)').matches;
+        let fit = containerWidth / referenceWidth;
+        if (isSmallScreen) {
+          fit = Math.max(fit, MIN_PAGE_SCALE);
+        }
+        fitScaleRef.current = fit;
+      }
+
+      const scale = fitScaleRef.current * pageZoomRef.current;
       const viewport = page.getViewport({ scale });
 
       // Render at 2x resolution then scale down with CSS for sharper text
@@ -220,9 +244,21 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
     if (!pdfDoc) return;
 
     const handleResize = () => {
-      if (!scrollContainerRef.current) return;
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      // Recompute the document-wide fit scale for the new container width
+      if (firstPageWidthRef.current) {
+        const isSmallScreen = !window.matchMedia('(min-width: 1024px)').matches;
+        let fit = container.clientWidth / firstPageWidthRef.current;
+        if (isSmallScreen) {
+          fit = Math.max(fit, MIN_PAGE_SCALE);
+        }
+        fitScaleRef.current = fit;
+      }
+
       renderedPagesRef.current = new Set();
-      const containerRect = scrollContainerRef.current.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
       Object.values(canvasRefs.current).forEach((canvas) => {
         if (!canvas) return;
         const rect = canvas.getBoundingClientRect();
@@ -422,7 +458,8 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
       );
     }
 
-    // Office documents - use direct Cloudinary URL (Office Viewer needs public access)
+    // Office documents - stream via our proxy (Office Viewer needs a public URL
+    // that ends in the file extension and serves the correct content type)
     if (
       mimeType.includes('wordprocessingml') ||
       mimeType.includes('spreadsheetml') ||
@@ -431,8 +468,18 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
       mimeType === 'application/vnd.ms-excel' ||
       mimeType === 'application/vnd.ms-powerpoint'
     ) {
-      // Office Apps Viewer requires public URL
-      const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}`;
+      // The proxy appends its own extension via the :filename route segment so the
+      // Office Viewer can identify the document type from the URL
+      const officeExt = {
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation': '.pptx',
+        'application/msword': '.doc',
+        'application/vnd.ms-excel': '.xls',
+        'application/vnd.ms-powerpoint': '.ppt',
+      }[mimeType] || '.doc';
+
+      const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(`${proxyUrl}/document${officeExt}`)}`;
       
       return (
         <iframe

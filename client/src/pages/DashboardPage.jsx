@@ -630,10 +630,10 @@ const DashboardPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50  flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-mut-primary mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading your dashboard...</p>
+          <p className="text-gray-600 ">Loading your dashboard...</p>
         </div>
       </div>
     );
@@ -641,13 +641,13 @@ const DashboardPage = () => {
 
   if (!userProgram) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 max-w-md text-center">
+      <div className="min-h-screen bg-gray-50  flex items-center justify-center">
+        <div className="bg-white  rounded-lg shadow-md p-8 max-w-md text-center">
           <div className="text-red-500 mb-4">
             <XCircle className="w-16 h-16 mx-auto" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Program Not Found</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
+          <h2 className="text-xl font-bold text-gray-900  mb-2">Program Not Found</h2>
+          <p className="text-gray-600  mb-4">
             We couldn't load your program information. Please update your profile.
           </p>
           <button
@@ -662,7 +662,7 @@ const DashboardPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 ">
       {/* Header with Program Info */}
       <div className="bg-gradient-to-r from-mut-primary to-mut-secondary text-white py-6 px-4 shadow-lg">
         <div className="max-w-7xl mx-auto">
@@ -690,7 +690,7 @@ const DashboardPage = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search courses by name or code..."
-              className="w-full pl-12 pr-4 py-3 rounded-lg text-gray-900 dark:text-gray-100 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-white"
+              className="w-full pl-12 pr-4 py-3 rounded-lg text-gray-900   focus:outline-none focus:ring-2 focus:ring-white"
             />
           </div>
         </div>
@@ -728,10 +728,10 @@ const DashboardPage = () => {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowFilters(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-white  border border-gray-300  rounded-lg hover:bg-gray-50  transition-colors shadow-sm"
             >
-              <Filter className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              <span className="font-medium text-gray-700 dark:text-gray-300">Filters</span>
+              <Filter className="w-5 h-5 text-gray-600 " />
+              <span className="font-medium text-gray-700 ">Filters</span>
               {(filterType !== 'all' || selectedYear !== 1 || selectedSemester !== 1) && (
                 <span className="ml-1 px-2 py-0.5 bg-mut-primary text-white text-xs rounded-full">
                   Active
@@ -767,12 +767,12 @@ const DashboardPage = () => {
         {/* Courses Grid */}
         <div>
           {courses.length === 0 ? (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 text-center">
+            <div className="bg-white  rounded-lg shadow-md p-12 text-center">
               <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              <h3 className="text-xl font-semibold text-gray-900  mb-2">
                 No Courses Available
               </h3>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-gray-600 ">
                 There are no courses for Year {selectedYear}, Semester {selectedSemester} yet.
               </p>
             </div>
@@ -820,7 +820,7 @@ const DashboardPage = () => {
                 return (
                   <div
                     key={course.id}
-                    className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-xl transition-all overflow-hidden border border-gray-200 dark:border-gray-700"
+                    className="bg-white  rounded-lg shadow-md hover:shadow-xl transition-all overflow-hidden border border-gray-200 "
                   >
                     {/* Gradient Header */}
                     <div className="bg-gradient-to-br from-teal-500 via-teal-600 to-green-600 p-6">
@@ -833,12 +833,12 @@ const DashboardPage = () => {
                     </div>
 
                     {/* White Body */}
-                    <div className="p-6 bg-white dark:bg-gray-800">
+                    <div className="p-6 bg-white ">
                       {/* Progress Bar */}
                       <div className="mb-4">
                         <div className="flex items-center justify-between text-sm mb-2">
-                          <span className="text-gray-600 dark:text-gray-400 font-medium">Course progress bar</span>
-                          <span className="text-gray-900 dark:text-white font-bold">{overallProgress}%</span>
+                          <span className="text-gray-600  font-medium">Course progress bar</span>
+                          <span className="text-gray-900  font-bold">{overallProgress}%</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2.5">
                           <div
@@ -922,31 +922,31 @@ const DashboardPage = () => {
       {/* Resume Prompt Modal */}
       {showResumePrompt && savedProgress && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
+          <div className="bg-white  rounded-lg max-w-md w-full p-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                <Play className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              <div className="w-12 h-12 bg-blue-100  rounded-full flex items-center justify-center">
+                <Play className="w-6 h-6 text-blue-600 " />
               </div>
               <div>
-                <h3 className="font-bold text-gray-900 dark:text-white">Continue Reading?</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">You've already started this resource</p>
+                <h3 className="font-bold text-gray-900 ">Continue Reading?</h3>
+                <p className="text-sm text-gray-600 ">You've already started this resource</p>
               </div>
             </div>
 
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
+            <div className="bg-gray-50  rounded-lg p-4 mb-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Progress:</span>
-                <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                <span className="text-sm text-gray-600 ">Progress:</span>
+                <span className="text-sm font-semibold text-gray-900 ">
                   {savedProgress.progress}%
                 </span>
               </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+              <div className="w-full bg-gray-200  rounded-full h-2">
                 <div
                   className="bg-mut-primary h-2 rounded-full transition-all"
                   style={{ width: `${savedProgress.progress}%` }}
                 ></div>
               </div>
-              <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              <div className="mt-2 text-xs text-gray-500 ">
                 Last accessed: {new Date(savedProgress.lastAccessed).toLocaleString()}
               </div>
             </div>
@@ -961,7 +961,7 @@ const DashboardPage = () => {
               </button>
               <button
                 onClick={handleStartFromBeginning}
-                className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 font-medium flex items-center justify-center gap-2"
+                className="flex-1 bg-gray-100  text-gray-700  px-4 py-3 rounded-lg hover:bg-gray-200  font-medium flex items-center justify-center gap-2"
               >
                 <RotateCcw className="w-4 h-4" />
                 Start Over
@@ -974,9 +974,9 @@ const DashboardPage = () => {
       {/* Filter Modal */}
       {showFilters && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <div className="bg-white  rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white  border-b border-gray-200  px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900  flex items-center gap-2">
                 <Filter className="w-5 h-5" />
                 Filters
               </h2>

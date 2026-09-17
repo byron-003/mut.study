@@ -22,29 +22,29 @@ const QualityBadge = ({
     bronze: {
       label: 'Bronze Contributor',
       icon: Medal,
-      colors: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-700',
-      iconColor: 'text-orange-600 dark:text-orange-400',
+      colors: 'bg-orange-100  text-orange-700  border-orange-300 ',
+      iconColor: 'text-orange-600 ',
       description: 'Consistent quality contributions'
     },
     silver: {
       label: 'Silver Contributor',
       icon: Award,
-      colors: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600',
-      iconColor: 'text-gray-600 dark:text-gray-400',
+      colors: 'bg-gray-100  text-gray-700  border-gray-300 ',
+      iconColor: 'text-gray-600 ',
       description: 'High-quality resource provider'
     },
     gold: {
       label: 'Gold Contributor',
       icon: Trophy,
-      colors: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700',
-      iconColor: 'text-yellow-600 dark:text-yellow-400',
+      colors: 'bg-yellow-100  text-yellow-700  border-yellow-300 ',
+      iconColor: 'text-yellow-600 ',
       description: 'Outstanding contributions & ratings'
     },
     platinum: {
       label: 'Platinum Contributor',
       icon: Star,
-      colors: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-300 dark:border-purple-700',
-      iconColor: 'text-purple-600 dark:text-purple-400',
+      colors: 'bg-purple-100  text-purple-700  border-purple-300 ',
+      iconColor: 'text-purple-600 ',
       description: 'Elite contributor - Exceptional quality'
     }
   };
@@ -92,14 +92,14 @@ const QualityBadge = ({
       {/* Tooltip */}
       {showTooltip && (
         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 
-                      bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg
+                      bg-gray-900  text-white text-xs rounded-lg
                       opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none
                       whitespace-nowrap z-10 shadow-lg">
           <div className="font-semibold mb-0.5">{config.label}</div>
           <div className="text-gray-300">{config.description}</div>
           {/* Arrow */}
           <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1
-                        border-4 border-transparent border-t-gray-900 dark:border-t-gray-700" />
+                        border-4 border-transparent border-t-gray-900 " />
         </div>
       )}
     </div>

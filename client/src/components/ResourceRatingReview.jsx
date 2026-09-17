@@ -207,7 +207,7 @@ const ResourceRatingReview = ({ resourceId, isOpen, onClose }) => {
       />
 
       <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+      <div className="bg-white  rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
         {/* Header */}
         <div className="bg-gradient-to-r from-mut-primary to-mut-secondary p-6 flex items-center justify-between">
           <div className="flex items-center gap-3 text-white">
@@ -234,8 +234,8 @@ const ResourceRatingReview = ({ resourceId, isOpen, onClose }) => {
               
               {/* User Rating Section */}
               {isAuthenticated && (
-                <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
+                <div className="mt-6 bg-white  rounded-lg p-6 shadow-sm border border-gray-200 ">
+                  <h3 className="font-semibold text-gray-900  mb-3">
                     Your Rating
                   </h3>
                   <div className="flex items-center gap-3">
@@ -247,7 +247,7 @@ const ResourceRatingReview = ({ resourceId, isOpen, onClose }) => {
                     />
                   </div>
                   {userRating > 0 && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    <p className="text-xs text-gray-500  mt-2">
                       Click a star to update your rating
                     </p>
                   )}
@@ -255,8 +255,8 @@ const ResourceRatingReview = ({ resourceId, isOpen, onClose }) => {
               )}
 
               {!isAuthenticated && (
-                <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                  <p className="text-sm text-blue-800 dark:text-blue-300">
+                <div className="mt-6 bg-blue-50  border border-blue-200  rounded-lg p-4">
+                  <p className="text-sm text-blue-800 ">
                     Please login to rate and review this resource
                   </p>
                 </div>
@@ -268,8 +268,8 @@ const ResourceRatingReview = ({ resourceId, isOpen, onClose }) => {
               {/* Reviews Header */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  <MessageSquare className="w-5 h-5 text-gray-600 " />
+                  <h3 className="text-lg font-semibold text-gray-900 ">
                     Reviews ({reviewsTotal})
                   </h3>
                 </div>
@@ -279,8 +279,8 @@ const ResourceRatingReview = ({ resourceId, isOpen, onClose }) => {
                   <select
                     value={sortBy}
                     onChange={(e) => handleSortChange(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
-                             bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300
+                    className="px-4 py-2 border border-gray-300  rounded-lg
+                             bg-white  text-gray-700 
                              focus:ring-2 focus:ring-mut-primary focus:border-transparent
                              text-sm cursor-pointer"
                   >
@@ -295,10 +295,10 @@ const ResourceRatingReview = ({ resourceId, isOpen, onClose }) => {
               {isAuthenticated && !showReviewForm && (
                 <button
                   onClick={() => setShowReviewForm(true)}
-                  className="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-600
-                           rounded-lg hover:border-mut-primary dark:hover:border-mut-accent
-                           hover:bg-green-50 dark:hover:bg-green-900/10 transition-colors
-                           text-gray-600 dark:text-gray-400 hover:text-mut-primary dark:hover:text-mut-accent
+                  className="w-full py-3 border-2 border-dashed border-gray-300 
+                           rounded-lg hover:border-mut-primary 
+                           hover:bg-green-50  transition-colors
+                           text-gray-600  hover:text-mut-primary 
                            font-medium"
                 >
                   + Write a Review
@@ -307,8 +307,8 @@ const ResourceRatingReview = ({ resourceId, isOpen, onClose }) => {
 
               {/* Review Form */}
               {showReviewForm && (
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                  <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
+                <div className="bg-gray-50  rounded-lg p-4 border border-gray-200 ">
+                  <h4 className="font-semibold text-gray-900  mb-3">
                     {editingReview ? 'Edit Your Review' : 'Write Your Review'}
                   </h4>
                   <ReviewForm
@@ -338,9 +338,9 @@ const ResourceRatingReview = ({ resourceId, isOpen, onClose }) => {
                 <button
                   onClick={handleLoadMoreReviews}
                   disabled={reviewsLoading}
-                  className="w-full py-3 border border-gray-300 dark:border-gray-600 rounded-lg
-                           hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors
-                           text-gray-700 dark:text-gray-300 font-medium text-sm
+                  className="w-full py-3 border border-gray-300  rounded-lg
+                           hover:bg-gray-50  transition-colors
+                           text-gray-700  font-medium text-sm
                            disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {reviewsLoading ? (

@@ -52,7 +52,7 @@ const ReviewForm = ({
       <div>
         <label 
           htmlFor="review-text" 
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          className="block text-sm font-medium text-gray-700  mb-2"
         >
           Write your review
         </label>
@@ -62,27 +62,27 @@ const ReviewForm = ({
           onChange={handleChange}
           placeholder="Share your thoughts about this resource... What did you find helpful? Any suggestions for improvement?"
           rows={4}
-          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg 
+          className="w-full px-4 py-3 border border-gray-300  rounded-lg 
                    focus:ring-2 focus:ring-mut-primary focus:border-transparent
-                   bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                   placeholder-gray-400 dark:placeholder-gray-500
+                   bg-white  text-gray-900 
+                   placeholder-gray-400 
                    resize-none transition-colors"
           disabled={isSubmitting}
         />
         
         {/* Character Count */}
         <div className="flex items-center justify-between mt-1">
-          <div className="text-xs text-gray-500 dark:text-gray-400">
+          <div className="text-xs text-gray-500 ">
             {reviewText.trim().length >= minLength ? (
-              <span className="text-green-600 dark:text-green-400">✓ Minimum length met</span>
+              <span className="text-green-600 ">✓ Minimum length met</span>
             ) : (
               <span>At least {minLength} characters required</span>
             )}
           </div>
           <div className={`text-xs font-medium ${
             remainingChars < 50 
-              ? 'text-orange-600 dark:text-orange-400' 
-              : 'text-gray-500 dark:text-gray-400'
+              ? 'text-orange-600 ' 
+              : 'text-gray-500 '
           }`}>
             {remainingChars} characters remaining
           </div>
@@ -90,7 +90,7 @@ const ReviewForm = ({
 
         {/* Error Message */}
         {error && (
-          <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+          <p className="mt-2 text-sm text-red-600 ">
             {error}
           </p>
         )}
@@ -123,8 +123,8 @@ const ReviewForm = ({
             type="button"
             onClick={onCancel}
             disabled={isSubmitting}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600
-                     text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700
+            className="flex items-center gap-2 px-4 py-2 border border-gray-300 
+                     text-gray-700  rounded-lg hover:bg-gray-50 
                      disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
           >
             <X className="w-4 h-4" />
@@ -134,11 +134,11 @@ const ReviewForm = ({
       </div>
 
       {/* Guidelines */}
-      <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-        <p className="text-xs text-blue-800 dark:text-blue-300 font-medium mb-1">
+      <div className="mt-4 p-3 bg-blue-50  border border-blue-200  rounded-lg">
+        <p className="text-xs text-blue-800  font-medium mb-1">
           Review Guidelines:
         </p>
-        <ul className="text-xs text-blue-700 dark:text-blue-400 space-y-0.5 ml-4 list-disc">
+        <ul className="text-xs text-blue-700  space-y-0.5 ml-4 list-disc">
           <li>Be respectful and constructive</li>
           <li>Focus on the resource quality and usefulness</li>
           <li>Avoid personal attacks or inappropriate language</li>

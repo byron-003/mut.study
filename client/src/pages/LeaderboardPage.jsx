@@ -30,17 +30,17 @@ const LeaderboardPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div className="min-h-screen bg-gray-50  py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
             <Trophy className="w-12 h-12 text-yellow-500" />
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-4xl font-bold text-gray-900 ">
               Top Contributors
             </h1>
           </div>
-          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-600  max-w-2xl mx-auto">
             Recognizing our most valuable community members who share quality educational resources
           </p>
         </div>
@@ -49,8 +49,8 @@ const LeaderboardPage = () => {
           {/* Main Leaderboard - Left 2/3 */}
           <div className="lg:col-span-2">
             {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
-                <p className="text-red-800 dark:text-red-400">{error}</p>
+              <div className="bg-red-50  border border-red-200  rounded-lg p-4 mb-6">
+                <p className="text-red-800 ">{error}</p>
               </div>
             )}
 
@@ -64,17 +64,17 @@ const LeaderboardPage = () => {
           {/* Info Sidebar - Right 1/3 */}
           <div className="space-y-6">
             {/* How It Works */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white  rounded-lg shadow-sm border border-gray-200  p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Info className="w-5 h-5 text-mut-primary" />
-                <h3 className="font-bold text-gray-900 dark:text-white">
+                <h3 className="font-bold text-gray-900 ">
                   How Reputation Works
                 </h3>
               </div>
 
-              <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
+              <div className="space-y-3 text-sm text-gray-600 ">
                 <div>
-                  <p className="font-semibold text-gray-900 dark:text-white mb-1">
+                  <p className="font-semibold text-gray-900  mb-1">
                     Earn Points By:
                   </p>
                   <ul className="space-y-1 ml-4 list-disc">
@@ -89,10 +89,10 @@ const LeaderboardPage = () => {
             </div>
 
             {/* Quality Badges */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white  rounded-lg shadow-sm border border-gray-200  p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Award className="w-5 h-5 text-mut-primary" />
-                <h3 className="font-bold text-gray-900 dark:text-white">
+                <h3 className="font-bold text-gray-900 ">
                   Quality Badges
                 </h3>
               </div>
@@ -100,12 +100,12 @@ const LeaderboardPage = () => {
               <div className="space-y-4">
                 {/* Bronze */}
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Award className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                  <div className="w-8 h-8 bg-orange-100  rounded-full flex items-center justify-center flex-shrink-0">
+                    <Award className="w-4 h-4 text-orange-600 " />
                   </div>
                   <div>
-                    <p className="font-semibold text-sm text-gray-900 dark:text-white">Bronze</p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                    <p className="font-semibold text-sm text-gray-900 ">Bronze</p>
+                    <p className="text-xs text-gray-600 ">
                       100+ points, 5+ uploads, 3.0+ avg rating
                     </p>
                   </div>
@@ -113,12 +113,12 @@ const LeaderboardPage = () => {
 
                 {/* Silver */}
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Award className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  <div className="w-8 h-8 bg-gray-100  rounded-full flex items-center justify-center flex-shrink-0">
+                    <Award className="w-4 h-4 text-gray-600 " />
                   </div>
                   <div>
-                    <p className="font-semibold text-sm text-gray-900 dark:text-white">Silver</p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                    <p className="font-semibold text-sm text-gray-900 ">Silver</p>
+                    <p className="text-xs text-gray-600 ">
                       500+ points, 15+ uploads, 3.5+ avg rating
                     </p>
                   </div>
@@ -126,12 +126,12 @@ const LeaderboardPage = () => {
 
                 {/* Gold */}
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Trophy className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                  <div className="w-8 h-8 bg-yellow-100  rounded-full flex items-center justify-center flex-shrink-0">
+                    <Trophy className="w-4 h-4 text-yellow-600 " />
                   </div>
                   <div>
-                    <p className="font-semibold text-sm text-gray-900 dark:text-white">Gold</p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                    <p className="font-semibold text-sm text-gray-900 ">Gold</p>
+                    <p className="text-xs text-gray-600 ">
                       1500+ points, 30+ uploads, 4.0+ avg rating
                     </p>
                   </div>
@@ -139,12 +139,12 @@ const LeaderboardPage = () => {
 
                 {/* Platinum */}
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Trophy className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                  <div className="w-8 h-8 bg-purple-100  rounded-full flex items-center justify-center flex-shrink-0">
+                    <Trophy className="w-4 h-4 text-purple-600 " />
                   </div>
                   <div>
-                    <p className="font-semibold text-sm text-gray-900 dark:text-white">Platinum</p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                    <p className="font-semibold text-sm text-gray-900 ">Platinum</p>
+                    <p className="text-xs text-gray-600 ">
                       5000+ points, 50+ uploads, 4.5+ avg rating
                     </p>
                   </div>
@@ -184,12 +184,12 @@ const LeaderboardPage = () => {
             </div>
 
             {/* Call to Action */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg p-6 text-center">
-              <Trophy className="w-12 h-12 text-blue-600 dark:text-blue-400 mx-auto mb-3" />
-              <h3 className="font-bold text-gray-900 dark:text-white mb-2">
+            <div className="bg-blue-50  border-2 border-blue-200  rounded-lg p-6 text-center">
+              <Trophy className="w-12 h-12 text-blue-600  mx-auto mb-3" />
+              <h3 className="font-bold text-gray-900  mb-2">
                 Want to Join the Leaderboard?
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-sm text-gray-600  mb-4">
                 Start sharing quality resources and helping your fellow students!
               </p>
               <button

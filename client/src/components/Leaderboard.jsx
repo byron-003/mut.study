@@ -13,12 +13,12 @@ const Leaderboard = ({ contributors = [], loading = false, limit = 10 }) => {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="animate-pulse bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
+          <div key={i} className="animate-pulse bg-gray-100  rounded-lg p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gray-300 dark:bg-gray-700 rounded-full" />
+              <div className="w-10 h-10 bg-gray-300  rounded-full" />
               <div className="flex-1 space-y-2">
-                <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/3" />
-                <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded w-1/4" />
+                <div className="h-4 bg-gray-300  rounded w-1/3" />
+                <div className="h-3 bg-gray-300  rounded w-1/4" />
               </div>
             </div>
           </div>
@@ -30,8 +30,8 @@ const Leaderboard = ({ contributors = [], loading = false, limit = 10 }) => {
   if (contributors.length === 0) {
     return (
       <div className="text-center py-12">
-        <Trophy className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-        <p className="text-gray-500 dark:text-gray-400 font-medium">No contributors yet</p>
+        <Trophy className="w-16 h-16 text-gray-300  mx-auto mb-3" />
+        <p className="text-gray-500  font-medium">No contributors yet</p>
       </div>
     );
   }
@@ -41,14 +41,14 @@ const Leaderboard = ({ contributors = [], loading = false, limit = 10 }) => {
       case 1: return 'bg-yellow-400 text-yellow-900';
       case 2: return 'bg-gray-300 text-gray-700';
       case 3: return 'bg-orange-400 text-orange-900';
-      default: return 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400';
+      default: return 'bg-gray-200  text-gray-600 ';
     }
   };
 
   const displayedContributors = contributors.slice(0, limit);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div className="bg-white  rounded-lg shadow-sm border border-gray-200  overflow-hidden">
       {/* Header */}
       <div className="bg-gradient-to-r from-mut-primary to-mut-secondary p-4">
         <div className="flex items-center gap-2 text-white">
@@ -61,7 +61,7 @@ const Leaderboard = ({ contributors = [], loading = false, limit = 10 }) => {
       </div>
 
       {/* Leaderboard List */}
-      <div className="divide-y divide-gray-200 dark:divide-gray-700">
+      <div className="divide-y divide-gray-200 ">
         {displayedContributors.map((contributor, index) => {
           const rank = index + 1;
           const isTopThree = rank <= 3;
@@ -71,8 +71,8 @@ const Leaderboard = ({ contributors = [], loading = false, limit = 10 }) => {
               key={contributor.id}
               className={`
                 p-4 flex items-center gap-4 transition-colors
-                ${isTopThree ? 'bg-gradient-to-r from-yellow-50/50 to-transparent dark:from-yellow-900/10' : ''}
-                hover:bg-gray-50 dark:hover:bg-gray-700/50
+                ${isTopThree ? 'bg-gradient-to-r from-yellow-50/50 to-transparent ' : ''}
+                hover:bg-gray-50 
               `}
             >
               {/* Rank Badge */}
@@ -80,7 +80,7 @@ const Leaderboard = ({ contributors = [], loading = false, limit = 10 }) => {
                 className={`
                   w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm
                   ${getMedalColor(rank)}
-                  ${isTopThree ? 'ring-2 ring-offset-2 ring-yellow-400 dark:ring-offset-gray-800' : ''}
+                  ${isTopThree ? 'ring-2 ring-offset-2 ring-yellow-400 ' : ''}
                 `}
               >
                 {rank}
@@ -91,7 +91,7 @@ const Leaderboard = ({ contributors = [], loading = false, limit = 10 }) => {
                 <img
                   src={contributor.profile_picture}
                   alt={contributor.name}
-                  className="w-12 h-12 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
+                  className="w-12 h-12 rounded-full object-cover border-2 border-gray-200 "
                 />
               ) : (
                 <div className="w-12 h-12 bg-mut-primary rounded-full flex items-center justify-center">
@@ -104,13 +104,13 @@ const Leaderboard = ({ contributors = [], loading = false, limit = 10 }) => {
               {/* Contributor Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <h4 className="font-semibold text-gray-900 dark:text-white truncate">
+                  <h4 className="font-semibold text-gray-900  truncate">
                     {contributor.name}
                   </h4>
                   <QualityBadge badge={contributor.quality_badge} size="sm" showLabel={false} />
                 </div>
 
-                <div className="flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400">
+                <div className="flex items-center gap-4 text-xs text-gray-600 ">
                   <div className="flex items-center gap-1">
                     <TrendingUp className="w-3 h-3" />
                     <span className="font-medium">{contributor.reputation_score}</span>
@@ -145,8 +145,8 @@ const Leaderboard = ({ contributors = [], loading = false, limit = 10 }) => {
 
       {/* Footer */}
       {contributors.length > limit && (
-        <div className="bg-gray-50 dark:bg-gray-900 px-4 py-3 text-center">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+        <div className="bg-gray-50  px-4 py-3 text-center">
+          <p className="text-sm text-gray-600 ">
             Showing top {limit} of {contributors.length} contributors
           </p>
         </div>

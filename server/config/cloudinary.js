@@ -68,6 +68,16 @@ const storage = new CloudinaryStorage({
     // Generate unique filename with timestamp
     const timestamp = Date.now();
     const originalName = file.originalname.split('.')[0].replace(/[^a-zA-Z0-9]/g, '_');
+
+    // For raw files (documents), pin the format so the generated URL includes
+    // the extension (e.g. .docx). Microsoft Office Viewer and other services
+    // reject extensionless URLs even when the server sets the correct MIME type.
+    if (resourceType === 'raw' && file.originalname) {
+      const dotIndex = file.originalname.lastIndexOf('.');
+      if (dotIndex !== -1 && dotIndex < file.originalname.length - 1) {
+        format = file.originalname.substring(dotIndex + 1).toLowerCase();
+      }
+    }
     
     return {
       folder: process.env.CLOUDINARY_FOLDER || 'mut_study_hub_docs',

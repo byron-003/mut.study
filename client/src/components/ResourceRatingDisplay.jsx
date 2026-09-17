@@ -38,10 +38,10 @@ const ResourceRatingDisplay = ({
     return (
       <button
         onClick={onClick}
-        className="flex items-center gap-1 text-gray-400 dark:text-gray-500 hover:text-mut-primary 
-                 dark:hover:text-mut-accent transition-colors group"
+        className="flex items-center gap-1 text-gray-400  hover:text-mut-primary 
+                  transition-colors group"
       >
-        <Star className={`${classes.star} group-hover:fill-mut-primary dark:group-hover:fill-mut-accent`} />
+        <Star className={`${classes.star} group-hover:fill-mut-primary `} />
         <span className={`${classes.text} font-medium`}>No ratings yet</span>
       </button>
     );
@@ -55,21 +55,21 @@ const ResourceRatingDisplay = ({
       {/* Star Rating */}
       <div className="flex items-center gap-0.5">
         <Star className={`${classes.star} fill-yellow-400 text-yellow-400`} />
-        <span className={`${classes.text} font-bold text-gray-900 dark:text-white`}>
+        <span className={`${classes.text} font-bold text-gray-900 `}>
           {rating.toFixed(1)}
         </span>
       </div>
 
       {/* Rating Count */}
-      <span className={`${classes.text} text-gray-600 dark:text-gray-400`}>
+      <span className={`${classes.text} text-gray-600 `}>
         ({ratingCount})
       </span>
 
       {/* Review Count */}
       {reviewCount > 0 && (
         <div className="flex items-center gap-1 ml-1">
-          <MessageSquare className={`${classes.star} text-gray-400 dark:text-gray-500`} />
-          <span className={`${classes.text} text-gray-600 dark:text-gray-400`}>
+          <MessageSquare className={`${classes.star} text-gray-400 `} />
+          <span className={`${classes.text} text-gray-600 `}>
             {reviewCount}
           </span>
         </div>

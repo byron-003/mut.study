@@ -208,7 +208,7 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50  py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex justify-center mb-6">
@@ -218,12 +218,12 @@ const RegisterPage = () => {
               className="w-24 h-24 object-contain"
             />
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 ">
             Create your account
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-center text-sm text-gray-600 ">
             Already have an account?{' '}
-            <Link to="/login" className="font-medium text-mut-primary hover:text-green-700 dark:text-mut-accent">
+            <Link to="/login" className="font-medium text-mut-primary hover:text-green-700 ">
               Sign in
             </Link>
           </p>
@@ -318,7 +318,7 @@ const RegisterPage = () => {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700  mb-1">
                 Password
               </label>
               <input
@@ -335,9 +335,9 @@ const RegisterPage = () => {
               
               {/* Password Strength Indicator */}
               {showPasswordRequirements && formData.password && (
-                <div className="mt-3 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg space-y-3">
+                <div className="mt-3 p-4 bg-gray-50  border border-gray-200  rounded-lg space-y-3">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Password Strength:</span>
+                    <span className="text-sm font-medium text-gray-700 ">Password Strength:</span>
                     <span className={`text-sm font-semibold ${
                       passwordStrength.score <= 2 ? 'text-red-600' :
                       passwordStrength.score === 3 ? 'text-yellow-600' :
@@ -352,7 +352,7 @@ const RegisterPage = () => {
                   </div>
                   
                   {/* Strength Bar */}
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div className="w-full bg-gray-200  rounded-full h-2">
                     <div 
                       className={`h-2 rounded-full transition-all duration-300 ${
                         passwordStrength.score <= 2 ? 'bg-red-500' :
@@ -366,7 +366,7 @@ const RegisterPage = () => {
                   
                   {/* Requirements Checklist */}
                   <div className="space-y-2 text-sm">
-                    <div className={`flex items-center gap-2 ${passwordStrength.hasMinLength ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                    <div className={`flex items-center gap-2 ${passwordStrength.hasMinLength ? 'text-green-600 ' : 'text-gray-500 '}`}>
                       {passwordStrength.hasMinLength ? (
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -379,7 +379,7 @@ const RegisterPage = () => {
                       <span>At least 8 characters</span>
                     </div>
                     
-                    <div className={`flex items-center gap-2 ${passwordStrength.hasUppercase ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                    <div className={`flex items-center gap-2 ${passwordStrength.hasUppercase ? 'text-green-600 ' : 'text-gray-500 '}`}>
                       {passwordStrength.hasUppercase ? (
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -392,7 +392,7 @@ const RegisterPage = () => {
                       <span>Uppercase letter (A-Z)</span>
                     </div>
                     
-                    <div className={`flex items-center gap-2 ${passwordStrength.hasLowercase ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                    <div className={`flex items-center gap-2 ${passwordStrength.hasLowercase ? 'text-green-600 ' : 'text-gray-500 '}`}>
                       {passwordStrength.hasLowercase ? (
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -405,7 +405,7 @@ const RegisterPage = () => {
                       <span>Lowercase letter (a-z)</span>
                     </div>
                     
-                    <div className={`flex items-center gap-2 ${passwordStrength.hasNumber ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                    <div className={`flex items-center gap-2 ${passwordStrength.hasNumber ? 'text-green-600 ' : 'text-gray-500 '}`}>
                       {passwordStrength.hasNumber ? (
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -418,7 +418,7 @@ const RegisterPage = () => {
                       <span>Number (0-9)</span>
                     </div>
                     
-                    <div className={`flex items-center gap-2 ${passwordStrength.hasSymbol ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                    <div className={`flex items-center gap-2 ${passwordStrength.hasSymbol ? 'text-green-600 ' : 'text-gray-500 '}`}>
                       {passwordStrength.hasSymbol ? (
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -433,7 +433,7 @@ const RegisterPage = () => {
                   </div>
                   
                   {passwordStrength.score < 3 && (
-                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                    <p className="text-xs text-amber-600  mt-2">
                       ⚠️ Include at least 3 requirements for a strong password
                     </p>
                   )}
@@ -442,7 +442,7 @@ const RegisterPage = () => {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700  mb-1">
                 Confirm Password
               </label>
               <input
@@ -457,14 +457,14 @@ const RegisterPage = () => {
               {formData.confirmPassword && (
                 <div className="mt-2">
                   {formData.password === formData.confirmPassword ? (
-                    <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
+                    <p className="text-sm text-green-600  flex items-center gap-1">
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                       Passwords match
                     </p>
                   ) : (
-                    <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                    <p className="text-sm text-red-600  flex items-center gap-1">
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                       </svg>
@@ -533,7 +533,7 @@ const RegisterPage = () => {
           </button>
 
           {/* Security Info */}
-          <div className="text-center text-xs text-gray-500 dark:text-gray-400 pt-2">
+          <div className="text-center text-xs text-gray-500  pt-2">
             <p>🔒 Rate limit: 3 registrations per 15 minutes</p>
           </div>
         </form>

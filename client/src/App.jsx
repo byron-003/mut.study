@@ -4,7 +4,6 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './utils/authContext';
 import { SocketProvider } from './context/SocketContext';
 import { NotificationProvider } from './context/NotificationContext';
-import { ThemeProvider } from './context/ThemeContext';
 import Navbar from './components/Navbar';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
@@ -58,17 +57,17 @@ function AppRoutes() {
   // Don't render routes until auth is loaded
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50  flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
+          <p className="mt-4 text-gray-600 ">Loading...</p>
         </div>
       </div>
     );
   }
   
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+    <div className="min-h-screen bg-gray-50  transition-colors">
       <Navbar />
       <Routes>
         {/* Home redirects to dashboard if authenticated */}
@@ -145,8 +144,7 @@ function AppRoutes() {
 function App() {
   return (
     <Router>
-      <ThemeProvider>
-        <AuthProvider>
+      <AuthProvider>
           <SocketProvider>
             <NotificationProvider>
               <Toaster 
@@ -192,7 +190,6 @@ function App() {
             </NotificationProvider>
           </SocketProvider>
         </AuthProvider>
-      </ThemeProvider>
     </Router>
   );
 }

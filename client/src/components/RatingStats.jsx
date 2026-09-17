@@ -15,8 +15,8 @@ import { Star } from 'lucide-react';
 const RatingStats = ({ stats }) => {
   if (!stats || stats.total_ratings === 0) {
     return (
-      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-        <Star className="w-12 h-12 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
+      <div className="text-center py-8 text-gray-500 ">
+        <Star className="w-12 h-12 mx-auto mb-2 text-gray-300 " />
         <p className="text-sm">No ratings yet</p>
         <p className="text-xs mt-1">Be the first to rate this resource</p>
       </div>
@@ -46,11 +46,11 @@ const RatingStats = ({ stats }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+    <div className="bg-white  rounded-lg p-6 shadow-sm border border-gray-200 ">
       {/* Overall Rating */}
-      <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-200 ">
         <div className="text-center">
-          <div className="text-5xl font-bold text-gray-900 dark:text-white mb-1">
+          <div className="text-5xl font-bold text-gray-900  mb-1">
             {parseFloat(average_rating).toFixed(1)}
           </div>
           <div className="flex items-center justify-center gap-0.5 mb-1">
@@ -60,12 +60,12 @@ const RatingStats = ({ stats }) => {
                 className={`w-4 h-4 ${
                   star <= Math.round(average_rating)
                     ? 'fill-yellow-400 text-yellow-400'
-                    : 'fill-gray-200 text-gray-300 dark:fill-gray-600 dark:text-gray-600'
+                    : 'fill-gray-200 text-gray-300  '
                 }`}
               />
             ))}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">
+          <div className="text-xs text-gray-500 ">
             {total_ratings} {total_ratings === 1 ? 'rating' : 'ratings'}
           </div>
         </div>
@@ -78,20 +78,20 @@ const RatingStats = ({ stats }) => {
             return (
               <div key={stars} className="flex items-center gap-2">
                 <div className="flex items-center gap-1 w-12">
-                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  <span className="text-xs font-medium text-gray-700 ">
                     {stars}
                   </span>
-                  <Star className="w-3 h-3 fill-gray-400 text-gray-400 dark:fill-gray-500 dark:text-gray-500" />
+                  <Star className="w-3 h-3 fill-gray-400 text-gray-400  " />
                 </div>
                 
-                <div className="flex-1 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div className="flex-1 h-2 bg-gray-100  rounded-full overflow-hidden">
                   <div
                     className="h-full bg-yellow-400 transition-all duration-300"
                     style={{ width: `${percentage}%` }}
                   />
                 </div>
                 
-                <span className="text-xs text-gray-600 dark:text-gray-400 w-8 text-right">
+                <span className="text-xs text-gray-600  w-8 text-right">
                   {count}
                 </span>
               </div>
@@ -103,16 +103,16 @@ const RatingStats = ({ stats }) => {
       {/* Rating Breakdown Summary */}
       <div className="grid grid-cols-2 gap-4 text-center">
         <div>
-          <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+          <div className="text-2xl font-bold text-green-600 ">
             {((five_star + four_star) / total_ratings * 100).toFixed(0)}%
           </div>
-          <div className="text-xs text-gray-600 dark:text-gray-400">Positive</div>
+          <div className="text-xs text-gray-600 ">Positive</div>
         </div>
         <div>
           <div className="text-2xl font-bold text-mut-primary">
             {five_star}
           </div>
-          <div className="text-xs text-gray-600 dark:text-gray-400">5-Star Ratings</div>
+          <div className="text-xs text-gray-600 ">5-Star Ratings</div>
         </div>
       </div>
     </div>

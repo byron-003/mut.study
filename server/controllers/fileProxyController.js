@@ -2,6 +2,36 @@ import axios from 'axios';
 import { query } from '../config/database.js';
 import { AppError } from '../middleware/errorHandler.js';
 
+// Map MIME types to file extensions so proxied URLs/filenames carry a real extension.
+// Microsoft Office Viewer detects file type from the URL/name, so an extensionless
+// document (e.g. Cloudinary raw URLs that drop the extension) is treated as invalid.
+const MIME_EXTENSIONS = {
+  'application/pdf': '.pdf',
+  'application/msword': '.doc',
+  'application/vnd.ms-excel': '.xls',
+  'application/vnd.ms-powerpoint': '.ppt',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': '.pptx',
+  'application/vnd.oasis.opendocument.text': '.odt',
+  'application/vnd.oasis.opendocument.spreadsheet': '.ods',
+  'application/vnd.oasis.opendocument.presentation': '.odp',
+  'text/plain': '.txt',
+  'text/html': '.html',
+  'text/csv': '.csv',
+  'application/json': '.json',
+};
+
+// Build a safe filename, appending the MIME-appropriate extension when missing
+const buildFileName = (mimeType, baseName) => {
+  const extension = MIME_EXTENSIONS?.[mimeType?.toLowerCase()] || '';
+  let filename = (baseName || 'file').replace(/["\\]/g, '_');
+  if (extension && !/\.[a-z0-9]{1,5}$/i.test(filename)) {
+    filename = `${filename}${extension}`;
+  }
+  return filename;
+};
+
 /**
  * Proxy file viewing - serves files inline for reading
  * This prevents forced downloads from Cloudinary
@@ -10,6 +40,7 @@ export const viewFile = async (req, res, next) => {
   try {
     const { resourceId } = req.params;
     const userId = req.user?.id; // Optional auth
+    const requestedFilename = req.params.filename || null;
 
     // Get file details from database
     const result = await query(
@@ -36,12 +67,16 @@ export const viewFile = async (req, res, next) => {
       timeout: 30000 // 30 second timeout
     });
 
-    // Get content type from Cloudinary response or database
-    const contentType = response.headers['content-type'] || resource.file_type || 'application/octet-stream';
+    // Prefer the MIME type stored in the database - Cloudinary raw uploads often
+    // return application/octet-stream, which breaks viewers that sniff content type
+    const contentType = resource.file_type || response.headers['content-type'] || 'application/octet-stream';
+
+    // Use a filename with a real extension so external viewers can identify the file
+    const filename = buildFileName(contentType, requestedFilename || resource.title);
 
     // Set headers for inline viewing (not download)
     res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', `inline; filename="${resource.title}"`);
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
     res.setHeader('X-Content-Type-Options', 'nosniff');
 
@@ -120,12 +155,15 @@ export const downloadFile = async (req, res, next) => {
       timeout: 60000 // 60 second timeout for large files
     });
 
-    // Get content type
-    const contentType = response.headers['content-type'] || resource.file_type || 'application/octet-stream';
+    // Get content type - prefer DB type since Cloudinary raw files often report octet-stream
+    const contentType = resource.file_type || response.headers['content-type'] || 'application/octet-stream';
+
+    // Use a filename with a real extension
+    const filename = buildFileName(contentType, resource.title);
 
     // Set headers for download (attachment)
     res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${resource.title}"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     
     if (response.headers['content-length']) {
       res.setHeader('Content-Length', response.headers['content-length']);

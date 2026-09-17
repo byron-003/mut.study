@@ -95,7 +95,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50  py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex justify-center mb-6">
@@ -105,12 +105,12 @@ const LoginPage = () => {
               className="w-24 h-24 object-contain"
             />
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 ">
             Sign in to your account
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-center text-sm text-gray-600 ">
             Or{' '}
-            <Link to="/register" className="font-medium text-mut-primary hover:text-green-700 dark:text-mut-accent">
+            <Link to="/register" className="font-medium text-mut-primary hover:text-green-700 ">
               create a new account
             </Link>
           </p>
@@ -119,7 +119,7 @@ const LoginPage = () => {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {/* Rate Limit Warning */}
           {rateLimitInfo && Date.now() < rateLimitInfo.resetTime && (
-            <div className="rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4">
+            <div className="rounded-md bg-amber-50  border border-amber-200  p-4">
               <div className="flex">
                 <div className="flex-shrink-0">
                   <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
@@ -127,7 +127,7 @@ const LoginPage = () => {
                   </svg>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm text-amber-800 dark:text-amber-400">
+                  <p className="text-sm text-amber-800 ">
                     ⚠️ Account temporarily locked due to multiple failed attempts. Please wait before trying again.
                   </p>
                 </div>
@@ -137,9 +137,9 @@ const LoginPage = () => {
 
           {/* Attempts Remaining Indicator */}
           {attemptsRemaining !== null && attemptsRemaining > 0 && (
-            <div className="rounded-md bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-3">
+            <div className="rounded-md bg-yellow-50  border border-yellow-200  p-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-yellow-800 dark:text-yellow-400 font-medium">
+                <span className="text-sm text-yellow-800  font-medium">
                   Attempts remaining: {attemptsRemaining} / 5
                 </span>
                 <div className="flex gap-1">
@@ -160,7 +160,7 @@ const LoginPage = () => {
 
           <div className="rounded-md shadow-sm space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700  mb-1">
                 Email address
               </label>
               <input
@@ -177,12 +177,12 @@ const LoginPage = () => {
             </div>
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 ">
                   Password
                 </label>
                 <Link 
                   to="/forgot-password" 
-                  className="text-sm text-mut-primary hover:text-mut-secondary transition-colors dark:text-mut-accent"
+                  className="text-sm text-mut-primary hover:text-mut-secondary transition-colors "
                 >
                   Forgot password?
                 </Link>
@@ -220,7 +220,7 @@ const LoginPage = () => {
           </button>
 
           {/* Security Info */}
-          <div className="text-center text-xs text-gray-500 dark:text-gray-400 pt-2">
+          <div className="text-center text-xs text-gray-500  pt-2">
             <p>🔒 For security: 5 login attempts per 5 minutes</p>
           </div>
         </form>
