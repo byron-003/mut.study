@@ -77,6 +77,11 @@ export const adminAPI = {
   // System settings
   getSettings: () => api.get('/admin/settings'),
   updateSetting: (key, value) => api.put('/admin/settings', { key, value }),
+
+  // Announcement banner (shown to users below the header)
+  getBanner: () => api.get('/admin/public/banner'),
+  setBanner: (message) => api.put('/admin/banner', { message }),
+  clearBanner: () => api.delete('/admin/banner'),
   
   // Notifications
   createNotification: (data) => api.post('/notifications', data),

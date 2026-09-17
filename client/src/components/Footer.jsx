@@ -10,13 +10,13 @@ const Footer = () => {
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          
+
           {/* Brand Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <img 
-                src="/mut-logo.png" 
-                alt="MUT Logo" 
+              <img
+                src="/mut-logo.png"
+                alt="MUT Logo"
                 className="w-12 h-12 object-contain"
               />
               <div>
@@ -27,12 +27,12 @@ const Footer = () => {
             <p className="text-gray-400 text-sm leading-relaxed">
               Your comprehensive platform for academic resources, collaboration, and success at Muranga University of Technology.
             </p>
-            
+
             {/* Social Links */}
             <div className="flex gap-3">
-              <a 
-                href="https://www.facebook.com/profile.php?id=100073395579351" 
-                target="_blank" 
+              <a
+                href="https://www.facebook.com/profile.php?id=100073395579351"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 bg-gray-800 hover:bg-blue-600 rounded-full flex items-center justify-center transition-colors duration-300"
                 aria-label="Facebook"
@@ -41,9 +41,9 @@ const Footer = () => {
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                 </svg>
               </a>
-              <a 
-                href="https://x.com/oyoo_byron" 
-                target="_blank" 
+              <a
+                href="https://x.com/oyoo_byron"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 bg-gray-800 hover:bg-sky-500 rounded-full flex items-center justify-center transition-colors duration-300"
                 aria-label="Twitter"
@@ -52,10 +52,10 @@ const Footer = () => {
                   <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
                 </svg>
               </a>
-              
-              <a 
-                href="https://www.instagram.com/techxpat/" 
-                target="_blank" 
+
+              <a
+                href="https://www.instagram.com/techxpat/"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 bg-gray-800 hover:bg-pink-600 rounded-full flex items-center justify-center transition-colors duration-300"
                 aria-label="Instagram"
@@ -65,9 +65,9 @@ const Footer = () => {
                 </svg>
               </a>
 
-              <a 
-                href="https://whatsapp.com/channel/0029Vb8deG5HwXbGo9s3DL1I" 
-                target="_blank" 
+              <a
+                href="https://whatsapp.com/channel/0029Vb8deG5HwXbGo9s3DL1I"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 bg-gray-800 hover:bg-green-500 rounded-full flex items-center justify-center transition-colors duration-300"
                 aria-label="WhatsApp Channel"
@@ -85,8 +85,8 @@ const Footer = () => {
             <h4 className="text-lg font-semibold text-white mb-4">Quick Links</h4>
             <ul className="space-y-3">
               <li>
-                <Link 
-                  to="/programs" 
+                <Link
+                  to="/programs"
                   className="text-gray-400 hover:text-mut-primary transition-colors duration-300 flex items-center gap-2 group"
                 >
                   <span className="w-1 h-1 bg-mut-primary rounded-full group-hover:w-2 transition-all duration-300"></span>
@@ -94,8 +94,8 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link 
-                  to="/about" 
+                <Link
+                  to="/about"
                   className="text-gray-400 hover:text-mut-primary transition-colors duration-300 flex items-center gap-2 group"
                 >
                   <span className="w-1 h-1 bg-mut-primary rounded-full group-hover:w-2 transition-all duration-300"></span>
@@ -103,8 +103,8 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link 
-                  to="/contact" 
+                <Link
+                  to="/contact"
                   className="text-gray-400 hover:text-mut-primary transition-colors duration-300 flex items-center gap-2 group"
                 >
                   <span className="w-1 h-1 bg-mut-primary rounded-full group-hover:w-2 transition-all duration-300"></span>
@@ -112,8 +112,8 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link 
-                  to="/login" 
+                <Link
+                  to="/login"
                   className="text-gray-400 hover:text-mut-primary transition-colors duration-300 flex items-center gap-2 group"
                 >
                   <span className="w-1 h-1 bg-mut-primary rounded-full group-hover:w-2 transition-all duration-300"></span>
@@ -121,8 +121,8 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link 
-                  to="/register" 
+                <Link
+                  to="/register"
                   className="text-gray-400 hover:text-mut-primary transition-colors duration-300 flex items-center gap-2 group"
                 >
                   <span className="w-1 h-1 bg-mut-primary rounded-full group-hover:w-2 transition-all duration-300"></span>
@@ -137,9 +137,9 @@ const Footer = () => {
             <h4 className="text-lg font-semibold text-white mb-4">Resources</h4>
             <ul className="space-y-3">
               <li>
-                <a 
-                  href="https://www.mut.co.ke" 
-                  target="_blank" 
+                <a
+                  href="https://www.mut.ac.ke"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-400 hover:text-mut-primary transition-colors duration-300 flex items-center gap-2 group"
                 >
@@ -149,8 +149,8 @@ const Footer = () => {
                 </a>
               </li>
               <li>
-                <Link 
-                  to="/terms" 
+                <Link
+                  to="/terms"
                   className="text-gray-400 hover:text-mut-primary transition-colors duration-300 flex items-center gap-2 group"
                 >
                   <span className="w-1 h-1 bg-mut-primary rounded-full group-hover:w-2 transition-all duration-300"></span>
@@ -158,8 +158,8 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link 
-                  to="/privacy" 
+                <Link
+                  to="/privacy"
                   className="text-gray-400 hover:text-mut-primary transition-colors duration-300 flex items-center gap-2 group"
                 >
                   <span className="w-1 h-1 bg-mut-primary rounded-full group-hover:w-2 transition-all duration-300"></span>
@@ -167,8 +167,8 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <a 
-                  href="mailto:oyoookoth42@gmail.com" 
+                <a
+                  href="mailto:oyoookoth42@gmail.com"
                   className="text-gray-400 hover:text-mut-primary transition-colors duration-300 flex items-center gap-2 group"
                 >
                   <span className="w-1 h-1 bg-mut-primary rounded-full group-hover:w-2 transition-all duration-300"></span>
@@ -225,12 +225,12 @@ const Footer = () => {
                 &copy; {currentYear} MUT Study Hub.
                 </p >
                 <p className="text-gray-400 text-sm"> All rights reserved.</p>
-              
+
               <p className="text-gray-500 text-xs mt-1">
                 Built with ❤️ for MUT students
               </p>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <span className="text-gray-500 text-sm">Developed by</span>
               <div className="px-4 py-2 bg-gradient-to-r from-mut-primary to-green-600 rounded-lg shadow-lg">

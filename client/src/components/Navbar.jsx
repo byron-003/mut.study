@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../utils/authContext';
 import { NotificationBell } from '../context/NotificationContext';
 import { Menu, Settings, LogOut, User as UserIcon } from 'lucide-react';
@@ -9,6 +9,31 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isActive = (to) => {
+    if (to === '/') return location.pathname === '/';
+    return location.pathname.startsWith(to);
+  };
+
+  const desktopLinkClass = (to) =>
+    `px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+      isActive(to)
+        ? 'text-mut-primary bg-green-50 font-semibold'
+        : 'text-gray-700 hover:text-mut-primary hover:bg-gray-50'
+    }`;
+
+  const desktopGuestLinkClass = (to) =>
+    `transition-colors font-medium ${
+      isActive(to) ? 'text-mut-primary font-semibold' : 'text-gray-700 hover:text-mut-primary'
+    }`;
+
+  const mobileLinkClass = (to) =>
+    `block px-3 py-2 rounded-md text-base font-medium transition-colors ${
+      isActive(to)
+        ? 'bg-green-50 text-mut-primary font-semibold'
+        : 'text-gray-700 hover:bg-gray-100'
+    }`;
 
   const handleLogout = () => {
     logout();
@@ -39,35 +64,49 @@ const Navbar = () => {
             {isAuthenticated ? (
               <>
                 <Link
+                  to="/"
+                  className={desktopLinkClass('/')}
+                >
+                  Home
+                </Link>
+                <Link
                   to="/forum"
-                  className="text-gray-700  hover:text-mut-primary  px-3 py-2 rounded-md text-sm font-medium"
+                  className={desktopLinkClass('/forum')}
                 >
                   Forum
                 </Link>
                 <Link
                   to="/my-uploads"
-                  className="text-gray-700  hover:text-mut-primary  px-3 py-2 rounded-md text-sm font-medium"
+                  className={desktopLinkClass('/my-uploads')}
                 >
                   My Uploads
                 </Link>
                 <Link
                   to="/study-history"
-                  className="text-gray-700  hover:text-mut-primary  px-3 py-2 rounded-md text-sm font-medium"
+                  className={desktopLinkClass('/study-history')}
                 >
                   History
                 </Link>
                 <Link
                   to="/leaderboard"
-                  className="text-gray-700  hover:text-mut-primary  px-3 py-2 rounded-md text-sm font-medium"
+                  className={desktopLinkClass('/leaderboard')}
                 >
                   Leaderboard
                 </Link>
                 {isClassRep && (
                   <Link
                     to="/pending-approvals"
-                    className="text-gray-700  hover:text-mut-primary  px-3 py-2 rounded-md text-sm font-medium"
+                    className={desktopLinkClass('/pending-approvals')}
                   >
                     Pending Approvals
+                  </Link>
+                )}
+                {!isActive('/dashboard') && (
+                  <Link
+                    to="/dashboard"
+                    className="px-6 py-2 rounded-lg transition-colors font-medium bg-mut-primary text-white hover:bg-mut-secondary"
+                  >
+                    Dashboard
                   </Link>
                 )}
                 {/* Notification Bell */}
@@ -121,20 +160,26 @@ const Navbar = () => {
                 {/* Centered Navigation Links on Home Page */}
                 <div className="flex items-center gap-8 absolute left-1/2 transform -translate-x-1/2">
                   <Link
+                    to="/"
+                    className={desktopGuestLinkClass('/')}
+                  >
+                    Home
+                  </Link>
+                  <Link
                     to="/programs"
-                    className="text-gray-700 hover:text-mut-primary transition-colors font-medium"
+                    className={desktopGuestLinkClass('/programs')}
                   >
                     Programs
                   </Link>
                   <Link
                     to="/about"
-                    className="text-gray-700 hover:text-mut-primary transition-colors font-medium"
+                    className={desktopGuestLinkClass('/about')}
                   >
                     About
                   </Link>
                   <Link
                     to="/contact"
-                    className="text-gray-700 hover:text-mut-primary transition-colors font-medium"
+                    className={desktopGuestLinkClass('/contact')}
                   >
                     Contact
                   </Link>
@@ -257,37 +302,46 @@ const Navbar = () => {
           <div className="px-2 pt-2 pb-3 space-y-1">
             {isAuthenticated ? (
               <>
+                {!isActive('/dashboard') && (
+                  <Link
+                    to="/dashboard"
+                    className={mobileLinkClass('/dashboard')}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                )}
                 <Link
-                  to="/dashboard"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700  hover:bg-gray-100 "
+                  to="/"
+                  className={mobileLinkClass('/')}
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Dashboard
+                  Home
                 </Link>
                 <Link
                   to="/forum"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700  hover:bg-gray-100 "
+                  className={mobileLinkClass('/forum')}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Forum
                 </Link>
                 <Link
                   to="/my-uploads"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700  hover:bg-gray-100 "
+                  className={mobileLinkClass('/my-uploads')}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   My Uploads
                 </Link>
                 <Link
                   to="/study-history"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700  hover:bg-gray-100 "
+                  className={mobileLinkClass('/study-history')}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   History
                 </Link>
                 <Link
                   to="/leaderboard"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700  hover:bg-gray-100 "
+                  className={mobileLinkClass('/leaderboard')}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Leaderboard
@@ -295,7 +349,7 @@ const Navbar = () => {
                 {isClassRep && (
                   <Link
                     to="/pending-approvals"
-                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700  hover:bg-gray-100 "
+                    className={mobileLinkClass('/pending-approvals')}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Pending Approvals
@@ -305,22 +359,29 @@ const Navbar = () => {
             ) : (
               <>
                 <Link
+                  to="/"
+                  className={mobileLinkClass('/')}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Home
+                </Link>
+                <Link
                   to="/programs"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700  hover:bg-gray-100 "
+                  className={mobileLinkClass('/programs')}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Programs
                 </Link>
                 <Link
                   to="/about"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700  hover:bg-gray-100 "
+                  className={mobileLinkClass('/about')}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   About
                 </Link>
                 <Link
                   to="/contact"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700  hover:bg-gray-100 "
+                  className={mobileLinkClass('/contact')}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Contact

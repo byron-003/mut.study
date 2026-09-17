@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './utils/authContext';
 import { SocketProvider } from './context/SocketContext';
 import { NotificationProvider } from './context/NotificationContext';
 import Navbar from './components/Navbar';
+import AnnouncementBanner from './components/AnnouncementBanner';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -52,7 +53,7 @@ const GuestRoute = ({ children }) => {
 };
 
 function AppRoutes() {
-  const { isAuthenticated, loading } = useAuth();
+  const { loading } = useAuth();
   
   // Don't render routes until auth is loaded
   if (loading) {
@@ -69,9 +70,10 @@ function AppRoutes() {
   return (
     <div className="min-h-screen bg-gray-50  transition-colors">
       <Navbar />
+      <AnnouncementBanner />
       <Routes>
-        {/* Home redirects to dashboard if authenticated */}
-        <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <HomePage />} />
+        {/* Landing page for everyone (home button target) */}
+        <Route path="/" element={<HomePage />} />
         
         {/* Public pages */}
         <Route path="/programs" element={<ProgramsPage />} />

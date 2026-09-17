@@ -43,7 +43,7 @@ const LoginPage = () => {
       sessionStorage.removeItem('loginRateLimit');
       
       setTimeout(() => {
-        navigate('/');
+        navigate('/dashboard');
       }, 500);
     } catch (err) {
       console.error('Login error:', err);

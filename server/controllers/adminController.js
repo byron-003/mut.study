@@ -1232,3 +1232,86 @@ export const uploadFile = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * Get active announcement banner (public endpoint)
+ */
+export const getBanner = async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT setting_value, updated_at FROM system_settings WHERE setting_key = 'announcement_banner'`
+    );
+
+    const banner = result.rows.length > 0 ? result.rows[0] : null;
+    const message = banner && banner.setting_value ? banner.setting_value.trim() : '';
+
+    res.json({
+      success: true,
+      data: {
+        active: message.length > 0,
+        message,
+        updated_at: banner?.updated_at || null
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Set announcement banner (admin only)
+ */
+export const setBanner = async (req, res, next) => {
+  try {
+    const { message } = req.body;
+    const userId = req.user.id;
+
+    if (!message || typeof message !== 'string' || !message.trim()) {
+      throw new AppError('Banner message is required', 400);
+    }
+
+    const result = await query(
+      `INSERT INTO system_settings (setting_key, setting_value, updated_by)
+       VALUES ('announcement_banner', $1, $2)
+       ON CONFLICT (setting_key)
+       DO UPDATE SET setting_value = $1, updated_by = $2, updated_at = CURRENT_TIMESTAMP
+       RETURNING setting_value, updated_at`,
+      [message.trim(), userId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Banner updated successfully',
+      data: {
+        active: true,
+        message: result.rows[0].setting_value,
+        updated_at: result.rows[0].updated_at
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Clear announcement banner (admin only)
+ */
+export const clearBanner = async (req, res, next) => {
+  try {
+    await query(
+      `INSERT INTO system_settings (setting_key, setting_value, updated_by)
+       VALUES ('announcement_banner', '', $1)
+       ON CONFLICT (setting_key)
+       DO UPDATE SET setting_value = '', updated_by = $1, updated_at = CURRENT_TIMESTAMP`,
+      [req.user.id]
+    );
+
+    res.json({
+      success: true,
+      message: 'Banner cleared successfully',
+      data: { active: false, message: '' }
+    });
+  } catch (error) {
+    next(error);
+  }
+};

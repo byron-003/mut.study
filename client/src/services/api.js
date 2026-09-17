@@ -59,6 +59,13 @@ export const searchAPI = {
 export const adminPublicAPI = {
   getDownloadsEnabled: () => api.get('/admin/public/downloads-enabled'),
   getMaxFileSize: () => api.get('/admin/public/max-file-size'),
+  getBanner: () => api.get('/admin/public/banner'),
+};
+
+// Admin API (auth required)
+export const adminAPI = {
+  setBanner: (message) => api.put('/admin/banner', { message }),
+  clearBanner: () => api.delete('/admin/banner'),
 };
 
 // Schools API

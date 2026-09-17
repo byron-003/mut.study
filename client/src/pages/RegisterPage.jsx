@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../utils/authContext';
 import { schoolsAPI } from '../services/api';
@@ -33,6 +33,18 @@ const RegisterPage = () => {
   const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [referredById, setReferredById] = useState(
+    () => localStorage.getItem('referral_ref') || searchParams.get('ref') || ''
+  );
+
+  useEffect(() => {
+    const ref = searchParams.get('ref');
+    if (ref) {
+      localStorage.setItem('referral_ref', ref);
+      setReferredById(ref);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchPrograms();
@@ -174,8 +186,11 @@ const RegisterPage = () => {
         password: formData.password,
         firstName: formData.firstName,
         lastName: formData.lastName,
-        programId: formData.programId || null
+        programId: formData.programId || null,
+        referredBy: referredById || null
       });
+
+      localStorage.removeItem('referral_ref');
       
       toast.success('Account created successfully! Redirecting...', {
         icon: '🎉',
@@ -183,7 +198,7 @@ const RegisterPage = () => {
       });
       
       setTimeout(() => {
-        navigate('/');
+        navigate('/dashboard');
       }, 1000);
     } catch (err) {
       console.error('Registration error:', err);
@@ -221,6 +236,13 @@ const RegisterPage = () => {
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 ">
             Create your account
           </h2>
+          {referredById && (
+            <div className="mt-4 bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-center">
+              <p className="text-sm font-medium text-green-800">
+                🎉 You were invited by a MUT Study Hub member — you've joined through their referral link!
+              </p>
+            </div>
+          )}
           <p className="mt-2 text-center text-sm text-gray-600 ">
             Already have an account?{' '}
             <Link to="/login" className="font-medium text-mut-primary hover:text-green-700 ">

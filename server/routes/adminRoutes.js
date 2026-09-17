@@ -26,6 +26,9 @@ import {
   updateSetting,
   getDownloadsEnabled,
   getMaxFileSize,
+  getBanner,
+  setBanner,
+  clearBanner,
   uploadFile,
 } from '../controllers/adminController.js';
 import { authenticate, authorize } from '../middleware/authMiddleware.js';
@@ -36,10 +39,15 @@ const router = express.Router();
 // Public routes (no auth required)
 router.get('/public/downloads-enabled', getDownloadsEnabled);
 router.get('/public/max-file-size', getMaxFileSize);
+router.get('/public/banner', getBanner);
 
 // All other admin routes require authentication and admin/class_rep role
 router.use(authenticate);
 router.use(authorize('admin', 'class_rep'));
+
+// Announcement banner (admin only)
+router.put('/banner', authorize('admin'), setBanner);
+router.delete('/banner', authorize('admin'), clearBanner);
 
 // Statistics and analytics
 router.get('/stats', getStats);

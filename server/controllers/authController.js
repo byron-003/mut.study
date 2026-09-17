@@ -20,7 +20,7 @@ const generateToken = (userId) => {
  */
 export const register = async (req, res, next) => {
   try {
-    const { email, password, firstName, lastName, programId } = req.body;
+    const { email, password, firstName, lastName, programId, referredBy } = req.body;
 
     // Validate required fields
     if (!email || !password || !firstName || !lastName || !programId) {
@@ -62,12 +62,21 @@ export const register = async (req, res, next) => {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
+    // Validate referrer if provided (ignore invalid references)
+    let referredById = null;
+    if (referredBy) {
+      const referrer = await query('SELECT id FROM users WHERE id = $1', [referredBy]);
+      if (referrer.rows.length > 0) {
+        referredById = referrer.rows[0].id;
+      }
+    }
+
     // Create user
     const result = await query(
-      `INSERT INTO users (email, password_hash, first_name, last_name, program_id, role) 
-       VALUES ($1, $2, $3, $4, $5, $6) 
-       RETURNING id, email, first_name, last_name, role, program_id, created_at`,
-      [email.toLowerCase(), passwordHash, firstName, lastName, programId, 'student']
+      `INSERT INTO users (email, password_hash, first_name, last_name, program_id, role, referred_by) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7) 
+       RETURNING id, email, first_name, last_name, role, program_id, referred_by, created_at`,
+      [email.toLowerCase(), passwordHash, firstName, lastName, programId, 'student', referredById]
     );
 
     const user = result.rows[0];
