@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Download, X, AlertCircle, CheckCircle, Search, Star, BookOpen } from 'lucide-react';
+import { Download, X, AlertCircle, CheckCircle, Search, Star, BookOpen, Loader2 } from 'lucide-react';
 import { progressAPI } from '../services/api';
 
 /**
@@ -12,7 +12,11 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
   const [currentPage, setCurrentPage] = useState(savedProgress?.currentPage || 1);
   const [totalPages, setTotalPages] = useState(savedProgress?.totalPages || null);
   const [isTracking, setIsTracking] = useState(false);
-  const iframeRef = useRef(null);
+  const [pdfDoc, setPdfDoc] = useState(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const canvasRefs = useRef({});
+  const renderedPagesRef = useRef(new Set());
+  const scrollContainerRef = useRef(null);
   const progressTimerRef = useRef(null);
 
   if (!file) return null;
@@ -57,6 +61,7 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
           timeSpent: 10, // Increment by 10 seconds
           lastPosition: `page_${currentPage}`
         });
+        console.log(`Progress saved: Page ${currentPage} of ${totalPages}`);
       } else {
         // Percentage-based tracking for other files
         await progressAPI.updateProgress(resourceId, {
@@ -70,7 +75,7 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
     }
   };
 
-  // Detect PDF pages using PDF.js
+  // Load PDF with PDF.js for in-app rendering and page tracking
   useEffect(() => {
     const loadPdfJs = async () => {
       const mimeType = fileType?.toLowerCase() || '';
@@ -81,6 +86,8 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
         // Build proxy URL for PDF loading
         const proxyUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/files/view/${resourceId}`;
         
+        setPdfLoading(true);
+
         // Dynamically import PDF.js
         const pdfjsLib = await import('pdfjs-dist');
         
@@ -94,13 +101,16 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
         });
         const pdf = await loadingTask.promise;
         
+        setPdfDoc(pdf);
         setTotalPages(pdf.numPages);
         setIsTracking(true);
+        setPdfLoading(false);
         
         console.log(`PDF loaded: ${pdf.numPages} pages`);
       } catch (error) {
         console.error('Error loading PDF:', error);
-        // Fall back to iframe tracking
+        setLoadError(true);
+        setPdfLoading(false);
         setIsTracking(true);
       }
     };
@@ -108,18 +118,104 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
     loadPdfJs();
   }, [fileUrl, fileType, resourceId]);
 
-  // Listen for page changes in Google Docs Viewer (if possible via URL hash)
+  // Render PDF pages lazily as they scroll into view and track the visible page
   useEffect(() => {
-    const handleMessage = (event) => {
-      // Try to capture page changes from iframe
-      if (event.data && event.data.page) {
-        setCurrentPage(event.data.page);
+    if (!pdfDoc) return;
+
+    renderedPagesRef.current = new Set();
+
+    const renderPage = async (pageNum) => {
+      const canvas = canvasRefs.current[pageNum];
+      if (!canvas || !canvas.isConnected || renderedPagesRef.current.has(pageNum)) return;
+
+      try {
+        const page = await pdfDoc.getPage(pageNum);
+
+        const baseViewport = page.getViewport({ scale: 1 });
+        const containerWidth = canvas.parentElement?.clientWidth || 800;
+        const scale = containerWidth / baseViewport.width;
+        const viewport = page.getViewport({ scale });
+
+        // Render at 2x resolution then scale down with CSS for sharper text
+        const outputScale = 2;
+        canvas.width = Math.floor(viewport.width * outputScale);
+        canvas.height = Math.floor(viewport.height * outputScale);
+        canvas.style.width = `${viewport.width}px`;
+        canvas.style.height = `${viewport.height}px`;
+
+        const ctx = canvas.getContext('2d', { alpha: false });
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        await page.render({
+          canvasContext: ctx,
+          viewport,
+          transform: [outputScale, 0, 0, outputScale, 0, 0]
+        }).promise;
+        renderedPagesRef.current.add(pageNum);
+      } catch (error) {
+        if (error?.name !== 'RenderingCancelledException') {
+          console.error(`Error rendering PDF page ${pageNum}:`, error);
+        }
       }
     };
 
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, []);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        let currentVisible = null;
+        let currentRatio = 0;
+
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+
+          const pageNum = parseInt(entry.target.dataset.page, 10);
+          if (!Number.isInteger(pageNum)) continue;
+
+          renderPage(pageNum);
+
+          if (entry.intersectionRatio > currentRatio) {
+            currentRatio = entry.intersectionRatio;
+            currentVisible = pageNum;
+          }
+        }
+
+        if (currentVisible) {
+          setCurrentPage(currentVisible);
+        }
+      },
+      { root: scrollContainerRef.current, threshold: 0.1 }
+    );
+
+    Object.values(canvasRefs.current).forEach((canvas) => {
+      if (canvas) observer.observe(canvas);
+    });
+
+    return () => observer.disconnect();
+  }, [pdfDoc]);
+
+  // Restore viewer to the saved page when the document loads
+  useEffect(() => {
+    if (!pdfDoc) return;
+
+    const savedPage = savedProgress?.currentPage;
+    if (savedPage && savedPage > 1) {
+      const canvas = canvasRefs.current[savedPage];
+      if (canvas) {
+        setTimeout(() => canvas.scrollIntoView({ block: 'start' }), 150);
+      }
+    }
+  }, [pdfDoc, savedProgress?.currentPage]);
+
+  // Scroll the PDF container to a specific page
+  const goToPage = (pageNum) => {
+    if (!totalPages) return;
+    const target = Math.max(1, Math.min(totalPages, pageNum));
+    setCurrentPage(target);
+    const canvas = canvasRefs.current[target];
+    if (canvas) {
+      canvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   // Format date like WhatsApp (e.g., "13/09/2026 at 8:06 pm")
   const formatDate = (dateString) => {
@@ -151,32 +247,16 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
       'video/mp4',
       'video/webm',
       'video/ogg',
-      'text/plain'
+      'text/plain',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation'
     ];
 
     return previewableTypes.includes(fileType.toLowerCase());
-  };
-
-  // Build Google Docs Viewer URL with page parameter
-  const buildViewerUrl = () => {
-    const mimeType = fileType?.toLowerCase() || '';
-    
-    if (mimeType === 'application/pdf') {
-      // Use our proxy endpoint that serves files inline
-      const proxyUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/files/view/${resourceId}`;
-      
-      // Use Google Docs Viewer with our proxy URL
-      let url = `https://docs.google.com/viewer?url=${encodeURIComponent(proxyUrl)}&embedded=true`;
-      
-      // Try to add page number (not all viewers support this)
-      if (savedProgress?.currentPage && savedProgress.currentPage > 1) {
-        url += `#page=${savedProgress.currentPage}`;
-      }
-      
-      return url;
-    }
-    
-    return null;
   };
 
   // Render appropriate viewer based on file type
@@ -184,24 +264,33 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
     const mimeType = fileType?.toLowerCase() || '';
     const proxyUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/files/view/${resourceId}`;
 
-    // PDF files
+    // PDF files - render in-app with PDF.js
     if (mimeType === 'application/pdf') {
-      const viewerUrl = buildViewerUrl();
-      
       return (
-        <div className="w-full h-full bg-white">
-          <iframe
-            ref={iframeRef}
-            src={viewerUrl}
-            className="w-full h-full border-0"
-            title={title}
-            onError={() => setLoadError(true)}
-          />
+        <div ref={scrollContainerRef} className="h-full w-full bg-gray-100 overflow-auto">
+          <div className="flex flex-col items-center gap-4 p-4">
+            {pdfLoading && !pdfDoc && (
+              <div className="flex flex-col items-center gap-3 text-gray-500 py-16">
+                <Loader2 className="w-8 h-8 animate-spin" />
+                <p className="text-sm">Loading document...</p>
+              </div>
+            )}
+            {pdfDoc &&
+              Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                <canvas
+                  key={pageNum}
+                  ref={(el) => { canvasRefs.current[pageNum] = el; }}
+                  data-page={pageNum}
+                  className="block shadow-lg bg-white max-w-full"
+                  style={{ minHeight: '800px' }}
+                />
+              ))}
+          </div>
         </div>
       );
     }
 
-    // Image files
+    // Image files - use proxy for inline viewing
     if (mimeType.startsWith('image/')) {
       return (
         <div className="flex items-center justify-center h-full p-8 bg-white">
@@ -215,7 +304,7 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
       );
     }
 
-    // Video files
+    // Video files - use proxy for inline viewing
     if (mimeType.startsWith('video/')) {
       return (
         <div className="flex items-center justify-center h-full p-8 bg-white">
@@ -231,7 +320,7 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
       );
     }
 
-    // Text files
+    // Text files - use proxy
     if (mimeType === 'text/plain') {
       return (
         <div className="h-full p-8 overflow-auto bg-white">
@@ -245,7 +334,7 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
       );
     }
 
-    // Office documents (Word, Excel, PowerPoint)
+    // Office documents - use direct Cloudinary URL (Office Viewer needs public access)
     if (
       mimeType.includes('wordprocessingml') ||
       mimeType.includes('spreadsheetml') ||
@@ -254,7 +343,8 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
       mimeType === 'application/vnd.ms-excel' ||
       mimeType === 'application/vnd.ms-powerpoint'
     ) {
-      const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(proxyUrl)}`;
+      // Office Apps Viewer requires public URL
+      const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}`;
       
       return (
         <iframe
@@ -364,6 +454,37 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
           {/* Progress Bar */}
           {isTracking && totalPages && (
             <div className="px-4 pb-2">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-600">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  {/* Manual page navigation */}
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => goToPage(currentPage - 1)}
+                      disabled={currentPage <= 1}
+                      className="p-1 hover:bg-gray-200 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="Previous page"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => goToPage(currentPage + 1)}
+                      disabled={currentPage >= totalPages}
+                      className="p-1 hover:bg-gray-200 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="Next page"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <span className="text-xs text-gray-600">{progressPercentage}%</span>
+              </div>
               <div className="w-full bg-gray-200 rounded-full h-1.5">
                 <div
                   className="bg-purple-600 h-1.5 rounded-full transition-all duration-300"
