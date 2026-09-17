@@ -384,6 +384,7 @@ const DashboardPage = () => {
     setViewerFile(resource);
     setShowViewer(true);
     setSessionStartTime(Date.now());
+    setCurrentProgress(null);
     
     if (resumePosition) {
       setScrollPosition(resumePosition);
@@ -913,6 +914,7 @@ const DashboardPage = () => {
             onDownload={() => handleDownloadFile(viewerFile)}
             onMarkComplete={markAsComplete}
             downloadsEnabled={downloadsEnabled}
+            savedProgress={currentProgress}
           />
         )
       )}

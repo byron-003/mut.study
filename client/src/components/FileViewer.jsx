@@ -1,27 +1,42 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Download, X, AlertCircle, CheckCircle, Search, Star, BookOpen, Loader2 } from 'lucide-react';
+import { Download, X, AlertCircle, CheckCircle, Search, Star, BookOpen, Loader2, ZoomIn, ZoomOut } from 'lucide-react';
 import { progressAPI } from '../services/api';
+
+// Minimum page render scale - pages are never rendered smaller than full width so text stays readable on mobile
+const MIN_PAGE_SCALE = 1.5;
 
 /**
  * WhatsApp-style File Viewer Component with Page Tracking
  * Clean, modern UI with action buttons and progress tracking
  */
 const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMarkComplete, savedProgress }) => {
+  // Extract the last-read page from currentPage or legacy "page_N" lastPosition records
+  const getSavedPage = (progress) => {
+    if (progress?.currentPage) return progress.currentPage;
+    const match = progress?.lastPosition?.match(/^page_(\d+)/);
+    return match ? parseInt(match[1], 10) : null;
+  };
+
   const [loadError, setLoadError] = useState(false);
   const [viewDuration, setViewDuration] = useState(0);
-  const [currentPage, setCurrentPage] = useState(savedProgress?.currentPage || 1);
+  const [currentPage, setCurrentPage] = useState(getSavedPage(savedProgress) || 1);
   const [totalPages, setTotalPages] = useState(savedProgress?.totalPages || null);
   const [isTracking, setIsTracking] = useState(false);
   const [pdfDoc, setPdfDoc] = useState(null);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [pageZoom, setPageZoom] = useState(1);
   const canvasRefs = useRef({});
   const renderedPagesRef = useRef(new Set());
   const scrollContainerRef = useRef(null);
   const progressTimerRef = useRef(null);
+  const pdfDocRef = useRef(null);
+  const renderPageRef = useRef(null);
+  const pageZoomRef = useRef(1);
 
   if (!file) return null;
 
   const { fileUrl, fileType, title, createdAt, id: resourceId } = file;
+  const isPdf = fileType?.toLowerCase() === 'application/pdf';
 
   // Track viewing time
   useEffect(() => {
@@ -101,6 +116,7 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
         });
         const pdf = await loadingTask.promise;
         
+        pdfDocRef.current = pdf;
         setPdfDoc(pdf);
         setTotalPages(pdf.numPages);
         setIsTracking(true);
@@ -118,47 +134,53 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
     loadPdfJs();
   }, [fileUrl, fileType, resourceId]);
 
+  // Render a PDF page onto its canvas using a minimum scale so text stays readable on small screens
+  async function renderPage(pageNum) {
+    const canvas = canvasRefs.current[pageNum];
+    if (!canvas || !canvas.isConnected || renderedPagesRef.current.has(pageNum)) return;
+
+    try {
+      const pdf = pdfDocRef.current;
+      if (!pdf) return;
+
+      const page = await pdf.getPage(pageNum);
+
+      const baseViewport = page.getViewport({ scale: 1 });
+      const containerWidth = canvas.parentElement?.clientWidth || 800;
+      const fitScale = Math.max(containerWidth / baseViewport.width, MIN_PAGE_SCALE);
+      const scale = fitScale * pageZoomRef.current;
+      const viewport = page.getViewport({ scale });
+
+      // Render at 2x resolution then scale down with CSS for sharper text
+      const outputScale = 2;
+      canvas.width = Math.floor(viewport.width * outputScale);
+      canvas.height = Math.floor(viewport.height * outputScale);
+      canvas.style.width = `${viewport.width}px`;
+      canvas.style.height = `${viewport.height}px`;
+
+      const ctx = canvas.getContext('2d', { alpha: false });
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      await page.render({
+        canvasContext: ctx,
+        viewport,
+        transform: [outputScale, 0, 0, outputScale, 0, 0]
+      }).promise;
+      renderedPagesRef.current.add(pageNum);
+    } catch (error) {
+      if (error?.name !== 'RenderingCancelledException') {
+        console.error(`Error rendering PDF page ${pageNum}:`, error);
+      }
+    }
+  }
+  renderPageRef.current = renderPage;
+
   // Render PDF pages lazily as they scroll into view and track the visible page
   useEffect(() => {
     if (!pdfDoc) return;
 
     renderedPagesRef.current = new Set();
-
-    const renderPage = async (pageNum) => {
-      const canvas = canvasRefs.current[pageNum];
-      if (!canvas || !canvas.isConnected || renderedPagesRef.current.has(pageNum)) return;
-
-      try {
-        const page = await pdfDoc.getPage(pageNum);
-
-        const baseViewport = page.getViewport({ scale: 1 });
-        const containerWidth = canvas.parentElement?.clientWidth || 800;
-        const scale = containerWidth / baseViewport.width;
-        const viewport = page.getViewport({ scale });
-
-        // Render at 2x resolution then scale down with CSS for sharper text
-        const outputScale = 2;
-        canvas.width = Math.floor(viewport.width * outputScale);
-        canvas.height = Math.floor(viewport.height * outputScale);
-        canvas.style.width = `${viewport.width}px`;
-        canvas.style.height = `${viewport.height}px`;
-
-        const ctx = canvas.getContext('2d', { alpha: false });
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        await page.render({
-          canvasContext: ctx,
-          viewport,
-          transform: [outputScale, 0, 0, outputScale, 0, 0]
-        }).promise;
-        renderedPagesRef.current.add(pageNum);
-      } catch (error) {
-        if (error?.name !== 'RenderingCancelledException') {
-          console.error(`Error rendering PDF page ${pageNum}:`, error);
-        }
-      }
-    };
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -193,18 +215,79 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
     return () => observer.disconnect();
   }, [pdfDoc]);
 
+  // Re-render visible pages when the window is resized so scaling stays correct
+  useEffect(() => {
+    if (!pdfDoc) return;
+
+    const handleResize = () => {
+      if (!scrollContainerRef.current) return;
+      renderedPagesRef.current = new Set();
+      const containerRect = scrollContainerRef.current.getBoundingClientRect();
+      Object.values(canvasRefs.current).forEach((canvas) => {
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        if (rect.top < containerRect.bottom && rect.bottom > containerRect.top) {
+          const pageNum = parseInt(canvas.dataset.page, 10);
+          if (Number.isInteger(pageNum)) {
+            renderPageRef.current(pageNum);
+          }
+        }
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [pdfDoc]);
+
+  // Re-render visible pages when the zoom level changes and keep the reading position
+  useEffect(() => {
+    if (!pdfDoc || !scrollContainerRef.current) return;
+
+    const container = scrollContainerRef.current;
+    const prevZoom = pageZoomRef.current || 1;
+    pageZoomRef.current = pageZoom;
+    const ratio = pageZoom / prevZoom;
+    if (ratio === 1) return;
+
+    container.scrollTop = container.scrollTop * ratio;
+
+    renderedPagesRef.current = new Set();
+    const containerRect = container.getBoundingClientRect();
+    Object.values(canvasRefs.current).forEach((canvas) => {
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      if (rect.top < containerRect.bottom && rect.bottom > containerRect.top) {
+        const pageNum = parseInt(canvas.dataset.page, 10);
+        if (Number.isInteger(pageNum)) {
+          renderPageRef.current(pageNum);
+        }
+      }
+    });
+  }, [pdfDoc, pageZoom]);
+
   // Restore viewer to the saved page when the document loads
   useEffect(() => {
     if (!pdfDoc) return;
 
-    const savedPage = savedProgress?.currentPage;
-    if (savedPage && savedPage > 1) {
+    const savedPage = getSavedPage(savedProgress);
+    if (!savedPage || savedPage <= 1) return;
+    if (totalPages && savedPage > totalPages) return;
+
+    // Retry until the target canvas exists (canvases mount after the PDF loads)
+    let attempts = 0;
+    const timer = setInterval(() => {
       const canvas = canvasRefs.current[savedPage];
       if (canvas) {
-        setTimeout(() => canvas.scrollIntoView({ block: 'start' }), 150);
+        canvas.scrollIntoView({ block: 'start' });
+        clearInterval(timer);
+      } else if (attempts >= 20) {
+        clearInterval(timer);
       }
-    }
-  }, [pdfDoc, savedProgress?.currentPage]);
+      attempts += 1;
+    }, 100);
+
+    return () => clearInterval(timer);
+  }, [pdfDoc, savedProgress?.currentPage, savedProgress?.lastPosition, totalPages]);
 
   // Scroll the PDF container to a specific page
   const goToPage = (pageNum) => {
@@ -215,6 +298,11 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
     if (canvas) {
       canvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+  };
+
+  // Adjust the PDF zoom level, clamped to a sensible range
+  const zoomChange = (delta) => {
+    setPageZoom(prev => Math.min(3, Math.max(0.5, Math.round((prev + delta) * 20) / 20)));
   };
 
   // Format date like WhatsApp (e.g., "13/09/2026 at 8:06 pm")
@@ -268,7 +356,7 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
     if (mimeType === 'application/pdf') {
       return (
         <div ref={scrollContainerRef} className="h-full w-full bg-gray-100 overflow-auto">
-          <div className="flex flex-col items-center gap-4 p-4">
+          <div className="p-4 space-y-4">
             {pdfLoading && !pdfDoc && (
               <div className="flex flex-col items-center gap-3 text-gray-500 py-16">
                 <Loader2 className="w-8 h-8 animate-spin" />
@@ -281,8 +369,8 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
                   key={pageNum}
                   ref={(el) => { canvasRefs.current[pageNum] = el; }}
                   data-page={pageNum}
-                  className="block shadow-lg bg-white max-w-full"
-                  style={{ minHeight: '800px' }}
+                  className="block shadow-lg bg-white mx-auto"
+                  style={{ minHeight: '800px', minWidth: '600px' }}
                 />
               ))}
           </div>
@@ -428,6 +516,35 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
               >
                 <Star className="w-5 h-5 text-gray-700" />
               </button>
+
+              {/* Zoom Controls - desktop only */}
+              {isPdf && (
+                <div className="hidden lg:flex items-center gap-0.5 ml-1 border border-gray-200 rounded-lg px-1">
+                  <button
+                    onClick={() => zoomChange(-0.25)}
+                    disabled={pageZoom <= 0.5}
+                    className="p-1.5 hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Zoom out"
+                  >
+                    <ZoomOut className="w-4 h-4 text-gray-700" />
+                  </button>
+                  <button
+                    onClick={() => setPageZoom(1)}
+                    className="px-1 min-w-[2.75rem] text-xs font-medium text-gray-700 py-1 hover:bg-gray-100 rounded"
+                    title="Reset zoom"
+                  >
+                    {Math.round(pageZoom * 100)}%
+                  </button>
+                  <button
+                    onClick={() => zoomChange(0.25)}
+                    disabled={pageZoom >= 3}
+                    className="p-1.5 hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Zoom in"
+                  >
+                    <ZoomIn className="w-4 h-4 text-gray-700" />
+                  </button>
+                </div>
+              )}
 
               {/* Download Button - Only visible if admin enables downloads */}
               {downloadsEnabled && onDownload && (

@@ -183,6 +183,7 @@ const CoursePage = () => {
         setShowResumePrompt(true);
         setViewerFile(resource);
       } else {
+        setSavedProgress(null);
         openViewer(resource);
       }
     } catch (error) {
@@ -229,6 +230,7 @@ const CoursePage = () => {
   const handleStartFromBeginning = () => {
     if (viewerFile) {
       openViewer(viewerFile);
+      setSavedProgress(null);
     }
     setShowResumePrompt(false);
   };
@@ -550,6 +552,7 @@ const CoursePage = () => {
           onDownload={() => handleDownloadFile(viewerFile)}
           onMarkComplete={markAsComplete}
           downloadsEnabled={downloadsEnabled}
+          savedProgress={savedProgress}
         />
       )}
 
