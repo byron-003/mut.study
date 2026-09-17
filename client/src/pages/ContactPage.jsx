@@ -1,18 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, Phone, MapPin, Send, CheckCircle } from 'lucide-react';
 import { useAlert } from '../hooks/useAlert';
 import CustomAlert from '../components/CustomAlert';
+import { useAuth } from '../utils/authContext';
 
 const ContactPage = () => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
+    name: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '',
+    email: user?.email || '',
     subject: '',
     message: '',
   });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const { alertState, showAlert, closeAlert } = useAlert();
+
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        name: prev.name || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        email: prev.email || user.email || '',
+      }));
+    }
+  }, [user]);
 
   const handleChange = (e) => {
     setFormData({
@@ -24,7 +36,7 @@ const ContactPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/contact/messages`, {
         method: 'POST',
@@ -34,13 +46,25 @@ const ContactPage = () => {
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
+      let data = null;
+      try {
+        data = await response.json();
+      } catch {
+        data = null;
+      }
 
-      if (data.success) {
+      if (response.ok && data?.success) {
         setSubmitted(true);
-        setFormData({ name: '', email: '', subject: '', message: '' });
+        setFormData({
+          name: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '',
+          email: user?.email || '',
+          subject: '',
+          message: '',
+        });
+      } else if (response.status === 429) {
+        showAlert('Error', data?.message || 'Too many requests. Please try again later.', 'error');
       } else {
-        showAlert('Error', data.message || 'Failed to send message. Please try again.', 'error');
+        showAlert('Error', data?.message || 'Failed to send message. Please try again.', 'error');
       }
     } catch (error) {
       console.error('Error submitting message:', error);
@@ -68,12 +92,12 @@ const ContactPage = () => {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid md:grid-cols-3 gap-8">
-          
+
           {/* Contact Information */}
           <div className="md:col-span-1 space-y-6">
             <div className="bg-white rounded-xl shadow-md p-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Contact Information</h2>
-              
+
               <div className="space-y-4">
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -96,8 +120,8 @@ const ContactPage = () => {
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-1">Email</h3>
                     <p className="text-gray-600 text-sm">
-                      support@mutstudy.ac.za<br />
-                      info@mutstudy.ac.za
+                      support@mutstudy.com<br />
+                      info@mutstudy.com
                     </p>
                   </div>
                 </div>
@@ -109,7 +133,7 @@ const ContactPage = () => {
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-1">Phone</h3>
                     <p className="text-gray-600 text-sm">
-                      +27 (0) 31 907 7000<br />
+                      +254742041208<br />
                       Mon - Fri: 8:00 AM - 4:30 PM
                     </p>
                   </div>
@@ -150,6 +174,11 @@ const ContactPage = () => {
               ) : (
                 <>
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">Send us a Message</h2>
+                  {user && (
+                    <p className="-mt-4 mb-6 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-2">
+                      Signed in as <strong>{formData.email}</strong> — your details are auto-filled below. You can edit them if needed.
+                    </p>
+                  )}
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
@@ -237,7 +266,7 @@ const ContactPage = () => {
           </div>
         </div>
       </div>
-      
+
       <CustomAlert {...alertState} onClose={closeAlert} />
     </div>
   );

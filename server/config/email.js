@@ -461,3 +461,119 @@ export const sendContactReply = async (email, userName, originalSubject, replyMe
     throw error;
   }
 };
+
+/**
+ * Send admin notification when a new contact message is submitted.
+ * Best-effort - failures are logged and never block the request.
+ */
+export const sendContactNotification = async (adminEmails, message) => {
+  try {
+    if (!adminEmails || adminEmails.length === 0) {
+      console.log('📭 No admin emails configured; skipping contact notification');
+      return { success: false, skipped: true };
+    }
+
+    // Development fallback - log to console
+    if (isDevelopment) {
+      console.log('\n📧 ===== CONTACT NOTIFICATION (DEV MODE) =====');
+      console.log('To Admins:', adminEmails.join(', '));
+      console.log('From:', `${message.name} <${message.email}>`);
+      console.log('Subject:', message.subject);
+      console.log('Message:', message.message);
+      console.log('============================================\n');
+      return { success: true, messageId: 'dev-mode' };
+    }
+
+    // Production - use Resend
+    const { data, error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM || 'MUT Study Hub <onboarding@resend.dev>',
+      to: adminEmails,
+      replyTo: process.env.SUPPORT_EMAIL || 'support@mutstudy.ac.za',
+      subject: `📬 New Contact Message: ${message.subject}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            body { 
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+              line-height: 1.6; 
+              color: #333; 
+              margin: 0;
+              padding: 0;
+              background-color: #f3f4f6;
+            }
+            .container { 
+              max-width: 600px; 
+              margin: 40px auto; 
+              background: white;
+              border-radius: 16px;
+              overflow: hidden;
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            .header { 
+              background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+              color: white; 
+              padding: 30px 30px; 
+              text-align: center;
+            }
+            .header h1 { margin: 0; font-size: 24px; font-weight: 700; }
+            .content { padding: 30px; }
+            .meta { background: #f9fafb; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+            .meta p { margin: 6px 0; font-size: 14px; }
+            .message-box { 
+              background: #f0fdf4; 
+              border-left: 4px solid #10b981; 
+              border-radius: 8px; 
+              padding: 16px; 
+              margin: 16px 0;
+              white-space: pre-wrap;
+            }
+            .footer { 
+              background: #f9fafb; 
+              padding: 20px; 
+              text-align: center; 
+              color: #6b7280;
+              font-size: 13px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>📬 New Contact Message</h1>
+            </div>
+            <div class="content">
+              <div class="meta">
+                <p><strong>Name:</strong> ${message.name}</p>
+                <p><strong>Email:</strong> <a href="mailto:${message.email}">${message.email}</a></p>
+                <p><strong>Subject:</strong> ${message.subject}</p>
+                <p><strong>Received:</strong> ${new Date(message.created_at || Date.now()).toLocaleString()}</p>
+              </div>
+              <h3 style="margin: 0 0 8px;">Message:</h3>
+              <div class="message-box">
+                ${(message.message || '').split('\n').map(line => `<p style="margin: 6px 0;">${line}</p>`).join('')}
+              </div>
+              <p>Reply to this message from the admin panel to get back to the sender.</p>
+            </div>
+            <div class="footer">
+              <p>MUT Study Hub - Muranga University of Technology</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error sending contact notification email:', error);
+    return { success: false };
+  }
+};

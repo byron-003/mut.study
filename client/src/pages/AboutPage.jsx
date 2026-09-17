@@ -20,27 +20,27 @@ const AboutPage = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        
+
         {/* Mission Section */}
         <div className="bg-white rounded-2xl shadow-lg p-8 md:p-12 mb-12">
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>
-              <img 
-                src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=600&h=400&fit=crop" 
-                alt="Students studying" 
-                className="rounded-lg shadow-md w-full h-64 object-cover"
+              <img
+                src="https://res.cloudinary.com/dxzmo0roe/image/upload/v1789036804/uploads/banners/banner-1789036801738-mut_logo.png?w=600&h=600&fit=crop"
+                alt="Students studying"
+                className="rounded-lg shadow-md w-full h-50 object-cover"
               />
             </div>
-            
+
             <div className="space-y-4">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">Our Mission</h2>
               <p className="text-gray-700 leading-relaxed">
-                MUT Study Hub is a centralized platform designed to help Muranga University of Technology 
-                students access and share academic resources seamlessly. We believe in the power of collaborative 
+                MUT Study Hub is a centralized platform designed to help Muranga University of Technology
+                students access and share academic resources seamlessly. We believe in the power of collaborative
                 learning and aim to make quality educational materials accessible to every student.
               </p>
               <p className="text-gray-700 leading-relaxed">
-                Our platform connects students across all programs, enabling them to share lecture notes, 
+                Our platform connects students across all programs, enabling them to share lecture notes,
                 past papers, practical manuals, and other study materials in a secure and organized environment.
               </p>
             </div>
@@ -156,14 +156,14 @@ const AboutPage = () => {
             Join thousands of MUT students who are already using Study Hub to excel in their academics.
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
-            <Link 
-              to="/register" 
+            <Link
+              to="/register"
               className="px-8 py-3 bg-mut-primary text-white rounded-lg hover:bg-mut-secondary transition-colors font-medium"
             >
               Create Account
             </Link>
-            <Link 
-              to="/login" 
+            <Link
+              to="/login"
               className="px-8 py-3 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition-colors font-medium"
             >
               Sign In
@@ -171,7 +171,7 @@ const AboutPage = () => {
           </div>
         </div>
       </div>
-      
+
       <Footer />
     </div>
   );

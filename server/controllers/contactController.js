@@ -1,6 +1,6 @@
 import { query } from '../config/database.js';
 import { AppError } from '../middleware/errorHandler.js';
-import { sendContactReply } from '../config/email.js';
+import { sendContactReply, sendContactNotification } from '../config/email.js';
 
 /**
  * Submit contact message (public)
@@ -24,9 +24,20 @@ export const submitContactMessage = async (req, res, next) => {
     const result = await query(
       `INSERT INTO contact_messages (name, email, subject, message, status)
        VALUES ($1, $2, $3, $4, 'unread')
-       RETURNING id, name, email, subject, created_at`,
+       RETURNING id, name, email, subject, message, created_at`,
       [name.trim(), email.toLowerCase().trim(), subject.trim(), message.trim()]
     );
+
+    // Notify all admins about the new message (best-effort, non-blocking)
+    try {
+      const adminResult = await query(
+        `SELECT email FROM users WHERE role = 'admin' AND email IS NOT NULL AND email != ''`
+      );
+      const adminEmails = adminResult.rows.map((row) => row.email);
+      await sendContactNotification(adminEmails, result.rows[0]);
+    } catch (notifyError) {
+      console.error('Contact admin notification failed:', notifyError);
+    }
 
     res.status(201).json({
       success: true,
