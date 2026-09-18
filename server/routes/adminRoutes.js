@@ -44,6 +44,12 @@ import {
   sendTestEmailAdmin,
   clearEmailLogs,
 } from '../controllers/emailAdminController.js';
+import {
+  getForumPosts,
+  getForumComments,
+  deleteForumPost,
+  deleteForumComment,
+} from '../controllers/forumAdminController.js';
 import { authenticate, authorize } from '../middleware/authMiddleware.js';
 import { upload } from '../config/cloudinary.js';
 
@@ -115,5 +121,11 @@ router.get('/email/status', authorize('admin'), getEmailStatus);
 router.post('/email/check', authorize('admin'), runEmailCheck);
 router.post('/email/test', authorize('admin'), sendTestEmailAdmin);
 router.delete('/email/logs', authorize('admin'), clearEmailLogs);
+
+// Forum management (Admin only - site-wide posts and comments)
+router.get('/forum/posts', authorize('admin'), getForumPosts);
+router.get('/forum/comments', authorize('admin'), getForumComments);
+router.delete('/forum/posts/:id', authorize('admin'), deleteForumPost);
+router.delete('/forum/comments/:commentId', authorize('admin'), deleteForumComment);
 
 export default router;

@@ -10,6 +10,7 @@ import UsersPage from './pages/UsersPage';
 import ResourcesPage from './pages/ResourcesPage';
 import MessagesPage from './pages/MessagesPage';
 import FeedbackPage from './pages/FeedbackPage';
+import ForumPage from './pages/ForumPage';
 import EmailPage from './pages/EmailPage';
 import ProgramsPage from './pages/ProgramsPage';
 import CoursesPage from './pages/CoursesPage';
@@ -86,6 +87,11 @@ function AppRoutes() {
         <Route path="feedback" element={
           <ProtectedRoute requireAdmin={true}>
             <FeedbackPage />
+          </ProtectedRoute>
+        } />
+        <Route path="forum" element={
+          <ProtectedRoute requireAdmin={true}>
+            <ForumPage />
           </ProtectedRoute>
         } />
         <Route path="email" element={

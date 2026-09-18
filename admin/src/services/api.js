@@ -94,6 +94,12 @@ export const adminAPI = {
   runEmailCheck: () => api.post('/admin/email/check'),
   sendTestEmail: (to) => api.post('/admin/email/test', { to }),
   clearEmailLogs: () => api.delete('/admin/email/logs'),
+
+  // Forum management (admin only)
+  getForumPosts: (params) => api.get('/admin/forum/posts', { params }),
+  getForumComments: (params) => api.get('/admin/forum/comments', { params }),
+  deleteForumPost: (id) => api.delete(`/admin/forum/posts/${id}`),
+  deleteForumComment: (id) => api.delete(`/admin/forum/comments/${id}`),
   
   // Notifications
   createNotification: (data) => api.post('/notifications', data),
