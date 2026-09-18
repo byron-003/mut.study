@@ -34,6 +34,8 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
   const pageZoomRef = useRef(1);
   const fitScaleRef = useRef(null);
   const firstPageWidthRef = useRef(null);
+  const touchStartDistanceRef = useRef(null);
+  const touchStartZoomRef = useRef(1);
 
   if (!file) return null;
 
@@ -341,6 +343,51 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
     setPageZoom(prev => Math.min(3, Math.max(0.5, Math.round((prev + delta) * 20) / 20)));
   };
 
+  // Handle pinch-to-zoom on mobile devices
+  useEffect(() => {
+    if (!pdfDoc || !scrollContainerRef.current) return;
+
+    const container = scrollContainerRef.current;
+
+    const handleTouchStart = (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        touchStartDistanceRef.current = Math.sqrt(dx * dx + dy * dy);
+        touchStartZoomRef.current = pageZoomRef.current;
+      }
+    };
+
+    const handleTouchMove = (e) => {
+      if (e.touches.length === 2 && touchStartDistanceRef.current) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const scale = distance / touchStartDistanceRef.current;
+        const newZoom = Math.min(3, Math.max(0.5, touchStartZoomRef.current * scale));
+        setPageZoom(Math.round(newZoom * 20) / 20);
+      }
+    };
+
+    const handleTouchEnd = (e) => {
+      if (e.touches.length < 2) {
+        touchStartDistanceRef.current = null;
+      }
+    };
+
+    container.addEventListener('touchstart', handleTouchStart, { passive: false });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    container.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [pdfDoc]);
+
   // Format date like WhatsApp (e.g., "13/09/2026 at 8:06 pm")
   const formatDate = (dateString) => {
     if (!dateString) return '';
@@ -391,8 +438,15 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
     // PDF files - render in-app with PDF.js
     if (mimeType === 'application/pdf') {
       return (
-        <div ref={scrollContainerRef} className="h-full w-full bg-gray-100 overflow-auto">
-          <div className="p-4 space-y-4">
+        <div 
+          ref={scrollContainerRef} 
+          className="h-full w-full bg-gray-100 overflow-auto touch-pan-x touch-pan-y"
+          style={{ 
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehavior: 'contain'
+          }}
+        >
+          <div className="p-2 md:p-4 space-y-2 md:space-y-4">
             {pdfLoading && !pdfDoc && (
               <div className="flex flex-col items-center gap-3 text-gray-500 py-16">
                 <Loader2 className="w-8 h-8 animate-spin" />
@@ -405,8 +459,7 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
                   key={pageNum}
                   ref={(el) => { canvasRefs.current[pageNum] = el; }}
                   data-page={pageNum}
-                  className="block shadow-lg bg-white mx-auto"
-                  style={{ minHeight: '800px', minWidth: '600px' }}
+                  className="block shadow-lg bg-white mx-auto max-w-full"
                 />
               ))}
           </div>
@@ -417,11 +470,18 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
     // Image files - use proxy for inline viewing
     if (mimeType.startsWith('image/')) {
       return (
-        <div className="flex items-center justify-center h-full p-8 bg-white">
+        <div 
+          className="flex items-center justify-center h-full p-4 md:p-8 bg-white overflow-auto"
+          style={{ 
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehavior: 'contain'
+          }}
+        >
           <img
             src={proxyUrl}
             alt={title}
-            className="max-w-full max-h-full object-contain shadow-lg"
+            className="max-w-full h-auto object-contain shadow-lg"
+            style={{ touchAction: 'pan-x pan-y pinch-zoom' }}
             onError={() => setLoadError(true)}
           />
         </div>
@@ -431,11 +491,17 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
     // Video files - use proxy for inline viewing
     if (mimeType.startsWith('video/')) {
       return (
-        <div className="flex items-center justify-center h-full p-8 bg-white">
+        <div 
+          className="flex items-center justify-center h-full p-4 md:p-8 bg-white"
+          style={{ 
+            WebkitOverflowScrolling: 'touch'
+          }}
+        >
           <video
             src={proxyUrl}
             controls
             className="max-w-full max-h-full shadow-lg"
+            style={{ touchAction: 'manipulation' }}
             onError={() => setLoadError(true)}
           >
             Your browser does not support the video tag.
@@ -564,20 +630,20 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
                 <Star className="w-5 h-5 text-gray-700" />
               </button>
 
-              {/* Zoom Controls - desktop only */}
+              {/* Zoom Controls - visible on all devices */}
               {isPdf && (
-                <div className="hidden lg:flex items-center gap-0.5 ml-1 border border-gray-200 rounded-lg px-1">
+                <div className="flex items-center gap-0.5 ml-1 border border-gray-200 rounded-lg px-1">
                   <button
                     onClick={() => zoomChange(-0.25)}
                     disabled={pageZoom <= 0.5}
-                    className="p-1.5 hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="p-1.5 hover:bg-gray-100 active:bg-gray-200 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     title="Zoom out"
                   >
                     <ZoomOut className="w-4 h-4 text-gray-700" />
                   </button>
                   <button
                     onClick={() => setPageZoom(1)}
-                    className="px-1 min-w-[2.75rem] text-xs font-medium text-gray-700 py-1 hover:bg-gray-100 rounded"
+                    className="px-1 min-w-[2.75rem] text-xs font-medium text-gray-700 py-1 hover:bg-gray-100 active:bg-gray-200 rounded transition-colors"
                     title="Reset zoom"
                   >
                     {Math.round(pageZoom * 100)}%
@@ -585,7 +651,7 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
                   <button
                     onClick={() => zoomChange(0.25)}
                     disabled={pageZoom >= 3}
-                    className="p-1.5 hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="p-1.5 hover:bg-gray-100 active:bg-gray-200 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     title="Zoom in"
                   >
                     <ZoomIn className="w-4 h-4 text-gray-700" />

@@ -369,7 +369,7 @@ export const getUsers = async (req, res, next) => {
     const usersResult = await query(
       `SELECT 
         u.id, u.email, u.first_name, u.last_name, u.role, u.is_active, 
-        u.current_year, u.current_semester, u.created_at, u.is_class_rep,
+        u.current_year, u.current_semester, u.created_at, u.is_class_rep, u.program_id,
         p.name as program_name, p.code as program_code
        FROM users u
        LEFT JOIN programs p ON u.program_id = p.id
@@ -484,6 +484,65 @@ export const updateClassRepStatus = async (req, res, next) => {
       status: 'success',
       message: `User ${isClassRep ? 'granted' : 'revoked'} class representative privileges`,
       data: result.rows[0],
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update user's program
+ */
+export const updateUserProgram = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { program_id: programId } = req.body;
+
+    const userId = parseInt(id, 10);
+    if (!userId || userId <= 0) {
+      throw new AppError('Invalid user ID', 400);
+    }
+
+    // Validate program exists
+    const programIdInt = programId !== null && programId !== undefined ? parseInt(programId, 10) : null;
+    if (programIdInt !== null && programIdInt > 0) {
+      const programResult = await query(
+        'SELECT id, name, code FROM programs WHERE id = $1',
+        [programIdInt]
+      );
+      if (programResult.rows.length === 0) {
+        throw new AppError('Program not found', 400);
+      }
+    }
+
+    const result = await query(
+      `UPDATE users SET program_id = $1
+       WHERE id = $2
+       RETURNING id, email, first_name, last_name, program_id`,
+      [programIdInt || null, userId]
+    );
+
+    if (result.rows.length === 0) {
+      throw new AppError('User not found', 404);
+    }
+
+    const updatedUser = result.rows[0];
+
+    // Fetch program info to return together
+    let program = null;
+    if (updatedUser.program_id) {
+      const pg = await query('SELECT id, name, code FROM programs WHERE id = $1', [updatedUser.program_id]);
+      program = pg.rows[0] || null;
+    }
+
+    res.json({
+      status: 'success',
+      message: 'User program updated successfully',
+      data: {
+        ...updatedUser,
+        program_name: program?.name || null,
+        program_code: program?.code || null,
+      },
     });
   } catch (error) {
     next(error);

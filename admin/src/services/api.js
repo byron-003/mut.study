@@ -52,6 +52,7 @@ export const adminAPI = {
   updateUserStatus: (id, status) => api.put(`/admin/users/${id}/status`, { status }),
   updateUserRole: (id, role) => api.put(`/admin/users/${id}/role`, { role }),
   updateClassRepStatus: (id, isClassRep) => api.put(`/admin/users/${id}/class-rep`, { isClassRep }),
+  updateUserProgram: (id, programId) => api.put(`/admin/users/${id}/program`, { program_id: programId }),
   deleteUser: (id) => api.delete(`/admin/users/${id}`),
   
   getResources: (params) => api.get('/admin/resources', { params }),

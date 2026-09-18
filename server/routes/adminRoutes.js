@@ -6,6 +6,7 @@ import {
   updateUserStatus,
   updateUserRole,
   updateClassRepStatus,
+  updateUserProgram,
   getResources,
   approveResource,
   rejectResource,
@@ -78,6 +79,7 @@ router.get('/users', getUsers);
 router.put('/users/:id/status', updateUserStatus);
 router.put('/users/:id/role', authorize('admin'), updateUserRole); // Only admins can change roles
 router.put('/users/:id/class-rep', authorize('admin'), updateClassRepStatus); // Only admins can set class reps
+router.put('/users/:id/program', authorize('admin'), updateUserProgram); // Only admins can change program
 
 // Resource management
 router.get('/resources', getResources);

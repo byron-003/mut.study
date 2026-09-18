@@ -32,6 +32,13 @@ const UsersPage = () => {
   const [newRole, setNewRole] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Program edit modal states
+  const [showProgramModal, setShowProgramModal] = useState(false);
+  const [programs, setPrograms] = useState([]);
+  const [programsLoading, setProgramsLoading] = useState(false);
+  const [programSearch, setProgramSearch] = useState('');
+  const [selectedProgramId, setSelectedProgramId] = useState(null);
+
   useEffect(() => {
     fetchUsers();
   }, [filters]);
@@ -141,6 +148,54 @@ const UsersPage = () => {
     setSelectedUser(user);
     setNewRole(user.role);
     setShowRoleModal(true);
+  };
+
+  const openProgramModal = async (user) => {
+    setSelectedUser(user);
+    setSelectedProgramId(user.program_id || null);
+    setProgramSearch('');
+    setShowProgramModal(true);
+    try {
+      setProgramsLoading(true);
+      const response = await adminAPI.getProgramsDropdown();
+      setPrograms(response.data.data || []);
+    } catch (error) {
+      console.error('Error fetching programs:', error);
+      setPrograms([]);
+    } finally {
+      setProgramsLoading(false);
+    }
+  };
+
+  const filteredPrograms = programs.filter((p) => {
+    const q = programSearch.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      (p.name || '').toLowerCase().includes(q) ||
+      (p.code || '').toLowerCase().includes(q)
+    );
+  });
+
+  const handleProgramSave = async () => {
+    if (!selectedUser) return;
+    try {
+      setActionLoading(true);
+      const response = await adminAPI.updateUserProgram(selectedUser.id, selectedProgramId);
+      const { program_name: programName, program_code: programCode } = response.data.data || {};
+
+      setUsers(users.map((u) =>
+        u.id === selectedUser.id ? { ...u, program_id: selectedProgramId, program_name: programName, program_code: programCode } : u
+      ));
+
+      setShowProgramModal(false);
+      setSelectedUser(null);
+      showAlert('Success', 'User program updated successfully!', 'success');
+    } catch (error) {
+      console.error('Error updating user program:', error);
+      showAlert('Error', error.response?.data?.message || 'Failed to update user program', 'error');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const getRoleBadge = (role) => {
@@ -356,6 +411,18 @@ const UsersPage = () => {
                           </button>
                         )}
 
+                        {/* Edit Program (Admin only) */}
+                        {isAdmin && (
+                          <button
+                            onClick={() => openProgramModal(user)}
+                            disabled={actionLoading}
+                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors disabled:opacity-50"
+                            title="Edit Program"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                        )}
+
                         {/* Change Role (Admin only) */}
                         {isAdmin && (
                           <button
@@ -452,7 +519,7 @@ const UsersPage = () => {
               </select>
             </div>
 
-            <p className="text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
               <strong>Note:</strong> To grant class representative privileges, use the star (⭐) button on the user row instead of changing the role.
             </p>
 
@@ -470,6 +537,125 @@ const UsersPage = () => {
                   setSelectedUser(null);
                 }}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Program Edit Modal */}
+      {showProgramModal && selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-lg w-full p-6 max-h-[90vh] flex flex-col">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Edit User Program</h3>
+            
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-2">User:</p>
+              <p className="font-medium text-gray-900">
+                {selectedUser.first_name} {selectedUser.last_name}
+              </p>
+              <p className="text-sm text-gray-500">{selectedUser.email}</p>
+            </div>
+
+            {/* Current Program Display */}
+            {selectedUser.program_name && (
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-xs text-gray-500 mb-1">Current Program:</p>
+                <p className="font-medium text-gray-900">{selectedUser.program_code}</p>
+                <p className="text-sm text-gray-600">{selectedUser.program_name}</p>
+              </div>
+            )}
+
+            {/* Search Box */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Search Programs
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  value={programSearch}
+                  onChange={(e) => setProgramSearch(e.target.value)}
+                  placeholder="Search by name or code..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-primary"
+                />
+              </div>
+            </div>
+
+            {/* Program List */}
+            <div className="flex-1 overflow-y-auto border border-gray-200 rounded-lg mb-4">
+              {programsLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-admin-primary"></div>
+                </div>
+              ) : filteredPrograms.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  {programSearch ? 'No programs found matching your search' : 'No programs available'}
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-200">
+                  {/* Option to remove program */}
+                  <label className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer transition-colors">
+                    <input
+                      type="radio"
+                      name="program"
+                      checked={selectedProgramId === null}
+                      onChange={() => setSelectedProgramId(null)}
+                      className="w-4 h-4 text-admin-primary focus:ring-admin-primary"
+                    />
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">No Program</p>
+                      <p className="text-xs text-gray-500">Remove user from any program</p>
+                    </div>
+                  </label>
+
+                  {/* Program options */}
+                  {filteredPrograms.map((program) => (
+                    <label
+                      key={program.id}
+                      className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                    >
+                      <input
+                        type="radio"
+                        name="program"
+                        checked={selectedProgramId === program.id}
+                        onChange={() => setSelectedProgramId(program.id)}
+                        className="w-4 h-4 text-admin-primary focus:ring-admin-primary"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <GraduationCap className="w-4 h-4 text-gray-400" />
+                          <p className="font-medium text-gray-900">{program.code}</p>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-0.5">{program.name}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleProgramSave}
+                disabled={actionLoading || selectedProgramId === selectedUser.program_id}
+                className="flex-1 bg-admin-primary text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {actionLoading ? 'Updating...' : 'Update Program'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowProgramModal(false);
+                  setSelectedUser(null);
+                  setSelectedProgramId(null);
+                  setProgramSearch('');
+                }}
+                disabled={actionLoading}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
               >
                 Cancel
               </button>
