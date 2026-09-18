@@ -185,7 +185,7 @@ const PrivacyPage = () => {
               <li><strong>Withdraw Consent:</strong> Withdraw consent for optional data collection</li>
             </ul>
             <p className="text-gray-700 mt-4">
-              To exercise these rights, contact us at <a href="mailto:privacy@mutstudy.ac.za" className="text-mut-primary hover:underline">privacy@mutstudy.ac.za</a>
+              To exercise these rights, contact us at <a href="mailto:privacy@mutstudy.com" className="text-mut-primary hover:underline">privacy@mutstudy.com</a>
             </p>
           </section>
 
@@ -222,8 +222,8 @@ const PrivacyPage = () => {
             <div className="bg-gray-50 rounded-lg p-6">
               <p className="text-gray-700 mb-4">If you have questions or concerns about this Privacy Policy or our data practices:</p>
               <div className="space-y-2 text-gray-700">
-                <p><strong>Email:</strong> privacy@mutstudy.ac.za</p>
-                <p><strong>Support:</strong> support@mutstudy.ac.za</p>
+                <p><strong>Email:</strong> privacy@mutstudy.com</p>
+                <p><strong>Support:</strong> support@mutstudy.com</p>
                 <p><strong>Address:</strong> Muranga University of Technology, Muranga County, Kenya</p>
               </div>
             </div>

@@ -39,13 +39,13 @@ For production, you should use your own domain:
 
 1. Go to [Domains](https://resend.com/domains) in Resend dashboard
 2. Click "Add Domain"
-3. Enter your domain (e.g., `mutstudy.ac.za`)
+3. Enter your domain (e.g., `mutstudy.com`)
 4. Add the DNS records shown by Resend to your domain
 5. Wait for verification (usually a few minutes)
 6. Update `.env`:
 
 ```env
-EMAIL_FROM=MUT Study Hub <noreply@mutstudy.ac.za>
+EMAIL_FROM=MUT Study Hub <noreply@mutstudy.com>
 ```
 
 ## Testing Email Delivery

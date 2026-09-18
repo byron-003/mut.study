@@ -88,6 +88,12 @@ export const adminAPI = {
   getFeedback: (params) => api.get('/admin/feedback', { params }),
   updateFeedbackStatus: (id, status) => api.patch(`/admin/feedback/${id}/status`, { status }),
   deleteFeedback: (id) => api.delete(`/admin/feedback/${id}`),
+
+  // Email service (admin only)
+  getEmailStatus: () => api.get('/admin/email/status'),
+  runEmailCheck: () => api.post('/admin/email/check'),
+  sendTestEmail: (to) => api.post('/admin/email/test', { to }),
+  clearEmailLogs: () => api.delete('/admin/email/logs'),
   
   // Notifications
   createNotification: (data) => api.post('/notifications', data),

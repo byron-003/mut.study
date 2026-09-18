@@ -108,7 +108,7 @@ const TermsPage = () => {
             <div className="space-y-3 text-gray-700">
               <p><strong>Platform Content:</strong> The MUT Study Hub platform, including its design, features, and branding, is owned by MCOKOTH TECHNOLOGIES and protected by copyright laws.</p>
               <p><strong>User Content:</strong> Users retain copyright to their original content but must ensure they have the right to share any uploaded materials.</p>
-              <p><strong>Reporting Violations:</strong> If you believe content violates your intellectual property rights, contact us at support@mutstudy.ac.za.</p>
+              <p><strong>Reporting Violations:</strong> If you believe content violates your intellectual property rights, contact us at support@mutstudy.com.</p>
             </div>
           </section>
 
@@ -154,7 +154,7 @@ const TermsPage = () => {
             <div className="bg-gray-50 rounded-lg p-6">
               <p className="text-gray-700 mb-4">If you have questions about these Terms of Service, please contact us:</p>
               <div className="space-y-2 text-gray-700">
-                <p><strong>Email:</strong> support@mutstudy.ac.za</p>
+                <p><strong>Email:</strong> support@mutstudy.com</p>
                 <p><strong>Address:</strong> Muranga University of Technology, Muranga County, Kenya</p>
               </div>
             </div>

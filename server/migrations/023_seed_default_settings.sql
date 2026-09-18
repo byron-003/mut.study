@@ -6,7 +6,7 @@
 INSERT INTO system_settings (setting_key, setting_value, description) VALUES
   ('site_name', 'MUT Study Hub', 'Public site name shown in the header, footer and browser tab'),
   ('site_description', 'Your comprehensive platform for academic resources, collaboration, and success at Muranga University of Technology.', 'Short description of the platform used for branding and SEO'),
-  ('contact_email', 'support@mutstudy.ac.za', 'Support email address displayed to users'),
+  ('contact_email', 'support@mutstudy.com', 'Support email address displayed to users'),
   ('allowed_file_types', '.pdf,.doc,.docx,.txt,.html,.rtf,.odt,.ppt,.pptx,.odp,.xls,.xlsx,.csv,.ods,.zip,.rar,.7z,.tar,.gz,.jpg,.jpeg,.png,.gif,.bmp,.svg,.webp,.mp4,.avi,.mov,.wmv,.flv,.mkv,.webm,.mp3,.wav,.ogg,.m4a,.aac', 'Comma-separated list of allowed file extensions'),
   ('allow_student_uploads', 'true', 'Allow students to upload study materials'),
   ('password_min_length', '8', 'Minimum number of characters required for user passwords'),

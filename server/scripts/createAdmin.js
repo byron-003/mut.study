@@ -22,7 +22,7 @@ async function createAdminUser() {
     
     // Admin credentials
     const adminData = {
-      email: 'admin@mutstudy.ac.za',
+      email: 'admin@mutstudy.com',
       password: 'Admin@123',
       firstName: 'System',
       lastName: 'Administrator',

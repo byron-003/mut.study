@@ -210,7 +210,7 @@ const ContactPage = () => {
                           onChange={handleChange}
                           required
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mut-primary focus:border-transparent"
-                          placeholder="john@mutstudy.ac.za"
+                          placeholder="john@mutstudy.com"
                         />
                       </div>
                     </div>

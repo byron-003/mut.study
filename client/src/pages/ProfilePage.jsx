@@ -297,7 +297,7 @@ const ProfilePage = () => {
                   <div className="flex items-start gap-2">
                     <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                     <p className="text-sm text-blue-800">
-                      <strong>Note:</strong> To change your name or email address, please contact admin support at <strong>support@mutstudy.ac.za</strong>
+                      <strong>Note:</strong> To change your name or email address, please contact admin support at <strong>support@mutstudy.com</strong>
                     </p>
                   </div>
                 </div>

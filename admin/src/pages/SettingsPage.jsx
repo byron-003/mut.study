@@ -15,7 +15,7 @@ const SettingsPage = () => {
   const [generalSettings, setGeneralSettings] = useState({
     siteName: 'MUT Study Hub',
     siteDescription: 'Academic Resource Sharing Platform',
-    contactEmail: 'admin@mutstudy.ac.za',
+    contactEmail: 'admin@mutstudy.com',
     maxFileSize: 50, // MB
     allowedFileTypes: '.pdf,.doc,.docx,.ppt,.pptx,.zip',
     downloadsEnabled: true, // Global download control

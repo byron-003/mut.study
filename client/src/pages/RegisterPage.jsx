@@ -647,14 +647,14 @@ const RegisterPage = () => {
                   <li>Correct or update your information</li>
                   <li>Request account deletion</li>
                   <li>Opt out of non-essential communications</li>
-                  <li>Report privacy concerns to: privacy@mutstudy.ac.za</li>
+                  <li>Report privacy concerns to: privacy@mutstudy.com</li>
                 </ul>
               </section>
 
               <section>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">Contact & Support</h3>
                 <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700">
-                  <p><strong>Email:</strong> support@mutstudy.ac.za</p>
+                  <p><strong>Email:</strong> support@mutstudy.com</p>
                   <p><strong>Location:</strong> Muranga University of Technology, Muranga County, Kenya</p>
                   <p className="mt-2">For detailed information, please visit our full <Link to="/terms" target="_blank" className="text-mut-primary hover:underline">Terms of Service</Link> and <Link to="/privacy" target="_blank" className="text-mut-primary hover:underline">Privacy Policy</Link> pages.</p>
                 </div>

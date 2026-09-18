@@ -12,7 +12,18 @@ const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    if (window.matchMedia('(min-width: 1024px)').matches) {
+      // Desktop: collapse to icon-only rail (never fully closed)
+      setSidebarCollapsed((prev) => !prev);
+    } else {
+      // Mobile: open/close the drawer
+      setSidebarOpen((prev) => !prev);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -25,6 +36,7 @@ const Layout = () => {
     { name: 'Resources', path: '/resources', icon: FileText, allowClassRep: true },
     { name: 'Messages', path: '/messages', icon: Mail, allowClassRep: false },
     { name: 'Feedback', path: '/feedback', icon: MessageSquare, allowClassRep: false },
+    { name: 'Email', path: '/email', icon: Mail, allowClassRep: false },
     { name: 'Notifications', path: '/notifications', icon: Bell, allowClassRep: false },
     { name: 'Banner', path: '/banner', icon: Megaphone, allowClassRep: false },
     { name: 'Programs', path: '/programs', icon: GraduationCap, allowClassRep: false },
@@ -41,17 +53,17 @@ const Layout = () => {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       {/* Sidebar */}
-      <aside className={`fixed top-0 left-0 z-40 h-screen transition-transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="h-full w-64 bg-white dark:bg-gray-800 shadow-lg flex flex-col">
+      <aside className={`fixed top-0 left-0 z-40 h-screen transition-all duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 ${sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}`}>
+        <div className="h-full w-64 lg:w-full bg-white dark:bg-gray-800 shadow-lg flex flex-col">
           {/* Logo */}
           <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-2">
+            <div className={`flex items-center gap-2 ${sidebarCollapsed ? 'lg:flex-col lg:justify-center' : ''}`}>
               <img 
                 src="/mut-logo.png" 
                 alt="MUT Logo" 
-                className="w-10 h-10 object-contain"
+                className="w-10 h-10 object-contain flex-shrink-0"
               />
-              <div>
+              <div className={`${sidebarCollapsed ? 'lg:hidden' : ''}`}>
                 <h1 className="font-bold text-gray-900 dark:text-white">MUT Study Hub</h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Admin Panel</p>
               </div>
@@ -69,14 +81,15 @@ const Layout = () => {
                   <li key={item.path}>
                     <Link
                       to={item.path}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                      title={sidebarCollapsed ? item.name : undefined}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${sidebarCollapsed ? 'lg:justify-center lg:px-0' : ''} ${
                         isActive
                           ? 'bg-admin-primary text-white shadow-md'
                           : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                       }`}
                     >
-                      <Icon className="w-5 h-5" />
-                      <span className="font-medium">{item.name}</span>
+                      <Icon className="w-5 h-5 flex-shrink-0" />
+                      <span className={`font-medium ${sidebarCollapsed ? 'lg:hidden' : ''}`}>{item.name}</span>
                     </Link>
                   </li>
                 );
@@ -89,16 +102,17 @@ const Layout = () => {
             <div className="relative">
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                title={sidebarCollapsed ? 'Account' : undefined}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${sidebarCollapsed ? 'lg:justify-center lg:px-0' : ''}`}
               >
-                <div className="w-10 h-10 bg-admin-primary rounded-full flex items-center justify-center text-white font-bold">
+                <div className="w-10 h-10 bg-admin-primary rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
                   {user?.firstName?.[0]}{user?.lastName?.[0]}
                 </div>
-                <div className="flex-1 text-left">
+                <div className={`flex-1 text-left ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
                   <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.firstName} {user?.lastName}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user?.role}</p>
                 </div>
-                <ChevronDown className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform ${sidebarCollapsed ? 'lg:hidden' : ''} ${userMenuOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {userMenuOpen && (
@@ -118,12 +132,12 @@ const Layout = () => {
       </aside>
 
       {/* Main Content */}
-      <div className={`transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
+      <div className={`transition-all duration-300 ${sidebarOpen ? 'max-lg:ml-64' : 'max-lg:ml-0'} ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
         {/* Top Bar */}
         <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-30">
           <div className="px-4 py-4 flex items-center justify-between">
             <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
+              onClick={toggleSidebar}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               <Menu className="w-6 h-6 dark:text-gray-300" />

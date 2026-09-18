@@ -38,6 +38,12 @@ import {
   updateFeedbackStatus,
   deleteFeedback,
 } from '../controllers/feedbackController.js';
+import {
+  getEmailStatus,
+  runEmailCheck,
+  sendTestEmailAdmin,
+  clearEmailLogs,
+} from '../controllers/emailAdminController.js';
 import { authenticate, authorize } from '../middleware/authMiddleware.js';
 import { upload } from '../config/cloudinary.js';
 
@@ -103,5 +109,11 @@ router.post('/upload', upload.single('file'), uploadFile);
 router.get('/feedback', authorize('admin'), getFeedbackList);
 router.patch('/feedback/:id/status', authorize('admin'), updateFeedbackStatus);
 router.delete('/feedback/:id', authorize('admin'), deleteFeedback);
+
+// Email service (Admin only - config status, verification, test sends, logs)
+router.get('/email/status', authorize('admin'), getEmailStatus);
+router.post('/email/check', authorize('admin'), runEmailCheck);
+router.post('/email/test', authorize('admin'), sendTestEmailAdmin);
+router.delete('/email/logs', authorize('admin'), clearEmailLogs);
 
 export default router;

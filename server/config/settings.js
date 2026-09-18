@@ -22,7 +22,7 @@ export const SETTINGS_DEFAULTS = {
     description: 'Short description of the platform used for branding and SEO',
   },
   contact_email: {
-    value: 'support@mutstudy.ac.za',
+    value: 'support@mutstudy.com',
     type: 'string',
     public: true,
     description: 'Support email address displayed to users',
@@ -152,6 +152,68 @@ export const SETTINGS_DEFAULTS = {
     type: 'boolean',
     public: false,
     description: 'Receive critical system notifications and updates',
+  },
+
+  // Email service
+  email_provider: {
+    value: 'brevo',
+    type: 'string',
+    public: false,
+    description: 'Email provider used to send platform emails (Brevo SMTP relay)',
+  },
+  email_api_key: {
+    value: '',
+    type: 'string',
+    public: false,
+    description: 'Legacy API key setting (kept for compatibility - sending now uses SMTP credentials below)',
+  },
+  email_smtp_host: {
+    value: 'smtp-relay.brevo.com',
+    type: 'string',
+    public: false,
+    description: 'SMTP server hostname used to send emails',
+  },
+  email_smtp_port: {
+    value: 587,
+    type: 'number',
+    public: false,
+    description: 'SMTP server port (587 = STARTTLS, 465 = implicit TLS)',
+  },
+  email_smtp_user: {
+    value: '',
+    type: 'string',
+    public: false,
+    description: 'SMTP login username (leave empty to use the SMTP_USER environment variable)',
+  },
+  email_smtp_key: {
+    value: '',
+    type: 'string',
+    public: false,
+    description: 'SMTP password/key (starts with xsmtpsib- for Brevo; leave empty to use BREVO_SMTP_KEY)',
+  },
+  email_from_name: {
+    value: 'MUT Study Hub',
+    type: 'string',
+    public: false,
+    description: 'Sender name shown on outgoing emails',
+  },
+  email_from_address: {
+    value: 'byronoyoo2030@gmail.com',
+    type: 'string',
+    public: false,
+    description: 'Sender address emails are sent from (must be a registered/verified sender)',
+  },
+  email_support_address: {
+    value: 'support@mutstudy.com',
+    type: 'string',
+    public: false,
+    description: 'Reply-to address used on outgoing emails',
+  },
+  email_enabled: {
+    value: true,
+    type: 'boolean',
+    public: false,
+    description: 'Master switch for sending outbound emails',
   },
 };
 

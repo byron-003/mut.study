@@ -5,7 +5,7 @@ export const DEFAULT_SETTINGS = {
   site_name: 'MUT Study Hub',
   site_description:
     'Your comprehensive platform for academic resources, collaboration, and success at Muranga University of Technology.',
-  contact_email: 'support@mutstudy.ac.za',
+  contact_email: 'support@mutstudy.com',
   max_file_size: 52428800,
   allowed_file_types:
     '.pdf,.doc,.docx,.txt,.html,.rtf,.odt,.ppt,.pptx,.odp,.xls,.xlsx,.csv,.ods,.zip,.rar,.7z,.tar,.gz,.jpg,.jpeg,.png,.gif,.bmp,.svg,.webp,.mp4,.avi,.mov,.wmv,.flv,.mkv,.webm,.mp3,.wav,.ogg,.m4a,.aac',
