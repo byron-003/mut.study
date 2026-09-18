@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../services/api';
 import {
   Users, FileText, GraduationCap, BookOpen, Download,
-  TrendingUp, Clock, CheckCircle, XCircle, AlertCircle
+  TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, MessageSquare, Star
 } from 'lucide-react';
 
 const DashboardPage = () => {
@@ -138,6 +138,70 @@ const DashboardPage = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Platform Feedback */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Platform Feedback</h2>
+          <a href="/feedback" className="text-sm text-admin-primary hover:underline">
+            View all →
+          </a>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          <div className="p-4 border-2 border-yellow-200 rounded-lg">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1 flex items-center gap-1">
+              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+              Average Rating
+            </p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              {stats?.feedback && stats.feedback.avgRating > 0 ? stats.feedback.avgRating.toFixed(1) : '—'}
+            </p>
+          </div>
+          <div className="p-4 border-2 border-blue-200 rounded-lg">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1 flex items-center gap-1">
+              <MessageSquare className="w-4 h-4 text-blue-500" />
+              Total Feedback
+            </p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.feedback?.total || 0}</p>
+          </div>
+          <div className="p-4 border-2 border-yellow-200 rounded-lg">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1 flex items-center gap-1">
+              <Clock className="w-4 h-4 text-yellow-600" />
+              New / Unreviewed
+            </p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.feedback?.newCount || 0}</p>
+          </div>
+          <div className="p-4 border-2 border-purple-200 rounded-lg">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">5-Star Feedback</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.feedback?.distribution?.[5] || 0}</p>
+          </div>
+        </div>
+
+        {stats?.feedback?.recent?.length > 0 ? (
+          <div className="space-y-3">
+            {stats.feedback.recent.map((item) => (
+              <div key={item.id} className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="flex items-center gap-0.5 mt-0.5 flex-shrink-0">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`w-3.5 h-3.5 ${star <= item.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300 dark:text-gray-500'}`}
+                    />
+                  ))}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-800 dark:text-gray-200 truncate">{item.feedback}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {item.user.name} · {new Date(item.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-500 dark:text-gray-400 text-center py-4">No feedback yet — it will appear here once users submit it</p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

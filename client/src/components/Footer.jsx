@@ -1,9 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin, ExternalLink } from 'lucide-react';
+import { useSettings } from '../context/SettingsContext';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const { settings } = useSettings();
 
   return (
     <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white mt-12">
@@ -20,12 +22,12 @@ const Footer = () => {
                 className="w-12 h-12 object-contain"
               />
               <div>
-                <h3 className="text-xl font-bold text-white">MUT Study Hub</h3>
+                <h3 className="text-xl font-bold text-white">{settings.site_name}</h3>
                 <p className="text-sm text-gray-400">Academic Excellence</p>
               </div>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed">
-              Your comprehensive platform for academic resources, collaboration, and success at Muranga University of Technology.
+              {settings.site_description}
             </p>
 
             {/* Social Links */}
@@ -197,8 +199,8 @@ const Footer = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-white">Email</p>
-                  <a href="mailto:support@mutstudy.ac.za" className="text-sm mt-1 hover:text-mut-primary transition-colors">
-                    support@mutstudy.com
+                  <a href={`mailto:${settings.contact_email}`} className="text-sm mt-1 hover:text-mut-primary transition-colors">
+                    {settings.contact_email}
                   </a>
                 </div>
               </li>
@@ -234,7 +236,7 @@ const Footer = () => {
             <div className="flex items-center gap-2">
               <span className="text-gray-500 text-sm">Developed by</span>
               <div className="px-4 py-2 bg-gradient-to-r from-mut-primary to-green-600 rounded-lg shadow-lg">
-                <span className="text-white font-bold text-sm"><a href='mcokothtechnologies.vercel.app'>MCOKOTH TECHNOLOGIES</a></span>
+                <span className="text-white font-bold text-sm"><a href='https://mcokoth-tech-flow.base44.app'>MCOKOTH TECHNOLOGIES</a></span>
               </div>
             </div>
           </div>

@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import Footer from '../components/Footer';
 import { schoolsAPI } from '../services/api';
+import { useSettings } from '../context/SettingsContext';
 
 const HomePage = () => {
+  const { settings } = useSettings();
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSchool, setSelectedSchool] = useState(null);
@@ -48,13 +50,13 @@ const HomePage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold mb-4 text-shadow">
-              MUT Study Hub
+              {settings.site_name}
             </h1>
             <p className="text-xl md:text-2xl mb-2 text-shadow">
               Murang'a University of Technology
             </p>
-            <p className="text-lg text-shadow">
-              Your Academic Resource Portal
+            <p className="text-lg text-shadow max-w-3xl mx-auto">
+              {settings.site_description}
             </p>
           </div>
 

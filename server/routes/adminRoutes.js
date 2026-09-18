@@ -24,6 +24,8 @@ import {
   getProgramsDropdown,
   getSettings,
   updateSetting,
+  updateSettings,
+  getPublicSettings,
   getDownloadsEnabled,
   getMaxFileSize,
   getBanner,
@@ -31,6 +33,11 @@ import {
   clearBanner,
   uploadFile,
 } from '../controllers/adminController.js';
+import {
+  getFeedbackList,
+  updateFeedbackStatus,
+  deleteFeedback,
+} from '../controllers/feedbackController.js';
 import { authenticate, authorize } from '../middleware/authMiddleware.js';
 import { upload } from '../config/cloudinary.js';
 
@@ -40,6 +47,7 @@ const router = express.Router();
 router.get('/public/downloads-enabled', getDownloadsEnabled);
 router.get('/public/max-file-size', getMaxFileSize);
 router.get('/public/banner', getBanner);
+router.get('/public/settings', getPublicSettings);
 
 // All other admin routes require authentication and admin/class_rep role
 router.use(authenticate);
@@ -86,8 +94,14 @@ router.get('/programs/list', getProgramsDropdown);
 // System settings (Admin only)
 router.get('/settings', authorize('admin'), getSettings);
 router.put('/settings', authorize('admin'), updateSetting);
+router.put('/settings/bulk', authorize('admin'), updateSettings);
 
 // File upload (for notifications, etc.)
 router.post('/upload', upload.single('file'), uploadFile);
+
+// Platform feedback (Admin only - users' feedback and ratings)
+router.get('/feedback', authorize('admin'), getFeedbackList);
+router.patch('/feedback/:id/status', authorize('admin'), updateFeedbackStatus);
+router.delete('/feedback/:id', authorize('admin'), deleteFeedback);
 
 export default router;

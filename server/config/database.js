@@ -1,8 +1,18 @@
 import pkg from 'pg';
-const { Pool } = pkg;
+const { Pool, types } = pkg;
 import dotenv from 'dotenv';
 
 dotenv.config();
+
+// PostgreSQL `timestamp without time zone` columns (OID 1114) are stored in UTC
+// by this application (the DB session is pinned to UTC below). By default the
+// pg driver parses those values in the Node process's local timezone, which
+// shifts every timestamp whenever the server does not run in UTC (e.g. a dev
+// machine on EAT/UTC+2/+3). Parse them as UTC so API responses always carry the
+// correct instant, and clients can render them in the user's local time.
+types.setTypeParser(1114, (value) =>
+  value === null ? null : new Date(`${value.replace(' ', 'T')}Z`)
+);
 
 // Detect if we're using a remote database
 const isRemote = process.env.DB_HOST && 
@@ -30,8 +40,11 @@ const pool = new Pool({
 // Test database connection
 pool.on('connect', (client) => {
   console.log('📊 Connected to PostgreSQL database');
-  // Set statement timeout to prevent long-running queries
-  client.query('SET statement_timeout = 30000'); // 30 seconds
+  // Pin the session to UTC (matches how timestamps are parsed), and set a
+  // statement timeout to prevent long-running queries.
+  client
+    .query("SET statement_timeout = 30000; SET TIME ZONE 'UTC'")
+    .catch((err) => console.error('Failed to initialise database session:', err.message));
 });
 
 pool.on('error', (err, client) => {

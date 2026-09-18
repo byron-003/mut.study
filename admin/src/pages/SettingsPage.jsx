@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { adminAPI } from '../services/api';
 import {
   Settings, User, Bell, Shield, Database, Mail,
-  Info, Save, RefreshCw, AlertTriangle, CheckCircle
+  Info, Save, RefreshCw, AlertTriangle, CheckCircle, UserPlus, Wrench
 } from 'lucide-react';
 
 const SettingsPage = () => {
@@ -19,6 +19,8 @@ const SettingsPage = () => {
     maxFileSize: 50, // MB
     allowedFileTypes: '.pdf,.doc,.docx,.ppt,.pptx,.zip',
     downloadsEnabled: true, // Global download control
+    registrationEnabled: true, // Allow new users to register
+    maintenanceMode: false, // Pause new uploads and show a notice
   });
 
   // Notification Settings
@@ -32,8 +34,8 @@ const SettingsPage = () => {
 
   // Security Settings
   const [securitySettings, setSecuritySettings] = useState({
-    requireEmailVerification: true,
-    sessionTimeout: 60, // minutes
+    requireEmailVerification: false,
+    sessionTimeout: 10080, // minutes (7 days)
     maxLoginAttempts: 5,
     passwordMinLength: 8,
     requireStrongPassword: true,
@@ -50,19 +52,50 @@ const SettingsPage = () => {
 
   const handleSaveSettings = async (settingsType) => {
     setSaveStatus('saving');
-    
+
+    const payloads = {
+      general: {
+        site_name: generalSettings.siteName,
+        site_description: generalSettings.siteDescription,
+        contact_email: generalSettings.contactEmail,
+        max_file_size: Math.round(Number(generalSettings.maxFileSize) * 1024 * 1024),
+        allowed_file_types: generalSettings.allowedFileTypes,
+        downloads_enabled: generalSettings.downloadsEnabled,
+        registration_enabled: generalSettings.registrationEnabled,
+        maintenance_mode: generalSettings.maintenanceMode,
+      },
+      notifications: {
+        email_notifications: notificationSettings.emailNotifications,
+        new_resource_alert: notificationSettings.newResourceAlert,
+        approval_notification: notificationSettings.approvalNotification,
+        weekly_report: notificationSettings.weeklyReport,
+        system_alerts: notificationSettings.systemAlerts,
+      },
+      security: {
+        require_email_verification: securitySettings.requireEmailVerification,
+        session_timeout_minutes: Number(securitySettings.sessionTimeout),
+        max_login_attempts: Number(securitySettings.maxLoginAttempts),
+        password_min_length: Number(securitySettings.passwordMinLength),
+        require_strong_password: securitySettings.requireStrongPassword,
+      },
+      approval: {
+        auto_approve: approvalSettings.autoApprove,
+        require_class_rep_approval: approvalSettings.requireClassRepApproval,
+        require_admin_approval: approvalSettings.requireAdminApproval,
+        allow_student_uploads: approvalSettings.allowStudentUploads,
+        moderation_queue_limit: Number(approvalSettings.moderationQueueLimit),
+      },
+    };
+
     try {
-      if (settingsType === 'general') {
-        // Save downloads_enabled setting
-        await adminAPI.updateSetting('downloads_enabled', generalSettings.downloadsEnabled);
-      }
-      
+      await adminAPI.updateSettings(payloads[settingsType]);
+
       setSaveStatus('success');
       setTimeout(() => setSaveStatus(null), 3000);
     } catch (error) {
       console.error('Error saving settings:', error);
       setSaveStatus('error');
-      setTimeout(() => setSaveStatus(null), 3000);
+      setTimeout(() => setSaveStatus(null), 4000);
     }
   };
 
@@ -71,19 +104,53 @@ const SettingsPage = () => {
     const loadSettings = async () => {
       try {
         const response = await adminAPI.getSettings();
-        const settings = response.data.data;
-        
-        if (settings.downloads_enabled) {
-          setGeneralSettings(prev => ({
-            ...prev,
-            downloadsEnabled: settings.downloads_enabled.value
-          }));
-        }
+        const settings = response.data.data || {};
+        const get = (key, fallback) =>
+          settings[key]?.value !== undefined ? settings[key].value : fallback;
+
+        setGeneralSettings((prev) => ({
+          ...prev,
+          siteName: get('site_name', prev.siteName),
+          siteDescription: get('site_description', prev.siteDescription),
+          contactEmail: get('contact_email', prev.contactEmail),
+          maxFileSize: Math.max(
+            1,
+            Math.round(Number(get('max_file_size', prev.maxFileSize * 1024 * 1024)) / 1024 / 1024)
+          ),
+          allowedFileTypes: get('allowed_file_types', prev.allowedFileTypes),
+          downloadsEnabled: Boolean(get('downloads_enabled', prev.downloadsEnabled)),
+          registrationEnabled: Boolean(get('registration_enabled', prev.registrationEnabled)),
+          maintenanceMode: Boolean(get('maintenance_mode', prev.maintenanceMode)),
+        }));
+
+        setNotificationSettings((prev) => ({
+          emailNotifications: Boolean(get('email_notifications', prev.emailNotifications)),
+          newResourceAlert: Boolean(get('new_resource_alert', prev.newResourceAlert)),
+          approvalNotification: Boolean(get('approval_notification', prev.approvalNotification)),
+          weeklyReport: Boolean(get('weekly_report', prev.weeklyReport)),
+          systemAlerts: Boolean(get('system_alerts', prev.systemAlerts)),
+        }));
+
+        setSecuritySettings((prev) => ({
+          requireEmailVerification: Boolean(get('require_email_verification', prev.requireEmailVerification)),
+          sessionTimeout: Number(get('session_timeout_minutes', prev.sessionTimeout)),
+          maxLoginAttempts: Number(get('max_login_attempts', prev.maxLoginAttempts)),
+          passwordMinLength: Number(get('password_min_length', prev.passwordMinLength)),
+          requireStrongPassword: Boolean(get('require_strong_password', prev.requireStrongPassword)),
+        }));
+
+        setApprovalSettings((prev) => ({
+          autoApprove: Boolean(get('auto_approve', prev.autoApprove)),
+          requireClassRepApproval: Boolean(get('require_class_rep_approval', prev.requireClassRepApproval)),
+          requireAdminApproval: Boolean(get('require_admin_approval', prev.requireAdminApproval)),
+          allowStudentUploads: Boolean(get('allow_student_uploads', prev.allowStudentUploads)),
+          moderationQueueLimit: Number(get('moderation_queue_limit', prev.moderationQueueLimit)),
+        }));
       } catch (error) {
         console.error('Error loading settings:', error);
       }
     };
-    
+
     if (user?.role === 'admin') {
       loadSettings();
     }
@@ -246,6 +313,54 @@ const SettingsPage = () => {
                         type="checkbox"
                         checked={generalSettings.downloadsEnabled}
                         onChange={(e) => setGeneralSettings({ ...generalSettings, downloadsEnabled: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-admin-primary"></div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Registration Toggle */}
+                <div>
+                  <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg border border-purple-200">
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900 flex items-center gap-2">
+                        <UserPlus className="w-5 h-5 text-purple-600" />
+                        Allow New Registrations
+                      </p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        When disabled, new students cannot create accounts. Existing users can still sign in.
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer ml-4">
+                      <input
+                        type="checkbox"
+                        checked={generalSettings.registrationEnabled}
+                        onChange={(e) => setGeneralSettings({ ...generalSettings, registrationEnabled: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-admin-primary"></div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Maintenance Mode Toggle */}
+                <div>
+                  <div className="flex items-center justify-between p-4 bg-amber-50 rounded-lg border border-amber-200">
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900 flex items-center gap-2">
+                        <Wrench className="w-5 h-5 text-amber-600" />
+                        Maintenance Mode
+                      </p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Shows a maintenance notice to all users and temporarily pauses new uploads.
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer ml-4">
+                      <input
+                        type="checkbox"
+                        checked={generalSettings.maintenanceMode}
+                        onChange={(e) => setGeneralSettings({ ...generalSettings, maintenanceMode: e.target.checked })}
                         className="sr-only peer"
                       />
                       <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-admin-primary"></div>
@@ -418,11 +533,14 @@ const SettingsPage = () => {
                   <input
                     type="number"
                     min="15"
-                    max="480"
+                    max="10080"
                     value={securitySettings.sessionTimeout}
                     onChange={(e) => setSecuritySettings({ ...securitySettings, sessionTimeout: parseInt(e.target.value) })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-primary"
                   />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Minutes a login stays valid (10080 = 7 days)
+                  </p>
                 </div>
 
                 <div>
@@ -665,6 +783,14 @@ const SettingsPage = () => {
               <div className="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-slide-up">
                 <CheckCircle className="w-5 h-5" />
                 <span className="font-medium">Settings saved successfully!</span>
+              </div>
+            )}
+
+            {/* Error Message */}
+            {saveStatus === 'error' && (
+              <div className="fixed bottom-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-slide-up">
+                <AlertTriangle className="w-5 h-5" />
+                <span className="font-medium">Failed to save settings. Please try again.</span>
               </div>
             )}
           </div>

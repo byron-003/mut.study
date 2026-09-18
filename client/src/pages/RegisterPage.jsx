@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../utils/authContext';
 import { schoolsAPI } from '../services/api';
 import { isValidEmail } from '../utils/helpers';
+import { useSettings } from '../context/SettingsContext';
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -32,6 +33,7 @@ const RegisterPage = () => {
   });
   const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
   const { register } = useAuth();
+  const { settings } = useSettings();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [referredById, setReferredById] = useState(
@@ -65,9 +67,10 @@ const RegisterPage = () => {
   }, [programSearch, programs]);
 
   useEffect(() => {
-    // Check password strength
+    // Check password strength against the admin-configured policy
     const password = formData.password;
-    const hasMinLength = password.length >= 8;
+    const minLength = Number(settings.password_min_length) || 8;
+    const hasMinLength = password.length >= minLength;
     const hasUppercase = /[A-Z]/.test(password);
     const hasLowercase = /[a-z]/.test(password);
     const hasNumber = /[0-9]/.test(password);
@@ -88,7 +91,7 @@ const RegisterPage = () => {
       hasSymbol,
       score
     });
-  }, [formData.password]);
+  }, [formData.password, settings.password_min_length]);
 
   const fetchPrograms = async () => {
     try {
@@ -139,12 +142,13 @@ const RegisterPage = () => {
       return;
     }
 
-    if (formData.password.length < 8) {
-      toast.error('Password must be at least 8 characters long', { icon: '🔑' });
+    const minPasswordLength = Number(settings.password_min_length) || 8;
+    if (formData.password.length < minPasswordLength) {
+      toast.error(`Password must be at least ${minPasswordLength} characters long`, { icon: '🔑' });
       return;
     }
 
-    if (passwordStrength.score < 3) {
+    if (settings.require_strong_password && passwordStrength.score < 3) {
       toast.error('Password is too weak. Please include at least 3 of: uppercase, lowercase, number, or symbol', { 
         icon: '⚠️',
         duration: 5000 
@@ -221,6 +225,30 @@ const RegisterPage = () => {
       setLoading(false);
     }
   };
+
+  if (settings.registration_enabled === false) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 text-center">
+          <img
+            src="/mut-logo.png"
+            alt="MUT Logo"
+            className="w-20 h-20 object-contain mx-auto mb-4"
+          />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Registration Closed</h2>
+          <p className="text-gray-600 mb-6">
+            New account registration is currently disabled. Please try again later or contact support.
+          </p>
+          <Link
+            to="/login"
+            className="inline-block px-6 py-2 bg-mut-primary text-white rounded-lg hover:bg-mut-secondary transition-colors"
+          >
+            Back to Sign In
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50  py-12 px-4 sm:px-6 lg:px-8">

@@ -3,9 +3,11 @@ import { Mail, Phone, MapPin, Send, CheckCircle } from 'lucide-react';
 import { useAlert } from '../hooks/useAlert';
 import CustomAlert from '../components/CustomAlert';
 import { useAuth } from '../utils/authContext';
+import { useSettings } from '../context/SettingsContext';
 
 const ContactPage = () => {
   const { user } = useAuth();
+  const { settings } = useSettings();
   const [formData, setFormData] = useState({
     name: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '',
     email: user?.email || '',
@@ -120,8 +122,9 @@ const ContactPage = () => {
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-1">Email</h3>
                     <p className="text-gray-600 text-sm">
-                      support@mutstudy.com<br />
-                      info@mutstudy.com
+                      <a href={`mailto:${settings.contact_email}`} className="hover:text-mut-primary">
+                        {settings.contact_email}
+                      </a>
                     </p>
                   </div>
                 </div>

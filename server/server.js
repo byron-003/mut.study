@@ -12,6 +12,7 @@ import adminRoutes from './routes/adminRoutes.js';
 import passwordResetRoutes from './routes/passwordResetRoutes.js';
 import forumRoutes from './routes/forumRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
+import feedbackRoutes from './routes/feedbackRoutes.js';
 import progressRoutes from './routes/progressRoutes.js';
 import classRepRoutes from './routes/classRepRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
@@ -144,6 +145,22 @@ async function runMigrations() {
       console.log('✅ User settings and AI summaries migration completed!');
     }
     
+    // Check if platform_feedback table exists (migration 024)
+    const feedbackTableCheck = await query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'platform_feedback'
+      );
+    `);
+    
+    if (!feedbackTableCheck.rows[0].exists) {
+      console.log('📝 Running platform feedback migration...');
+      const migrationPath = path.join(__dirname, 'migrations', '024_create_platform_feedback.sql');
+      const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
+      await query(migrationSQL);
+      console.log('✅ Platform feedback migration completed!');
+    }
+    
     console.log('✅ All migrations up to date');
   } catch (error) {
     console.error('❌ Migration error:', error.message);
@@ -199,6 +216,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/password-reset', passwordResetRoutes);
 app.use('/api/forum', forumRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/feedback', feedbackRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/class-rep', classRepRoutes);
 app.use('/api/notifications', notificationRoutes);

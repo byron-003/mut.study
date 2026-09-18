@@ -28,7 +28,7 @@ const MessagesPage = () => {
       const response = await axios.get(`${API_URL}/contact/messages`, {
         params: { status: filter },
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('adminToken')}`
+          Authorization: `Bearer ${localStorage.getItem('admin_token')}`
         }
       });
       setMessages(response.data.data);
@@ -43,7 +43,7 @@ const MessagesPage = () => {
     try {
       const response = await axios.get(`${API_URL}/contact/messages/stats`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('adminToken')}`
+          Authorization: `Bearer ${localStorage.getItem('admin_token')}`
         }
       });
       setStats(response.data.data);
@@ -56,7 +56,7 @@ const MessagesPage = () => {
     try {
       const response = await axios.get(`${API_URL}/contact/messages/${id}`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('adminToken')}`
+          Authorization: `Bearer ${localStorage.getItem('admin_token')}`
         }
       });
       setSelectedMessage(response.data.data);
@@ -76,7 +76,7 @@ const MessagesPage = () => {
         { reply: replyText },
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('adminToken')}`
+            Authorization: `Bearer ${localStorage.getItem('admin_token')}`
           }
         }
       );
@@ -108,7 +108,7 @@ const MessagesPage = () => {
     try {
       await axios.delete(`${API_URL}/contact/messages/${id}`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('adminToken')}`
+          Authorization: `Bearer ${localStorage.getItem('admin_token')}`
         }
       });
       fetchMessages();
@@ -129,7 +129,7 @@ const MessagesPage = () => {
         { status: 'archived' },
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('adminToken')}`
+            Authorization: `Bearer ${localStorage.getItem('admin_token')}`
           }
         }
       );

@@ -1,13 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../utils/authContext';
-import { authAPI } from '../services/api';
+import { authAPI, feedbackAPI } from '../services/api';
 import { useAlert } from '../hooks/useAlert';
 import CustomAlert from '../components/CustomAlert';
 import { 
   Settings, Lock, Sparkles, Eye, EyeOff, 
-  Save, ArrowLeft, Shield, Zap, CheckCircle, XCircle
+  Save, ArrowLeft, Shield, Zap, CheckCircle, XCircle, Star, MessageSquare
 } from 'lucide-react';
+
+const CATEGORIES = [
+  { value: 'general', label: 'General Feedback' },
+  { value: 'bug', label: 'Bug Report' },
+  { value: 'feature-request', label: 'Feature Request' },
+  { value: 'content', label: 'Content / Resources' },
+  { value: 'other', label: 'Other' },
+];
 
 const SettingsPage = () => {
   const { user, updateUser } = useAuth();
@@ -35,6 +43,14 @@ const SettingsPage = () => {
   const [loading, setLoading] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
 
+  // Feedback & Platform Rating State
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [category, setCategory] = useState('general');
+  const [existingFeedback, setExistingFeedback] = useState(null);
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
+
   useEffect(() => {
     fetchUserSettings();
   }, []);
@@ -55,7 +71,57 @@ const SettingsPage = () => {
   }, [passwordData.newPassword]);
 
   const fetchUserSettings = async () => {
-    // Placeholder for future settings
+    loadMyFeedback();
+  };
+
+  const loadMyFeedback = async () => {
+    try {
+      const response = await feedbackAPI.getMine();
+      const existing = response.data.data;
+      if (existing) {
+        setExistingFeedback(existing);
+        setRating(existing.rating);
+        setFeedbackText(existing.feedback);
+        setCategory(existing.category);
+      }
+    } catch (error) {
+      console.error('Error loading feedback:', error);
+    }
+  };
+
+  const handleSubmitFeedback = async (e) => {
+    e.preventDefault();
+
+    if (rating === 0) {
+      showAlert('Error', 'Please select a star rating before submitting', 'error');
+      return;
+    }
+
+    if (feedbackText.trim().length < 10) {
+      showAlert('Error', 'Please provide feedback of at least 10 characters', 'error');
+      return;
+    }
+
+    try {
+      setSubmittingFeedback(true);
+      const response = await feedbackAPI.submit({
+        rating,
+        feedback: feedbackText.trim(),
+        category,
+      });
+      showAlert('Success', response.data.message, 'success');
+      setExistingFeedback((prev) => ({
+        ...(prev || {}),
+        rating,
+        feedback: feedbackText.trim(),
+        category,
+      }));
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      showAlert('Error', error.response?.data?.message || 'Failed to submit feedback', 'error');
+    } finally {
+      setSubmittingFeedback(false);
+    }
   };
 
   const handlePasswordChange = async (e) => {
@@ -317,6 +383,126 @@ const SettingsPage = () => {
                     <>
                       <Save className="w-5 h-5" />
                       Change Password
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Feedback & Platform Rating Section */}
+          <div className="bg-white  rounded-lg shadow-md overflow-hidden">
+            <div className="bg-gradient-to-r from-purple-500 to-pink-600 px-6 py-4">
+              <div className="flex items-center gap-3">
+                <MessageSquare className="w-6 h-6 text-white" />
+                <div>
+                  <h2 className="text-xl font-bold text-white">Feedback & Platform Rating</h2>
+                  <p className="text-purple-100 text-sm">Help us improve MUT Study Hub</p>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmitFeedback} className="p-6 space-y-6">
+              {/* Rating */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700  mb-2">
+                  How would you rate MUT Study Hub? *
+                </label>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      type="button"
+                      key={star}
+                      onClick={() => setRating(star)}
+                      onMouseEnter={() => setHoverRating(star)}
+                      onMouseLeave={() => setHoverRating(0)}
+                      className="p-1 transition-transform hover:scale-110"
+                      aria-label={`${star} star${star > 1 ? 's' : ''}`}
+                    >
+                      <Star
+                        className={`w-9 h-9 transition-colors ${
+                          star <= (hoverRating || rating)
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-300 hover:text-yellow-300 '
+                        }`}
+                      />
+                    </button>
+                  ))}
+                  <span className="ml-3 text-sm text-gray-600 ">
+                    {rating > 0 ? (
+                      <span className="font-medium">
+                        {rating} {rating === 1 ? 'star' : 'stars'}
+                      </span>
+                    ) : (
+                      'Select a rating'
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              {/* Category */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700  mb-2">
+                  Category
+                </label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300  rounded-lg focus:ring-2 focus:ring-mut-primary focus:border-transparent  "
+                >
+                  {CATEGORIES.map((cat) => (
+                    <option key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Feedback Text */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700  mb-2">
+                  Your Feedback *
+                </label>
+                <textarea
+                  value={feedbackText}
+                  onChange={(e) => setFeedbackText(e.target.value)}
+                  rows={5}
+                  maxLength={2000}
+                  className="w-full px-4 py-3 border border-gray-300  rounded-lg focus:ring-2 focus:ring-mut-primary focus:border-transparent  "
+                  placeholder="Tell us what you like, what could be improved, bugs you found, or features you'd love..."
+                />
+                <div className="flex items-center justify-between mt-1">
+                  <p className={`text-sm ${feedbackText.trim().length < 10 ? 'text-red-500' : 'text-green-600'}`}>
+                    {feedbackText.trim().length < 10 ? 'At least 10 characters required' : 'Looking good, thanks!'}
+                  </p>
+                  <p className="text-xs text-gray-400 ">{feedbackText.length}/2000</p>
+                </div>
+              </div>
+
+              {/* Submit */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 ">
+                {existingFeedback && (
+                  <span className="text-sm text-gray-500  mr-auto flex items-center gap-1.5">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    {existingFeedback.status === 'resolved'
+                      ? 'Your previous feedback was resolved'
+                      : 'You have submitted feedback before — updates refresh your entry'}
+                  </span>
+                )}
+                <button
+                  type="submit"
+                  disabled={submittingFeedback}
+                  className="flex items-center gap-2 px-6 py-2.5 bg-mut-primary text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+                >
+                  {submittingFeedback ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5" />
+                      {existingFeedback ? 'Update Feedback' : 'Submit Feedback'}
                     </>
                   )}
                 </button>

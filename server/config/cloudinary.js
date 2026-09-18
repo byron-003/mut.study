@@ -3,6 +3,7 @@ import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import multer from 'multer';
 import dotenv from 'dotenv';
 import { query } from './database.js';
+import { getSettingValue } from './settings.js';
 
 dotenv.config();
 
@@ -47,6 +48,35 @@ const getCachedMaxFileSize = async () => {
     lastFetchTime = now;
   }
   return cachedMaxFileSize;
+};
+
+// Cache the allowed file extensions configured by the admin (updated every 5 minutes)
+let cachedAllowedExtensions = null;
+let lastTypesFetchTime = 0;
+
+const getAllowedExtensions = async () => {
+  try {
+    const value = await getSettingValue('allowed_file_types');
+    if (typeof value === 'string' && value.trim()) {
+      return value
+        .split(',')
+        .map((ext) => ext.trim().toLowerCase())
+        .filter(Boolean)
+        .map((ext) => (ext.startsWith('.') ? ext : `.${ext}`));
+    }
+  } catch (error) {
+    console.warn('Could not fetch allowed_file_types from database');
+  }
+  return null;
+};
+
+const getCachedAllowedExtensions = async () => {
+  const now = Date.now();
+  if (cachedAllowedExtensions === null || now - lastTypesFetchTime > CACHE_DURATION) {
+    cachedAllowedExtensions = await getAllowedExtensions();
+    lastTypesFetchTime = now;
+  }
+  return cachedAllowedExtensions;
 };
 
 // Configure Cloudinary storage for Multer
@@ -99,6 +129,24 @@ export const upload = multer({
     fileSize: cachedMaxFileSize // Initial value from cache
   },
   fileFilter: (req, file, cb) => {
+    // Prefer the admin-configured extension allowlist when available
+    const configuredExtensions = req.allowedExtensions;
+    if (Array.isArray(configuredExtensions) && configuredExtensions.length > 0) {
+      const dotIndex = file.originalname.lastIndexOf('.');
+      const ext = dotIndex !== -1 ? file.originalname.substring(dotIndex).toLowerCase() : '';
+
+      if (ext && configuredExtensions.includes(ext)) {
+        return cb(null, true);
+      }
+
+      return cb(
+        new Error(
+          `Invalid file type: ${ext || file.originalname}. Allowed types: ${configuredExtensions.join(', ')}`
+        ),
+        false
+      );
+    }
+
     // Comprehensive list of allowed MIME types for study materials
     const allowedMimes = [
       // Documents
@@ -161,10 +209,13 @@ export const checkFileSize = async (req, res, next) => {
   try {
     // Update cached max file size
     const maxFileSize = await getCachedMaxFileSize();
-    
+
     // Update multer's limits
     upload.limits.fileSize = maxFileSize;
-    
+
+    // Expose the admin-configured allowed extensions to the multer fileFilter
+    req.allowedExtensions = await getCachedAllowedExtensions();
+
     next();
   } catch (error) {
     console.error('Error checking file size limit:', error);

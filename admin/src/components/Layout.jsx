@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import DarkModeToggle from './DarkModeToggle';
 import {
   LayoutDashboard, Users, FileText, BookOpen, GraduationCap,
-  BarChart3, FileSpreadsheet, Settings, LogOut, Menu, X, ChevronDown, Mail, Bell, Megaphone
+  BarChart3, FileSpreadsheet, Settings, LogOut, Menu, X, ChevronDown, Mail, Bell, Megaphone, MessageSquare
 } from 'lucide-react';
 
 const Layout = () => {
@@ -24,6 +24,7 @@ const Layout = () => {
     { name: 'Users', path: '/users', icon: Users, allowClassRep: true },
     { name: 'Resources', path: '/resources', icon: FileText, allowClassRep: true },
     { name: 'Messages', path: '/messages', icon: Mail, allowClassRep: false },
+    { name: 'Feedback', path: '/feedback', icon: MessageSquare, allowClassRep: false },
     { name: 'Notifications', path: '/notifications', icon: Bell, allowClassRep: false },
     { name: 'Banner', path: '/banner', icon: Megaphone, allowClassRep: false },
     { name: 'Programs', path: '/programs', icon: GraduationCap, allowClassRep: false },

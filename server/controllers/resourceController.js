@@ -2,6 +2,7 @@ import { query } from '../config/database.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { deleteFromCloudinary } from '../config/cloudinary.js';
 import { emitToCourse, emitToUser, emitToRole } from '../config/socket.js';
+import { getSettingValue } from '../config/settings.js';
 
 /**
  * Upload new study material
@@ -19,6 +20,20 @@ export const uploadResource = async (req, res, next) => {
     // Validate title
     if (!title || !title.trim()) {
       throw new AppError('Title is required', 400);
+    }
+
+    // Respect the admin-configured upload policy
+    if (req.user.role === 'student') {
+      const allowStudentUploads = await getSettingValue('allow_student_uploads');
+      const maintenanceMode = await getSettingValue('maintenance_mode');
+
+      if (maintenanceMode) {
+        throw new AppError('The platform is currently in maintenance mode. Uploads are temporarily disabled.', 503);
+      }
+
+      if (!allowStudentUploads) {
+        throw new AppError('Uploads by students are currently disabled by the administrator.', 403);
+      }
     }
 
     // Determine the category to use
@@ -104,11 +119,15 @@ export const uploadResource = async (req, res, next) => {
       throw new AppError('Either courseId or (unitCode, unitName, yearOfStudy, semester, academicYear) must be provided', 400);
     }
 
+    // Auto-approval is controlled by the admin approval workflow setting
+    const autoApprove = await getSettingValue('auto_approve');
+    const initialStatus = autoApprove ? 'approved' : 'pending';
+
     // Insert study material
     const result = await query(
       `INSERT INTO study_materials 
-       (course_id, uploader_id, title, description, category, file_url, cloudinary_public_id, file_size, file_type, status) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+       (course_id, uploader_id, title, description, category, file_url, cloudinary_public_id, file_size, file_type, status, approved_at) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
        RETURNING *`,
       [
         finalCourseId,
@@ -120,7 +139,8 @@ export const uploadResource = async (req, res, next) => {
         req.file.filename,
         req.file.size,
         req.file.mimetype.substring(0, 100),
-        'pending'
+        initialStatus,
+        autoApprove ? new Date() : null
       ]
     );
 
@@ -161,22 +181,32 @@ export const uploadResource = async (req, res, next) => {
 
     // Emit socket event to course room (for real-time updates)
     try {
-      emitToCourse(finalCourseId, 'resource:uploaded', responseData);
-      
-      // Also notify admins and class reps about pending approval
-      emitToRole('admin', 'resource:pending', {
-        resourceId: material.id,
-        title: material.title,
-        uploader: responseData.uploadedBy,
-        courseId: finalCourseId
-      });
-      
-      emitToRole('class_rep', 'resource:pending', {
-        resourceId: material.id,
-        title: material.title,
-        uploader: responseData.uploadedBy,
-        courseId: finalCourseId
-      });
+      if (autoApprove) {
+        // Auto-approved: notify the course room and the uploader directly,
+        // bypassing the moderation queue entirely
+        emitToCourse(finalCourseId, 'resource:approved', responseData);
+        emitToUser(uploaderId, 'resource:approved', {
+          ...responseData,
+          message: `Your resource "${title}" has been auto-approved!`
+        });
+      } else {
+        emitToCourse(finalCourseId, 'resource:uploaded', responseData);
+
+        // Notify admins and class reps about pending approval
+        emitToRole('admin', 'resource:pending', {
+          resourceId: material.id,
+          title: material.title,
+          uploader: responseData.uploadedBy,
+          courseId: finalCourseId
+        });
+
+        emitToRole('class_rep', 'resource:pending', {
+          resourceId: material.id,
+          title: material.title,
+          uploader: responseData.uploadedBy,
+          courseId: finalCourseId
+        });
+      }
     } catch (socketError) {
       console.error('Socket emit error:', socketError);
       // Don't fail the request if socket emit fails
@@ -184,7 +214,7 @@ export const uploadResource = async (req, res, next) => {
 
     res.status(201).json({
       status: 'success',
-      message: 'Resource uploaded successfully and is pending approval',
+      message: autoApprove ? 'Resource uploaded and auto-approved successfully' : 'Resource uploaded successfully and is pending approval',
       data: responseData
     });
   } catch (error) {
@@ -206,10 +236,12 @@ export const uploadResource = async (req, res, next) => {
 export const getResourcesByCourse = async (req, res, next) => {
   try {
     const { courseId } = req.params;
-    const { category, status = 'approved' } = req.query;
+    const { category } = req.query;
     const userId = req.user?.id; // Get the current user ID
 
-    // Build query - show approved resources OR resources uploaded by current user
+    // Only approved resources are visible to other users. A user can always see
+    // their own uploads regardless of status. The `status` query param is
+    // intentionally ignored so clients cannot request pending/rejected items.
     let queryText = `
       SELECT 
         sm.id, sm.title, sm.description, sm.category, sm.file_url, 
@@ -222,13 +254,13 @@ export const getResourcesByCourse = async (req, res, next) => {
       JOIN users u ON sm.uploader_id = u.id
       JOIN courses c ON sm.course_id = c.id
       WHERE sm.course_id = $1 
-        AND (sm.status = $2 OR sm.uploader_id = $3)
+        AND (sm.status = 'approved' OR sm.uploader_id = $2)
     `;
 
-    const params = [courseId, status, userId];
+    const params = [courseId, userId];
 
     if (category) {
-      queryText += ` AND sm.category = $4`;
+      queryText += ` AND sm.category = $3`;
       params.push(category);
     }
 
@@ -582,7 +614,7 @@ export const getMyUploads = async (req, res, next) => {
     const result = await query(
       `SELECT 
         sm.id, sm.title, sm.description, sm.category, sm.file_url, 
-        sm.file_size, sm.status, sm.download_count, sm.rejection_reason,
+        sm.file_size, sm.file_type, sm.status, sm.download_count, sm.rejection_reason,
         sm.created_at, sm.approved_at,
         c.unit_code, c.unit_title
       FROM study_materials sm
@@ -603,6 +635,7 @@ export const getMyUploads = async (req, res, next) => {
         category: row.category,
         fileUrl: row.file_url,
         fileSize: row.file_size,
+        fileType: row.file_type,
         status: row.status,
         downloads: row.download_count, // Frontend expects 'downloads'
         downloadCount: row.download_count,

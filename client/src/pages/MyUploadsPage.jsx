@@ -10,7 +10,7 @@ import {
   Upload, FileText, Trash2, Edit, Eye, Download, 
   Filter, Search, X, Plus, Save, AlertCircle,
   Clock, CheckCircle, XCircle, Book, File, Video,
-  ImageIcon, BookOpen, Calendar
+  ImageIcon, BookOpen, Calendar, Users
 } from 'lucide-react';
 
 // Helper function to get current academic year
@@ -54,8 +54,12 @@ const MyUploadsPage = () => {
   // Data State
   const [uploads, setUploads] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pendingUploads, setPendingUploads] = useState([]);
+  const [pendingLoading, setPendingLoading] = useState(false);
+  const [pendingActionId, setPendingActionId] = useState(null);
   
   // UI State
+  const [activeTab, setActiveTab] = useState('mine'); // mine, others (class reps only)
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all'); // all, pending, approved, rejected
   const [filterType, setFilterType] = useState('all'); // all, notes, assignment, pastpaper, video
@@ -93,6 +97,9 @@ const MyUploadsPage = () => {
 
   useEffect(() => {
     fetchMyUploads();
+    if (isClassRep) {
+      fetchOtherUploads();
+    }
   }, []);
 
   const fetchMyUploads = async () => {
@@ -104,6 +111,71 @@ const MyUploadsPage = () => {
       console.error('Error fetching uploads:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchOtherUploads = async () => {
+    if (!isClassRep) return;
+    try {
+      setPendingLoading(true);
+      const response = await resourcesAPI.getPendingResources();
+      const ownEmail = user?.email?.toLowerCase();
+      // "Other Uploads" shows pending resources uploaded by other students
+      const others = (response.data?.data || []).filter(
+        (r) =>
+          !ownEmail ||
+          !r.uploader?.email ||
+          r.uploader.email.toLowerCase() !== ownEmail
+      );
+      setPendingUploads(others);
+    } catch (error) {
+      console.error('Error fetching other uploads:', error);
+      showAlert('Error', 'Failed to load uploads awaiting approval', 'error');
+    } finally {
+      setPendingLoading(false);
+    }
+  };
+
+  const handleApproveOther = async (resource) => {
+    const confirmed = await showConfirm({
+      title: 'Approve Resource',
+      message: `Are you sure you want to approve "${resource.title}"?`,
+      type: 'warning',
+      confirmText: 'Approve',
+      cancelText: 'Cancel'
+    });
+
+    if (!confirmed) return;
+
+    setPendingActionId(resource.id);
+    try {
+      await resourcesAPI.approveResource(resource.id);
+      setPendingUploads(pendingUploads.filter((r) => r.id !== resource.id));
+      fetchMyUploads();
+      showAlert('Success', 'Resource approved successfully!', 'success');
+    } catch (error) {
+      console.error('Error approving resource:', error);
+      showAlert('Error', error.response?.data?.message || 'Failed to approve resource', 'error');
+    } finally {
+      setPendingActionId(null);
+    }
+  };
+
+  const handleRejectOther = async (resource) => {
+    const reason = window.prompt(`Enter rejection reason for "${resource.title}":`);
+    if (!reason) return;
+
+    setPendingActionId(resource.id);
+    try {
+      await resourcesAPI.rejectResource(resource.id, reason);
+      setPendingUploads(pendingUploads.filter((r) => r.id !== resource.id));
+      fetchMyUploads();
+      showAlert('Info', 'Resource rejected', 'info');
+    } catch (error) {
+      console.error('Error rejecting resource:', error);
+      showAlert('Error', error.response?.data?.message || 'Failed to reject resource', 'error');
+    } finally {
+      setPendingActionId(null);
     }
   };
 
@@ -380,101 +452,142 @@ const MyUploadsPage = () => {
             </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Uploads</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                </div>
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <Upload className="w-6 h-6 text-blue-600" />
-                </div>
-              </div>
+          {/* Tabs - Class reps get an "Other Uploads" moderation tab */}
+          {isClassRep && (
+            <div className="flex gap-2 bg-white rounded-lg shadow-md p-1 mb-6 w-fit">
+              <button
+                onClick={() => setActiveTab('mine')}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === 'mine'
+                    ? 'bg-green-600 text-white shadow'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Upload className="w-4 h-4" />
+                My Uploads
+              </button>
+              <button
+                onClick={() => setActiveTab('others')}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === 'others'
+                    ? 'bg-green-600 text-white shadow'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Users className="w-4 h-4" />
+                Other Uploads
+                {pendingUploads.length > 0 && (
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                    activeTab === 'others' ? 'bg-white text-green-700' : 'bg-yellow-100 text-yellow-700'
+                  }`}>
+                    {pendingUploads.length}
+                  </span>
+                )}
+              </button>
             </div>
-            
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Pending</p>
-                  <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
-                </div>
-                <div className="p-3 bg-yellow-100 rounded-lg">
-                  <Clock className="w-6 h-6 text-yellow-600" />
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Approved</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.approved}</p>
-                </div>
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <CheckCircle className="w-6 h-6 text-green-600" />
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Rejected</p>
-                  <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
-                </div>
-                <div className="p-3 bg-red-100 rounded-lg">
-                  <XCircle className="w-6 h-6 text-red-600" />
-                </div>
-              </div>
-            </div>
-          </div>
+          )}
 
-          {/* Filters */}
-          <div className="bg-white rounded-lg shadow-md p-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search resources..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-mut-primary"
-                />
+          {activeTab === 'mine' && (
+            <>
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-white rounded-lg shadow-md p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Total Uploads</p>
+                      <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                    </div>
+                    <div className="p-3 bg-blue-100 rounded-lg">
+                      <Upload className="w-6 h-6 text-blue-600" />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-white rounded-lg shadow-md p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Pending</p>
+                      <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+                    </div>
+                    <div className="p-3 bg-yellow-100 rounded-lg">
+                      <Clock className="w-6 h-6 text-yellow-600" />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-white rounded-lg shadow-md p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Approved</p>
+                      <p className="text-2xl font-bold text-green-600">{stats.approved}</p>
+                    </div>
+                    <div className="p-3 bg-green-100 rounded-lg">
+                      <CheckCircle className="w-6 h-6 text-green-600" />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-white rounded-lg shadow-md p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Rejected</p>
+                      <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
+                    </div>
+                    <div className="p-3 bg-red-100 rounded-lg">
+                      <XCircle className="w-6 h-6 text-red-600" />
+                    </div>
+                  </div>
+                </div>
               </div>
-              
-              {/* Status Filter */}
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-mut-primary"
-              >
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-              </select>
-              
-              {/* Type Filter */}
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-mut-primary"
-              >
-                <option value="all">All Types</option>
-                <option value="notes">Lecture Notes</option>
-                <option value="assignment">Assignments</option>
-                <option value="pastpaper">Past Papers</option>
-                <option value="video">Videos</option>
-              </select>
-            </div>
-          </div>
+
+              {/* Filters */}
+              <div className="bg-white rounded-lg shadow-md p-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search resources..."
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-mut-primary"
+                    />
+                  </div>
+                  
+                  {/* Status Filter */}
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-mut-primary"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                  
+                  {/* Type Filter */}
+                  <select
+                    value={filterType}
+                    onChange={(e) => setFilterType(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-mut-primary"
+                  >
+                    <option value="all">All Types</option>
+                    <option value="notes">Lecture Notes</option>
+                    <option value="assignment">Assignments</option>
+                    <option value="pastpaper">Past Papers</option>
+                    <option value="video">Videos</option>
+                  </select>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Resources List */}
+        {activeTab === 'mine' && (
+          <>
         {filteredUploads.length === 0 ? (
           <div className="bg-white rounded-lg shadow-md p-12 text-center">
             <Upload className="w-16 h-16 text-gray-400 mx-auto mb-4" />
@@ -594,9 +707,113 @@ const MyUploadsPage = () => {
                 </div>
               );
             })}
-          </div>
+            </div>
+            )}
+          </>
         )}
-      </div>
+        </div>
+
+      {/* Other Uploads (Class Reps) */}
+      {activeTab === 'others' && isClassRep && (
+        <div>
+          {pendingLoading ? (
+            <div className="text-center py-12 bg-white rounded-lg shadow-md">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-mut-primary mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading uploads awaiting approval...</p>
+            </div>
+          ) : pendingUploads.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-md p-12 text-center">
+              <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No uploads to review</h3>
+              <p className="text-gray-600">
+                Uploads from other students will appear here for you to approve or reject.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {pendingUploads.map((resource) => {
+                const TypeIcon = getTypeIcon(resource.type);
+                return (
+                  <div key={resource.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                    <div className="p-6">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-4 flex-1">
+                          <div className={`p-3 rounded-lg ${getTypeColor(resource.type)}`}>
+                            <TypeIcon className="w-6 h-6" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between mb-2">
+                              <div>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-1">{resource.title}</h3>
+                                {resource.description && (
+                                  <p className="text-sm text-gray-600 mb-2">{resource.description}</p>
+                                )}
+                              </div>
+                              {getStatusBadge('pending')}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500">
+                              <span className={`px-2 py-1 rounded ${getTypeColor(resource.type)} text-xs font-medium`}>
+                                {resource.type ? (resource.type.charAt(0).toUpperCase() + resource.type.slice(1)) : 'Unknown'}
+                              </span>
+                              <span>•</span>
+                              <span className="flex items-center gap-1">
+                                <Book className="w-4 h-4" />
+                                {resource.course?.unitCode || 'N/A'} - {resource.course?.unitTitle || 'Unknown Course'}
+                              </span>
+                              <span>•</span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-4 h-4" />
+                                {new Date(resource.createdAt).toLocaleDateString()}
+                              </span>
+                              {resource.uploader && (
+                                <>
+                                  <span>•</span>
+                                  <span className="flex items-center gap-1">
+                                    <Users className="w-4 h-4" />
+                                    {resource.uploader.firstName} {resource.uploader.lastName}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 ml-4">
+                          <button
+                            onClick={() => handleViewFile(resource)}
+                            disabled={pendingActionId === resource.id}
+                            className="p-2 text-gray-600 hover:text-mut-primary hover:bg-green-50 rounded-lg transition-colors"
+                            title="View"
+                          >
+                            <Eye className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleApproveOther(resource)}
+                            disabled={pendingActionId === resource.id}
+                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
+                            title="Approve"
+                          >
+                            <CheckCircle className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleRejectOther(resource)}
+                            disabled={pendingActionId === resource.id}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                            title="Reject"
+                          >
+                            <XCircle className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Upload Modal */}
       {showUploadModal && (

@@ -1,0 +1,11 @@
+import { query } from './config/database.js';
+const tz = await query(`SELECT current_setting('TIMEZONE') as tz, now() as now, localtimestamp as local, current_timestamp as cur`);
+console.log('session timezone:', tz.rows[0].tz);
+console.log('now() (timestamptz):', tz.rows[0].now);
+console.log('localtimestamp (ts):', tz.rows[0].local);
+console.log('current_timestamp:', tz.rows[0].cur);
+const s = await query(`SELECT created_at, created_at::text as raw FROM study_materials ORDER BY created_at DESC LIMIT 3`);
+s.rows.forEach(r => console.log('created_at:', r.created_at, '| as text:', r.raw));
+const u = await query(`SELECT created_at::text as raw FROM users ORDER BY id LIMIT 1`);
+console.log('sample user created_at:', u.rows[0].raw);
+process.exit(0);

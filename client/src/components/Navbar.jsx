@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../utils/authContext';
 import { NotificationBell } from '../context/NotificationContext';
+import { useSettings } from '../context/SettingsContext';
 import { Menu, Settings, LogOut, User as UserIcon } from 'lucide-react';
 
 const Navbar = () => {
   const { user, isAuthenticated, isClassRep, logout } = useAuth();
+  const { settings } = useSettings();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const navigate = useNavigate();
@@ -53,7 +55,7 @@ const Navbar = () => {
                 className="w-12 h-12 object-contain"
               />
               <div>
-                <h1 className="text-xl font-bold text-gray-900 ">MUT Study Hub</h1>
+                <h1 className="text-xl font-bold text-gray-900 ">{settings.site_name}</h1>
                 <p className="text-xs text-gray-500 ">Academic Resources Portal</p>
               </div>
             </Link>
@@ -191,12 +193,14 @@ const Navbar = () => {
                 >
                   Login
                 </Link>
-                <Link
-                  to="/register"
-                  className="px-6 py-2 bg-mut-primary text-white rounded-lg hover:bg-mut-secondary transition-colors font-medium"
-                >
-                  Register
-                </Link>
+                {settings.registration_enabled && (
+                  <Link
+                    to="/register"
+                    className="px-6 py-2 bg-mut-primary text-white rounded-lg hover:bg-mut-secondary transition-colors font-medium"
+                  >
+                    Register
+                  </Link>
+                )}
               </>
             )}
           </div>
@@ -394,13 +398,15 @@ const Navbar = () => {
                   >
                     Login
                   </Link>
-                  <Link
-                    to="/register"
-                    className="block mx-3 my-2 px-3 py-2 rounded-md text-base font-medium bg-mut-primary text-white hover:bg-mut-secondary text-center"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Register
-                  </Link>
+                  {settings.registration_enabled && (
+                    <Link
+                      to="/register"
+                      className="block mx-3 my-2 px-3 py-2 rounded-md text-base font-medium bg-mut-primary text-white hover:bg-mut-secondary text-center"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Register
+                    </Link>
+                  )}
                 </div>
               </>
             )}

@@ -3,16 +3,26 @@ import jwt from 'jsonwebtoken';
 import { query } from '../config/database.js';
 import { AppError } from '../middleware/errorHandler.js';
 import cloudinary from '../config/cloudinary.js';
+import { getSettingValue } from '../config/settings.js';
 
 /**
- * Generate JWT token
+ * Generate JWT token.
+ * Session lifetime is controlled by the admin-configurable `session_timeout_minutes`
+ * setting, falling back to the JWT_EXPIRES_IN environment variable.
  */
-const generateToken = (userId) => {
-  return jwt.sign(
-    { userId },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-  );
+const generateToken = async (userId) => {
+  let expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+
+  try {
+    const minutes = await getSettingValue('session_timeout_minutes');
+    if (minutes && Number(minutes) > 0) {
+      expiresIn = `${Number(minutes)}m`;
+    }
+  } catch (error) {
+    console.warn('Could not read session_timeout_minutes, using JWT_EXPIRES_IN');
+  }
+
+  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn });
 };
 
 /**
@@ -27,15 +37,31 @@ export const register = async (req, res, next) => {
       throw new AppError('All fields are required including program selection', 400);
     }
 
+    // Respect the admin registration toggle
+    const registrationEnabled = await getSettingValue('registration_enabled');
+    if (!registrationEnabled) {
+      throw new AppError('New user registration is currently disabled. Please try again later.', 403);
+    }
+
     // Validate email format and domain
     const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
     if (!emailRegex.test(email)) {
       throw new AppError('Please provide a valid email address', 400);
     }
 
-    // Validate password strength
-    if (password.length < 8) {
-      throw new AppError('Password must be at least 8 characters long', 400);
+    // Validate password against the admin-configured policy
+    const minLength = Number(await getSettingValue('password_min_length')) || 8;
+    const requireStrong = Boolean(await getSettingValue('require_strong_password'));
+
+    if (password.length < minLength) {
+      throw new AppError(`Password must be at least ${minLength} characters long`, 400);
+    }
+
+    if (requireStrong) {
+      const strongPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
+      if (!strongPassword.test(password)) {
+        throw new AppError('Password must include uppercase, lowercase and numeric characters', 400);
+      }
     }
 
     // Check if user already exists
@@ -82,7 +108,7 @@ export const register = async (req, res, next) => {
     const user = result.rows[0];
 
     // Generate token
-    const token = generateToken(user.id);
+    const token = await generateToken(user.id);
 
     res.status(201).json({
       success: true,
@@ -145,7 +171,7 @@ export const login = async (req, res, next) => {
     }
 
     // Generate token
-    const token = generateToken(user.id);
+    const token = await generateToken(user.id);
 
     res.json({
       success: true,

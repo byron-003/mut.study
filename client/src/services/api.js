@@ -60,6 +60,7 @@ export const adminPublicAPI = {
   getDownloadsEnabled: () => api.get('/admin/public/downloads-enabled'),
   getMaxFileSize: () => api.get('/admin/public/max-file-size'),
   getBanner: () => api.get('/admin/public/banner'),
+  getSettings: () => api.get('/admin/public/settings'),
 };
 
 // Admin API (auth required)
@@ -121,6 +122,12 @@ export const progressAPI = {
   markAsCompleted: (resourceId) => api.post(`/progress/${resourceId}/complete`),
   startSession: (resourceId) => api.post(`/progress/${resourceId}/session/start`),
   endSession: (sessionId, data) => api.put(`/progress/session/${sessionId}/end`, data),
+};
+
+// Feedback & Platform Rating API
+export const feedbackAPI = {
+  submit: (data) => api.post('/feedback', data),
+  getMine: () => api.get('/feedback/me'),
 };
 
 export default api;

@@ -5,9 +5,10 @@ import { useAlert, useConfirm } from '../hooks/useAlert';
 import CustomAlert from '../components/CustomAlert';
 import CustomConfirm from '../components/CustomConfirm';
 import TextResourceModal from '../components/TextResourceModal';
+import ResourceFilePreview from '../components/ResourceFilePreview';
 import {
   Search, Filter, CheckCircle, XCircle, Clock, FileText, Trash2,
-  ChevronLeft, ChevronRight, Download, Eye, User, Calendar, Book
+  ChevronLeft, ChevronRight, Download, Eye, User, Calendar, Book, FolderOpen
 } from 'lucide-react';
 
 const ResourcesPage = () => {
@@ -34,6 +35,8 @@ const ResourcesPage = () => {
   const [showBulkRejectModal, setShowBulkRejectModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedResource, setSelectedResource] = useState(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewResource, setPreviewResource] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -206,6 +209,11 @@ const ResourcesPage = () => {
       // File resources use regular details modal
       setShowDetailsModal(true);
     }
+  };
+
+  const openFilePreview = (resource) => {
+    setPreviewResource(resource);
+    setShowPreviewModal(true);
   };
 
   const toggleSelectAll = () => {
@@ -478,6 +486,17 @@ const ResourcesPage = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
+                        {/* View File (before approving) */}
+                        {(resource.content_type !== 'text' && resource.contentType !== 'text' && resource.file_path) && (
+                          <button
+                            onClick={() => openFilePreview(resource)}
+                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                            title="View File"
+                          >
+                            <FolderOpen className="w-4 h-4" />
+                          </button>
+                        )}
+
                         {/* View Details */}
                         <button
                           onClick={() => openDetailsModal(resource)}
@@ -671,6 +690,17 @@ const ResourcesPage = () => {
         </div>
       )}
 
+      {/* File Preview Modal */}
+      {showPreviewModal && previewResource && (
+        <ResourceFilePreview
+          resource={previewResource}
+          onClose={() => {
+            setShowPreviewModal(false);
+            setPreviewResource(null);
+          }}
+        />
+      )}
+
       {/* Details Modal - Conditional based on resource type */}
       {showDetailsModal && selectedResource && (
         selectedResource.content_type === 'text' || selectedResource.contentType === 'text' ? (
@@ -782,6 +812,13 @@ const ResourcesPage = () => {
             </div>
 
             <div className="flex items-center gap-3 mt-6 pt-6 border-t">
+              <button
+                onClick={() => openFilePreview(selectedResource)}
+                className="flex-1 px-4 py-2 bg-admin-primary text-white rounded-lg hover:opacity-90"
+              >
+                <FolderOpen className="w-4 h-4 inline mr-1" />
+                View File
+              </button>
               <button
                 onClick={() => setShowDetailsModal(false)}
                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"

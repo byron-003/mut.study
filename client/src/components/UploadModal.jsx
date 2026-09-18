@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { resourcesAPI } from '../services/api';
+import { useAuth } from '../utils/authContext';
+import { useSettings } from '../context/SettingsContext';
 
 const UploadModal = ({ isOpen, onClose, courseId, onSuccess }) => {
+  const { user } = useAuth();
+  const { settings } = useSettings();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -20,7 +24,17 @@ const UploadModal = ({ isOpen, onClose, courseId, onSuccess }) => {
     { value: 'pastpaper', label: 'Past Paper' },
     { value: 'other', label: 'Other' }
   ];
-  const maxFileSize = 50 * 1024 * 1024; // 50MB
+  // Admin-configurable upload limits
+  const maxFileSize = Number(settings.max_file_size) || 50 * 1024 * 1024;
+  const maxFileSizeMB = Math.round(maxFileSize / 1024 / 1024);
+  const allowedExtensions = (settings.allowed_file_types || '')
+    .split(',')
+    .map((ext) => ext.trim().toLowerCase())
+    .filter(Boolean);
+  const acceptAttr = allowedExtensions.length > 0 ? allowedExtensions.join(',') : undefined;
+  const uploadsBlocked =
+    settings.maintenance_mode ||
+    (user?.role === 'student' && settings.allow_student_uploads === false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -34,28 +48,22 @@ const UploadModal = ({ isOpen, onClose, courseId, onSuccess }) => {
     const selectedFile = e.target.files[0];
     
     if (selectedFile) {
-      // Validate file size
+      // Validate file size against the admin-configured limit
       if (selectedFile.size > maxFileSize) {
-        setError('File size must be less than 50MB');
+        setError(`File size must be less than ${maxFileSizeMB}MB`);
         setFile(null);
         return;
       }
 
-      // Validate file type
-      const allowedTypes = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/zip',
-        'application/x-zip-compressed',
-        'application/vnd.ms-powerpoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-      ];
-
-      if (!allowedTypes.includes(selectedFile.type)) {
-        setError('Invalid file type. Only PDF, DOC, DOCX, PPT, PPTX, and ZIP files are allowed.');
-        setFile(null);
-        return;
+      // Validate file type against the admin-configured allowlist
+      if (allowedExtensions.length > 0) {
+        const dotIndex = selectedFile.name.lastIndexOf('.');
+        const ext = dotIndex !== -1 ? selectedFile.name.substring(dotIndex).toLowerCase() : '';
+        if (!allowedExtensions.includes(ext)) {
+          setError(`Invalid file type. Allowed types: ${allowedExtensions.join(', ')}`);
+          setFile(null);
+          return;
+        }
       }
 
       setError('');
@@ -177,6 +185,16 @@ const UploadModal = ({ isOpen, onClose, courseId, onSuccess }) => {
               </div>
             )}
 
+            {uploadsBlocked && (
+              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                <p className="text-sm text-amber-800">
+                  {settings.maintenance_mode
+                    ? 'The platform is currently in maintenance mode. Uploads are temporarily disabled.'
+                    : 'Uploads by students are currently disabled by the administrator.'}
+                </p>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Topic/Title */}
               <div>
@@ -259,7 +277,7 @@ const UploadModal = ({ isOpen, onClose, courseId, onSuccess }) => {
                           type="file"
                           className="sr-only"
                           onChange={handleFileChange}
-                          accept=".pdf,.doc,.docx,.txt,.rtf,.odt,.ppt,.pptx,.odp,.xls,.xlsx,.csv,.ods,.zip,.rar,.7z,.jpg,.jpeg,.png,.gif,.bmp,.svg,.webp,.mp4,.avi,.mov,.wmv,.mkv,.webm,.mp3,.wav,.ogg,.m4a"
+                          accept={acceptAttr}
                           required
                           disabled={uploading}
                         />
@@ -267,7 +285,7 @@ const UploadModal = ({ isOpen, onClose, courseId, onSuccess }) => {
                       <p className="pl-1">or drag and drop</p>
                     </div>
                     <p className="text-xs text-gray-500">
-                      Documents, presentations, spreadsheets, images, videos up to 50MB
+                      Documents, presentations, spreadsheets, images, videos up to {maxFileSizeMB}MB
                     </p>
                     {file && (
                       <p className="text-sm text-purple-600 font-medium mt-2">
@@ -298,7 +316,7 @@ const UploadModal = ({ isOpen, onClose, courseId, onSuccess }) => {
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  disabled={uploading}
+                  disabled={uploading || uploadsBlocked}
                   className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {uploading ? 'Uploading...' : 'Upload Resource'}

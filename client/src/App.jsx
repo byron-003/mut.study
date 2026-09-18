@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './utils/authContext';
 import { SocketProvider } from './context/SocketContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { SettingsProvider } from './context/SettingsContext';
 import Navbar from './components/Navbar';
 import AnnouncementBanner from './components/AnnouncementBanner';
 import HomePage from './pages/HomePage';
@@ -146,7 +147,8 @@ function AppRoutes() {
 function App() {
   return (
     <Router>
-      <AuthProvider>
+      <SettingsProvider>
+        <AuthProvider>
           <SocketProvider>
             <NotificationProvider>
               <Toaster 
@@ -192,6 +194,7 @@ function App() {
             </NotificationProvider>
           </SocketProvider>
         </AuthProvider>
+      </SettingsProvider>
     </Router>
   );
 }

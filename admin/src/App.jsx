@@ -9,6 +9,7 @@ import DashboardPage from './pages/DashboardPage';
 import UsersPage from './pages/UsersPage';
 import ResourcesPage from './pages/ResourcesPage';
 import MessagesPage from './pages/MessagesPage';
+import FeedbackPage from './pages/FeedbackPage';
 import ProgramsPage from './pages/ProgramsPage';
 import CoursesPage from './pages/CoursesPage';
 import AnalyticsPage from './pages/AnalyticsPage';
@@ -79,6 +80,11 @@ function AppRoutes() {
         <Route path="messages" element={
           <ProtectedRoute requireAdmin={true}>
             <MessagesPage />
+          </ProtectedRoute>
+        } />
+        <Route path="feedback" element={
+          <ProtectedRoute requireAdmin={true}>
+            <FeedbackPage />
           </ProtectedRoute>
         } />
         <Route path="programs" element={

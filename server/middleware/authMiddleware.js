@@ -111,3 +111,20 @@ export const requireClassRep = (req, res, next) => {
 
   next();
 };
+
+/**
+ * Require a resource moderator - admins or class representatives.
+ * Accepts either the `class_rep` role or the `is_class_rep` flag, since reps
+ * promoted through the admin dashboard are flagged rather than re-roled.
+ */
+export const requireModerator = (req, res, next) => {
+  if (!req.user) {
+    return next(new AppError('Not authenticated', 401));
+  }
+
+  if (req.user.role === 'admin' || req.user.role === 'class_rep' || req.user.is_class_rep) {
+    return next();
+  }
+
+  return next(new AppError('Only class representatives can perform this action', 403));
+};

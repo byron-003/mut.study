@@ -1,5 +1,51 @@
 import { query } from '../config/database.js';
 import { AppError } from '../middleware/errorHandler.js';
+import {
+  SETTINGS_DEFAULTS,
+  getAllSettings,
+  getPublicSettings as getPublicSettingsMap,
+  getSettingValue,
+  saveSettings,
+} from '../config/settings.js';
+import { emitToCourse, emitToUser } from '../config/socket.js';
+
+/**
+ * When auto-approval is enabled, immediately approve every resource that is
+ * currently sitting in the moderation queue, bypassing manual admin/class rep
+ * review, and notify the affected uploaders and course rooms.
+ * Returns the number of resources that were auto-approved.
+ */
+const autoApprovePendingResources = async (approverId) => {
+  const result = await query(
+    `UPDATE study_materials
+     SET status = 'approved', approved_at = CURRENT_TIMESTAMP, approved_by = $1
+     WHERE status = 'pending'
+     RETURNING id, title, course_id, uploader_id`,
+    [approverId]
+  );
+
+  for (const resource of result.rows) {
+    try {
+      emitToCourse(resource.course_id, 'resource:approved', {
+        id: resource.id,
+        title: resource.title,
+        status: 'approved',
+        approvedAt: new Date(),
+      });
+      emitToUser(resource.uploader_id, 'resource:approved', {
+        id: resource.id,
+        title: resource.title,
+        status: 'approved',
+        approvedAt: new Date(),
+        message: `Your resource "${resource.title}" has been auto-approved!`,
+      });
+    } catch (socketError) {
+      console.error('Socket emit error during auto-approve:', socketError);
+    }
+  }
+
+  return result.rows.length;
+};
 
 /**
  * Get admin dashboard statistics
@@ -94,6 +140,45 @@ export const getStats = async (req, res, next) => {
       LIMIT 10
     `);
 
+    // Get platform feedback summary
+    const feedbackStatsResult = await query(`
+      SELECT
+        COUNT(*) as total,
+        COALESCE(AVG(rating), 0) as avg_rating,
+        COUNT(*) FILTER (WHERE status = 'new') as new_count
+      FROM platform_feedback
+    `);
+    const feedbackTotal = parseInt(feedbackStatsResult.rows[0].total);
+    const feedbackAvg = feedbackTotal > 0 ? Math.round(parseFloat(feedbackStatsResult.rows[0].avg_rating) * 100) / 100 : 0;
+    const feedbackNew = parseInt(feedbackStatsResult.rows[0].new_count);
+
+    const feedbackRatingsResult = await query(`
+      SELECT rating, COUNT(*) as count
+      FROM platform_feedback
+      GROUP BY rating
+    `);
+    const feedbackDistribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    feedbackRatingsResult.rows.forEach((rule) => {
+      feedbackDistribution[rule.rating] = parseInt(rule.count);
+    });
+
+    const recentFeedbackResult = await query(`
+      SELECT 
+        pf.id,
+        pf.rating,
+        pf.feedback,
+        pf.category,
+        pf.status,
+        pf.created_at,
+        u.first_name,
+        u.last_name,
+        u.email
+      FROM platform_feedback pf
+      JOIN users u ON pf.user_id = u.id
+      ORDER BY pf.created_at DESC
+      LIMIT 5
+    `);
+
     res.json({
       status: 'success',
       data: {
@@ -127,6 +212,24 @@ export const getStats = async (req, res, next) => {
             email: row.email,
           },
         })),
+        feedback: {
+          total: feedbackTotal,
+          avgRating: feedbackAvg,
+          newCount: feedbackNew,
+          distribution: feedbackDistribution,
+          recent: recentFeedbackResult.rows.map((row) => ({
+            id: row.id,
+            rating: row.rating,
+            feedback: row.feedback,
+            category: row.category,
+            status: row.status,
+            createdAt: row.created_at,
+            user: {
+              name: `${row.first_name} ${row.last_name}`.trim(),
+              email: row.email,
+            },
+          })),
+        },
       },
     });
   } catch (error) {
@@ -444,7 +547,7 @@ export const getResources = async (req, res, next) => {
     const resourcesResult = await query(
       `SELECT 
         sm.id, sm.title, sm.description, sm.category as type, sm.file_url as file_path, sm.file_size,
-        sm.status, sm.download_count, sm.created_at,
+        sm.file_type, sm.content_type, sm.status, sm.download_count, sm.created_at,
         sm.rejection_reason, sm.approved_at as reviewed_at, sm.approved_by as reviewed_by,
         c.unit_code, c.unit_title, c.academic_year, c.semester,
         u.first_name as uploader_first_name, u.last_name as uploader_last_name,
@@ -1103,21 +1206,86 @@ export const getProgramsDropdown = async (req, res, next) => {
  */
 export const getSettings = async (req, res, next) => {
   try {
-    const result = await query('SELECT * FROM system_settings');
-    
-    // Convert to object format
-    const settings = result.rows.reduce((acc, row) => {
-      acc[row.setting_key] = {
-        value: row.setting_value === 'true' ? true : row.setting_value === 'false' ? false : row.setting_value,
-        description: row.description,
-        updated_at: row.updated_at
-      };
+    // Typed values (merged with registry defaults so every key is always present)
+    const values = await getAllSettings();
+
+    // Metadata (description / last updated) for keys that exist in the database
+    const rows = await query(
+      'SELECT setting_key, description, updated_at FROM system_settings'
+    );
+    const meta = rows.rows.reduce((acc, row) => {
+      acc[row.setting_key] = row;
       return acc;
     }, {});
+
+    const settings = {};
+    for (const [key, value] of Object.entries(values)) {
+      settings[key] = {
+        value,
+        description: meta[key]?.description ?? SETTINGS_DEFAULTS[key]?.description ?? null,
+        updated_at: meta[key]?.updated_at ?? null,
+      };
+    }
 
     res.json({
       success: true,
       data: settings
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get public (client-safe) settings
+ */
+export const getPublicSettings = async (req, res, next) => {
+  try {
+    const settings = await getPublicSettingsMap();
+
+    res.json({
+      success: true,
+      data: settings
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Bulk update system settings (admin only)
+ */
+export const updateSettings = async (req, res, next) => {
+  try {
+    const { settings } = req.body;
+
+    if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
+      throw new AppError('A settings object is required', 400);
+    }
+
+    const invalidKey = Object.keys(settings).find(
+      (key) => !/^[a-z0-9_]+$/i.test(key)
+    );
+    if (invalidKey) {
+      throw new AppError(`Invalid setting key: ${invalidKey}`, 400);
+    }
+
+    // If auto-approve is being turned ON, every resource already waiting in
+    // the pending queue is approved immediately (bypassing manual review)
+    const previousAutoApprove = await getSettingValue('auto_approve');
+    const updated = await saveSettings(settings, req.user.id);
+
+    let autoApproved = 0;
+    if (updated.auto_approve === true && previousAutoApprove !== true) {
+      autoApproved = await autoApprovePendingResources(req.user.id);
+    }
+
+    res.json({
+      success: true,
+      message: autoApproved > 0
+        ? `Settings saved — ${autoApproved} pending resource(s) auto-approved`
+        : 'Settings saved successfully',
+      data: autoApproved > 0 ? { ...updated, autoApproved } : updated
     });
   } catch (error) {
     next(error);
@@ -1136,6 +1304,14 @@ export const updateSetting = async (req, res, next) => {
       throw new AppError('Setting key and value are required', 400);
     }
 
+    // If auto-approve is being turned ON, approve everything already waiting
+    // in the pending queue immediately (bypassing manual review)
+    let autoApproved = 0;
+    let previousAutoApprove;
+    if (key === 'auto_approve' && String(value) === 'true') {
+      previousAutoApprove = await getSettingValue('auto_approve');
+    }
+
     // Update or insert setting
     const result = await query(
       `INSERT INTO system_settings (setting_key, setting_value, updated_by)
@@ -1146,12 +1322,19 @@ export const updateSetting = async (req, res, next) => {
       [key, String(value), userId]
     );
 
+    if (key === 'auto_approve' && String(value) === 'true' && previousAutoApprove !== true) {
+      autoApproved = await autoApprovePendingResources(userId);
+    }
+
     res.json({
       success: true,
-      message: 'Setting updated successfully',
+      message: autoApproved > 0
+        ? `Setting updated — ${autoApproved} pending resource(s) auto-approved`
+        : 'Setting updated successfully',
       data: {
         key: result.rows[0].setting_key,
-        value: result.rows[0].setting_value === 'true' ? true : result.rows[0].setting_value === 'false' ? false : result.rows[0].setting_value
+        value: result.rows[0].setting_value === 'true' ? true : result.rows[0].setting_value === 'false' ? false : result.rows[0].setting_value,
+        autoApproved: autoApproved > 0 ? autoApproved : undefined,
       }
     });
   } catch (error) {

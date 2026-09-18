@@ -77,11 +77,17 @@ export const adminAPI = {
   // System settings
   getSettings: () => api.get('/admin/settings'),
   updateSetting: (key, value) => api.put('/admin/settings', { key, value }),
+  updateSettings: (settings) => api.put('/admin/settings/bulk', { settings }),
 
   // Announcement banner (shown to users below the header)
   getBanner: () => api.get('/admin/public/banner'),
   setBanner: (message) => api.put('/admin/banner', { message }),
   clearBanner: () => api.delete('/admin/banner'),
+  
+  // Platform feedback (admin only)
+  getFeedback: (params) => api.get('/admin/feedback', { params }),
+  updateFeedbackStatus: (id, status) => api.patch(`/admin/feedback/${id}/status`, { status }),
+  deleteFeedback: (id) => api.delete(`/admin/feedback/${id}`),
   
   // Notifications
   createNotification: (data) => api.post('/notifications', data),

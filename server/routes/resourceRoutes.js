@@ -10,7 +10,7 @@ import {
   getMyUploads,
   updateResource
 } from '../controllers/resourceController.js';
-import { authenticate, authorize } from '../middleware/authMiddleware.js';
+import { authenticate, requireModerator } from '../middleware/authMiddleware.js';
 import { upload, checkFileSize } from '../config/cloudinary.js';
 
 const router = express.Router();
@@ -39,8 +39,8 @@ router.post('/:id/download', incrementDownloadCount);
 router.delete('/:id', authenticate, deleteResource);
 
 // Class rep and admin routes
-router.get('/pending', authenticate, authorize('class_rep', 'admin'), getPendingResources);
-router.put('/:id/approve', authenticate, authorize('class_rep', 'admin'), approveResource);
-router.put('/:id/reject', authenticate, authorize('class_rep', 'admin'), rejectResource);
+router.get('/pending', authenticate, requireModerator, getPendingResources);
+router.put('/:id/approve', authenticate, requireModerator, approveResource);
+router.put('/:id/reject', authenticate, requireModerator, rejectResource);
 
 export default router;
