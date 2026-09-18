@@ -184,7 +184,15 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
       canvas.style.width = `${viewport.width}px`;
       canvas.style.height = `${viewport.height}px`;
 
-      const ctx = canvas.getContext('2d', { alpha: false });
+      const ctx = canvas.getContext('2d', { 
+        alpha: false,
+        desynchronized: false,
+        willReadFrequently: false
+      });
+      
+      // Set optimal rendering settings for sharp text
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -460,6 +468,11 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
                   ref={(el) => { canvasRefs.current[pageNum] = el; }}
                   data-page={pageNum}
                   className="block shadow-lg bg-white mx-auto max-w-full"
+                  style={{ 
+                    imageRendering: 'high-quality',
+                    WebkitFontSmoothing: 'antialiased',
+                    MozOsxFontSmoothing: 'grayscale'
+                  }}
                 />
               ))}
           </div>
@@ -584,55 +597,55 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
       <div className="h-full flex flex-col">
         {/* Header - WhatsApp Style */}
         <div className="bg-white shadow-sm border-b border-gray-200">
-          <div className="px-4 py-3 flex items-center justify-between">
+          <div className="px-3 lg:px-4 py-2 lg:py-3 flex items-center justify-between">
             {/* Left: File Info */}
-            <div className="flex-1 min-w-0 mr-4">
-              <h3 className="text-base font-medium text-gray-900 truncate">
+            <div className="flex-1 min-w-0 mr-2 lg:mr-4">
+              <h3 className="text-sm lg:text-base font-medium text-gray-900 truncate">
                 {title}
               </h3>
-              <div className="flex items-center gap-3 text-xs text-gray-500">
-                <span>{formatDate(createdAt)}</span>
+              <div className="flex items-center gap-2 lg:gap-3 text-xs text-gray-500">
+                <span className="hidden sm:inline">{formatDate(createdAt)}</span>
                 {totalPages && (
                   <span className="flex items-center gap-1">
                     <BookOpen className="w-3 h-3" />
-                    Page {currentPage} of {totalPages} ({progressPercentage}%)
+                    <span className="hidden sm:inline">Page </span>{currentPage}/{totalPages}
                   </span>
                 )}
               </div>
             </div>
 
             {/* Right: Action Buttons */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5 lg:gap-1">
               {/* Mark Complete Button */}
               {onMarkComplete && (
                 <button
                   onClick={onMarkComplete}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-1.5 lg:p-2 hover:bg-gray-100 rounded-full transition-colors"
                   title="Mark as complete"
                 >
-                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  <CheckCircle className="w-4 h-4 lg:w-5 lg:h-5 text-green-600" />
                 </button>
               )}
 
-              {/* Search Button */}
+              {/* Search Button - hidden on small mobile */}
               <button
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="hidden sm:block p-1.5 lg:p-2 hover:bg-gray-100 rounded-full transition-colors"
                 title="Search in document"
               >
-                <Search className="w-5 h-5 text-gray-700" />
+                <Search className="w-4 h-4 lg:w-5 lg:h-5 text-gray-700" />
               </button>
 
-              {/* Star Button */}
+              {/* Star Button - hidden on small mobile */}
               <button
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="hidden sm:block p-1.5 lg:p-2 hover:bg-gray-100 rounded-full transition-colors"
                 title="Add to favorites"
               >
-                <Star className="w-5 h-5 text-gray-700" />
+                <Star className="w-4 h-4 lg:w-5 lg:h-5 text-gray-700" />
               </button>
 
-              {/* Zoom Controls - visible on all devices */}
+              {/* Zoom Controls - hidden on mobile to save screen space */}
               {isPdf && (
-                <div className="flex items-center gap-0.5 ml-1 border border-gray-200 rounded-lg px-1">
+                <div className="hidden lg:flex items-center gap-0.5 ml-1 border border-gray-200 rounded-lg px-1">
                   <button
                     onClick={() => zoomChange(-0.25)}
                     disabled={pageZoom <= 0.5}
@@ -663,38 +676,38 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
               {downloadsEnabled && onDownload && (
                 <button
                   onClick={onDownload}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-1.5 lg:p-2 hover:bg-gray-100 rounded-full transition-colors"
                   title="Download"
                 >
-                  <Download className="w-5 h-5 text-gray-700" />
+                  <Download className="w-4 h-4 lg:w-5 lg:h-5 text-gray-700" />
                 </button>
               )}
 
               {/* Close Button */}
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors ml-2"
+                className="p-1.5 lg:p-2 hover:bg-gray-100 rounded-full transition-colors ml-1 lg:ml-2"
                 title="Close"
               >
-                <X className="w-5 h-5 text-gray-700" />
+                <X className="w-4 h-4 lg:w-5 lg:h-5 text-gray-700" />
               </button>
             </div>
           </div>
 
           {/* Progress Bar */}
           {isTracking && totalPages && (
-            <div className="px-4 pb-2">
+            <div className="px-3 lg:px-4 pb-2">
               <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 lg:gap-2">
                   <span className="text-xs text-gray-600">
-                    Page {currentPage} of {totalPages}
+                    <span className="hidden sm:inline">Page </span>{currentPage}/{totalPages}
                   </span>
                   {/* Manual page navigation */}
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5 lg:gap-1">
                     <button
                       onClick={() => goToPage(currentPage - 1)}
                       disabled={currentPage <= 1}
-                      className="p-1 hover:bg-gray-200 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                      className="p-0.5 lg:p-1 hover:bg-gray-200 rounded disabled:opacity-30 disabled:cursor-not-allowed"
                       title="Previous page"
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -704,7 +717,7 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
                     <button
                       onClick={() => goToPage(currentPage + 1)}
                       disabled={currentPage >= totalPages}
-                      className="p-1 hover:bg-gray-200 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                      className="p-0.5 lg:p-1 hover:bg-gray-200 rounded disabled:opacity-30 disabled:cursor-not-allowed"
                       title="Next page"
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
