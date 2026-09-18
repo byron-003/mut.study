@@ -47,7 +47,7 @@ const getAcademicYearOptions = () => {
 };
 
 const MyUploadsPage = () => {
-  const { user, isClassRep } = useAuth();
+  const { user, isClassRep, canAddCourse } = useAuth();
   const { alertState, showAlert, closeAlert } = useAlert();
   const { confirmState, showConfirm } = useConfirm();
   
@@ -436,11 +436,11 @@ const MyUploadsPage = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">My Uploads</h1>
               <p className="text-gray-600 mt-1">
-                {isClassRep ? 'Manage your uploads and courses' : 'Manage your uploaded resources'}
+                {canAddCourse ? 'Manage your uploads and courses' : 'Manage your uploaded resources'}
               </p>
             </div>
             <div className="flex gap-3">
-              {isClassRep && (
+              {canAddCourse && (
                 <button
                   onClick={() => setShowAddCourseModal(true)}
                   className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 flex items-center gap-2 shadow-lg transition-all hover:shadow-xl"
@@ -1113,8 +1113,8 @@ const MyUploadsPage = () => {
         />
       )}
 
-      {/* Add Course Modal (Class Reps only) */}
-      {isClassRep && (
+      {/* Add Course Modal */}
+      {canAddCourse && (
         <AddCourseModal
           isOpen={showAddCourseModal}
           onClose={() => setShowAddCourseModal(false)}

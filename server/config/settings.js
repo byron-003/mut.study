@@ -63,6 +63,12 @@ export const SETTINGS_DEFAULTS = {
     public: true,
     description: 'Allow students to upload study materials',
   },
+  allow_students_add_course: {
+    value: false,
+    type: 'boolean',
+    public: true,
+    description: 'Allow all students to add courses (normally class reps only)',
+  },
 
   // Security
   password_min_length: {

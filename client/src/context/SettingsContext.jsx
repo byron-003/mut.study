@@ -13,6 +13,7 @@ export const DEFAULT_SETTINGS = {
   registration_enabled: true,
   maintenance_mode: false,
   allow_student_uploads: true,
+  allow_students_add_course: false,
   password_min_length: 8,
   require_strong_password: true,
 };

@@ -51,7 +51,7 @@ const getAcademicYearOptions = () => {
 };
 
 const DashboardPage = () => {
-  const { user, isClassRep } = useAuth();
+  const { user, isClassRep, canAddCourse } = useAuth();
   const navigate = useNavigate();
   const { alertState, showAlert, closeAlert } = useAlert();
   const [ConfirmDialog, confirm] = useConfirm();
@@ -739,8 +739,8 @@ const DashboardPage = () => {
               )}
             </button>
             
-            {/* Add Course Button for Class Reps */}
-            {isClassRep && (
+            {/* Add Course Button for users allowed to create courses */}
+            {canAddCourse && (
               <button
                 onClick={() => setAddCourseModalOpen(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-mut-primary text-white rounded-lg hover:bg-green-700 transition-colors shadow-md"

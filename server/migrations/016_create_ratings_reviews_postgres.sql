@@ -150,21 +150,78 @@ ORDER BY sm.average_rating DESC, sm.rating_count DESC
 LIMIT 100;
 
 -- Top Contributors View
+-- Reputation score is computed live from real activity (approved uploads, ratings,
+-- reviews, helpful votes, downloads) matching utils/reputationCalculator.js, so it
+-- never depends on stale cached values in user_reputation.
+DROP VIEW IF EXISTS v_top_contributors;
+
 CREATE OR REPLACE VIEW v_top_contributors AS
-SELECT 
-    u.id,
-    CONCAT(u.first_name, ' ', u.last_name) as name,
-    u.email,
-    ur.reputation_score,
-    ur.quality_badge,
-    ur.total_approved_uploads,
-    ur.average_rating,
-    ur.total_ratings_received,
-    ur.total_helpful_votes_received
-FROM users u
-INNER JOIN user_reputation ur ON u.id = ur.user_id
-WHERE ur.total_approved_uploads > 0
-ORDER BY ur.reputation_score DESC, ur.average_rating DESC
+WITH user_scores AS (
+    SELECT
+        u.id,
+        CONCAT(u.first_name, ' ', u.last_name) AS name,
+        u.email,
+        (
+            (SELECT COUNT(*) FROM study_materials sma WHERE sma.uploader_id = u.id AND sma.status = 'approved') * 50
+            + COALESCE((
+                SELECT SUM(CASE rr.rating
+                    WHEN 5 THEN 10 WHEN 4 THEN 7 WHEN 3 THEN 5
+                    WHEN 2 THEN 2 WHEN 1 THEN 1 ELSE 0 END)
+                FROM resource_ratings rr
+                INNER JOIN study_materials smr ON smr.id = rr.resource_id
+                WHERE smr.uploader_id = u.id AND smr.status = 'approved'
+            ), 0)
+            + (SELECT COUNT(*) FROM resource_reviews rw WHERE rw.user_id = u.id) * 5
+            + COALESCE((
+                SELECT SUM(COALESCE(rh.helpful_count, 0))
+                FROM resource_reviews rh
+                WHERE rh.user_id = u.id
+            ), 0) * 3
+            + LEAST(
+                COALESCE((
+                    SELECT SUM(smd.download_count)
+                    FROM study_materials smd
+                    WHERE smd.uploader_id = u.id AND smd.status = 'approved'
+                ), 0),
+                1000
+            ) * 1
+        )::int AS reputation_score,
+        ((SELECT COUNT(*) FROM study_materials smp
+         WHERE smp.uploader_id = u.id AND smp.status = 'approved'))::int AS total_approved_uploads,
+        COALESCE((
+            SELECT ROUND(AVG(smr2.average_rating)::numeric, 2)
+            FROM study_materials smr2
+            WHERE smr2.uploader_id = u.id AND smr2.status = 'approved' AND smr2.rating_count > 0
+        ), 0) AS average_rating,
+        ((SELECT COUNT(*) FROM resource_ratings rr2
+         INNER JOIN study_materials sm5 ON sm5.id = rr2.resource_id
+         WHERE sm5.uploader_id = u.id AND sm5.status = 'approved'))::int AS total_ratings_received,
+        (COALESCE((
+            SELECT SUM(COALESCE(rh2.helpful_count, 0))
+            FROM resource_reviews rh2
+            WHERE rh2.user_id = u.id
+        ), 0)::int) AS total_helpful_votes_received
+    FROM users u
+)
+SELECT
+    us.id,
+    us.name,
+    us.email,
+    us.reputation_score,
+    us.total_approved_uploads,
+    us.average_rating,
+    us.total_ratings_received,
+    us.total_helpful_votes_received,
+    CASE
+        WHEN us.reputation_score >= 5000 AND us.total_approved_uploads >= 50 AND us.average_rating >= 4.5 THEN 'platinum'
+        WHEN us.reputation_score >= 1500 AND us.total_approved_uploads >= 30 AND us.average_rating >= 4.0 THEN 'gold'
+        WHEN us.reputation_score >= 500 AND us.total_approved_uploads >= 15 AND us.average_rating >= 3.5 THEN 'silver'
+        WHEN us.reputation_score >= 100 AND us.total_approved_uploads >= 5 AND us.average_rating >= 3.0 THEN 'bronze'
+        ELSE 'none'
+    END AS quality_badge
+FROM user_scores us
+WHERE us.total_approved_uploads > 0
+ORDER BY us.reputation_score DESC, us.average_rating DESC, us.name ASC
 LIMIT 100;
 
 -- =============================================

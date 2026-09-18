@@ -161,6 +161,13 @@ async function runMigrations() {
       console.log('✅ Platform feedback migration completed!');
     }
     
+    // Keep the leaderboard view computing real-time reputation points (idempotent)
+    console.log('📝 Updating leaderboard view to use real-time reputation points...');
+    const leaderboardViewPath = path.join(__dirname, 'migrations', '025_fix_leaderboard_real_points.sql');
+    const leaderboardViewSQL = fs.readFileSync(leaderboardViewPath, 'utf8');
+    await query(leaderboardViewSQL);
+    console.log('✅ Leaderboard view updated!');
+
     console.log('✅ All migrations up to date');
   } catch (error) {
     console.error('❌ Migration error:', error.message);

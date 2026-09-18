@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { AppError } from './errorHandler.js';
 import { query } from '../config/database.js';
+import { getSettingValue } from '../config/settings.js';
 
 /**
  * Verify JWT token and authenticate user
@@ -110,6 +111,30 @@ export const requireClassRep = (req, res, next) => {
   }
 
   next();
+};
+
+/**
+ * Allow course creation by any user when the allow_students_add_course
+ * setting is enabled; otherwise restrict to class representatives/admins.
+ */
+export const requireCanAddCourse = async (req, res, next) => {
+  try {
+    if (!req.user) {
+      return next(new AppError('Not authenticated', 401));
+    }
+
+    const isClassRep = req.user.is_class_rep || req.user.role === 'admin';
+    if (isClassRep) return next();
+
+    const allowAll = await getSettingValue('allow_students_add_course', false);
+    if (!allowAll) {
+      return next(new AppError('Only class representatives can perform this action', 403));
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
 };
 
 /**
