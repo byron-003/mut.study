@@ -73,12 +73,13 @@ export const passwordResetLimiter = rateLimit({
 });
 
 /**
- * General API rate limiter
- * 100 requests per 15 minutes per IP
+ * General API rate limiter - Increased for production scale
+ * 1000 requests per 15 minutes per IP (was 100)
+ * This allows ~67 requests/minute or ~1 request/second per user
  */
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests
+  max: 1000, // 1000 requests (increased from 100)
   message: {
     success: false,
     message: 'Too many requests from this IP. Please try again later.',
@@ -86,7 +87,11 @@ export const apiLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: true // Don't count successful requests
+  skipSuccessfulRequests: true, // Don't count successful requests
+  skip: (req) => {
+    // Skip rate limiting for health checks
+    return req.path === '/api/health' || req.path === '/health';
+  }
 });
 
 /**

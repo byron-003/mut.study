@@ -2,9 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Download, X, AlertCircle, CheckCircle, Search, Star, BookOpen, Loader2, ZoomIn, ZoomOut } from 'lucide-react';
 import { progressAPI } from '../services/api';
 
-// Minimum page render scale - pages are never rendered smaller than full width so text stays readable on mobile
-const MIN_PAGE_SCALE = 1.5;
-
 /**
  * WhatsApp-style File Viewer Component with Page Tracking
  * Clean, modern UI with action buttons and progress tracking
@@ -25,9 +22,11 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
   const [pdfDoc, setPdfDoc] = useState(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pageZoom, setPageZoom] = useState(1);
+  const [controlsVisible, setControlsVisible] = useState(false);
   const canvasRefs = useRef({});
   const renderedPagesRef = useRef(new Set());
   const scrollContainerRef = useRef(null);
+  const contentRef = useRef(null);
   const progressTimerRef = useRef(null);
   const pdfDocRef = useRef(null);
   const renderPageRef = useRef(null);
@@ -36,6 +35,10 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
   const firstPageWidthRef = useRef(null);
   const touchStartDistanceRef = useRef(null);
   const touchStartZoomRef = useRef(1);
+  const controlsTimerRef = useRef(null);
+  const revealControlsRef = useRef(null);
+  const programmaticScrollRef = useRef(false);
+  const programmaticTimerRef = useRef(null);
 
   if (!file) return null;
 
@@ -148,7 +151,7 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
     loadPdfJs();
   }, [fileUrl, fileType, resourceId]);
 
-  // Render a PDF page onto its canvas using a minimum scale so text stays readable on small screens
+  // Render a PDF page onto its canvas at the correct fit scale (natural rendering)
   async function renderPage(pageNum) {
     const canvas = canvasRefs.current[pageNum];
     if (!canvas || !canvas.isConnected || renderedPagesRef.current.has(pageNum)) return;
@@ -161,17 +164,17 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
 
       const baseViewport = page.getViewport({ scale: 1 });
 
-      // Compute the document-wide fit scale once so every page renders uniformly
+      // Compute the document-wide fit scale once so every page renders uniformly.
+      // The page is scaled to fit the scrollable content width exactly - on zoom the
+      // canvas grows beyond the container and is scrolled, never squashed to viewport.
       if (fitScaleRef.current == null) {
-        const container = scrollContainerRef.current;
-        const containerWidth = container?.clientWidth || 800;
+        const content = contentRef.current;
+        const contentPadding = content
+          ? parseFloat(getComputedStyle(content).paddingLeft) + parseFloat(getComputedStyle(content).paddingRight)
+          : 0;
+        const contentWidth = content ? content.clientWidth - contentPadding : 800;
         const referenceWidth = firstPageWidthRef.current || baseViewport.width;
-        const isSmallScreen = !window.matchMedia('(min-width: 1024px)').matches;
-        let fit = containerWidth / referenceWidth;
-        if (isSmallScreen) {
-          fit = Math.max(fit, MIN_PAGE_SCALE);
-        }
-        fitScaleRef.current = fit;
+        fitScaleRef.current = contentWidth / referenceWidth;
       }
 
       const scale = fitScaleRef.current * pageZoomRef.current;
@@ -257,14 +260,14 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
       const container = scrollContainerRef.current;
       if (!container) return;
 
-      // Recompute the document-wide fit scale for the new container width
+      // Recompute the document-wide fit scale for the new content width
       if (firstPageWidthRef.current) {
-        const isSmallScreen = !window.matchMedia('(min-width: 1024px)').matches;
-        let fit = container.clientWidth / firstPageWidthRef.current;
-        if (isSmallScreen) {
-          fit = Math.max(fit, MIN_PAGE_SCALE);
-        }
-        fitScaleRef.current = fit;
+        const content = contentRef.current;
+        const contentPadding = content
+          ? parseFloat(getComputedStyle(content).paddingLeft) + parseFloat(getComputedStyle(content).paddingRight)
+          : 0;
+        const contentWidth = content ? content.clientWidth - contentPadding : 800;
+        fitScaleRef.current = contentWidth / firstPageWidthRef.current;
       }
 
       renderedPagesRef.current = new Set();
@@ -297,6 +300,11 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
 
     container.scrollTop = container.scrollTop * ratio;
 
+    programmaticScrollRef.current = true;
+    revealControlsRef.current?.();
+    if (programmaticTimerRef.current) clearTimeout(programmaticTimerRef.current);
+    programmaticTimerRef.current = setTimeout(() => { programmaticScrollRef.current = false; }, 250);
+
     renderedPagesRef.current = new Set();
     const containerRect = container.getBoundingClientRect();
     Object.values(canvasRefs.current).forEach((canvas) => {
@@ -324,8 +332,11 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
     const timer = setInterval(() => {
       const canvas = canvasRefs.current[savedPage];
       if (canvas) {
+        programmaticScrollRef.current = true;
         canvas.scrollIntoView({ block: 'start' });
         clearInterval(timer);
+        if (programmaticTimerRef.current) clearTimeout(programmaticTimerRef.current);
+        programmaticTimerRef.current = setTimeout(() => { programmaticScrollRef.current = false; }, 250);
       } else if (attempts >= 20) {
         clearInterval(timer);
       }
@@ -342,7 +353,10 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
     setCurrentPage(target);
     const canvas = canvasRefs.current[target];
     if (canvas) {
+      programmaticScrollRef.current = true;
       canvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (programmaticTimerRef.current) clearTimeout(programmaticTimerRef.current);
+      programmaticTimerRef.current = setTimeout(() => { programmaticScrollRef.current = false; }, 600);
     }
   };
 
@@ -396,6 +410,44 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
     };
   }, [pdfDoc]);
 
+  // Show the mobile zoom controls only while the user is interacting
+  // (scrolling/tapping); fade them back out when reading goes idle so the
+  // page has maximum reading space
+  useEffect(() => {
+    if (!pdfDoc || !scrollContainerRef.current) return;
+
+    const container = scrollContainerRef.current;
+
+    const revealControls = () => {
+      if (!window.matchMedia('(max-width: 1023px)').matches) return;
+      setControlsVisible(true);
+      if (controlsTimerRef.current) clearTimeout(controlsTimerRef.current);
+      controlsTimerRef.current = setTimeout(() => setControlsVisible(false), 1800);
+    };
+    revealControlsRef.current = revealControls;
+
+    const handleScroll = () => {
+      if (programmaticScrollRef.current) return;
+      revealControls();
+    };
+
+    const handleTap = (e) => {
+      if (e.touches.length !== 1) return;
+      revealControls();
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    container.addEventListener('touchstart', handleTap, { passive: true });
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      container.removeEventListener('touchstart', handleTap);
+      revealControlsRef.current = null;
+      if (controlsTimerRef.current) clearTimeout(controlsTimerRef.current);
+      if (programmaticTimerRef.current) clearTimeout(programmaticTimerRef.current);
+    };
+  }, [pdfDoc]);
+
   // Format date like WhatsApp (e.g., "13/09/2026 at 8:06 pm")
   const formatDate = (dateString) => {
     if (!dateString) return '';
@@ -446,6 +498,7 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
     // PDF files - render in-app with PDF.js
     if (mimeType === 'application/pdf') {
       return (
+        <>
         <div 
           ref={scrollContainerRef} 
           className="h-full w-full bg-gray-100 overflow-auto touch-pan-x touch-pan-y"
@@ -454,7 +507,7 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
             overscrollBehavior: 'contain'
           }}
         >
-          <div className="p-2 md:p-4 space-y-2 md:space-y-4">
+          <div ref={contentRef} className="p-2 md:p-4 space-y-2 md:space-y-4">
             {pdfLoading && !pdfDoc && (
               <div className="flex flex-col items-center gap-3 text-gray-500 py-16">
                 <Loader2 className="w-8 h-8 animate-spin" />
@@ -467,16 +520,53 @@ const FileViewer = ({ file, onClose, onDownload, downloadsEnabled = true, onMark
                   key={pageNum}
                   ref={(el) => { canvasRefs.current[pageNum] = el; }}
                   data-page={pageNum}
-                  className="block shadow-lg bg-white mx-auto max-w-full"
+                  className="block shadow-lg bg-white mx-auto"
                   style={{ 
                     imageRendering: 'high-quality',
                     WebkitFontSmoothing: 'antialiased',
-                    MozOsxFontSmoothing: 'grayscale'
+                    MozOsxFontSmoothing: 'grayscale',
+                    maxWidth: 'none'
                   }}
                 />
               ))}
           </div>
         </div>
+
+        {/* Mobile Zoom Controls - bottom floating bar, appears when idle */}
+        <div
+          className={`lg:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-50 transition-opacity duration-300 ${
+            controlsVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
+        >
+          <div className="flex items-center gap-1 bg-gray-900/80 backdrop-blur text-white rounded-full px-2 py-1.5 shadow-xl">
+            <button
+              onClick={(e) => { e.stopPropagation(); zoomChange(-0.25); }}
+              disabled={pageZoom <= 0.5}
+              className="p-2 rounded-full hover:bg-white/10 active:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              title="Zoom out"
+              aria-label="Zoom out"
+            >
+              <ZoomOut className="w-5 h-5" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); setPageZoom(1); }}
+              className="px-2 min-w-[3rem] text-xs font-medium text-center hover:bg-white/10 active:bg-white/20 rounded-full py-2 transition-colors"
+              title="Reset zoom"
+            >
+              {Math.round(pageZoom * 100)}%
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); zoomChange(0.25); }}
+              disabled={pageZoom >= 3}
+              className="p-2 rounded-full hover:bg-white/10 active:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              title="Zoom in"
+              aria-label="Zoom in"
+            >
+              <ZoomIn className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+        </>
       );
     }
 

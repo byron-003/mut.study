@@ -19,19 +19,40 @@ const isRemote = process.env.DB_HOST &&
                  !process.env.DB_HOST.includes('localhost') && 
                  !process.env.DB_HOST.includes('127.0.0.1');
 
-// Create PostgreSQL connection pool
+// Detect CPU count for optimal pool sizing
+import os from 'os';
+const cpuCount = os.cpus().length;
+
+// Calculate optimal pool size: (CPU cores × 2) + number of spindle disks
+// For cloud databases, use a more aggressive pool size
+const optimalPoolSize = isRemote 
+  ? Math.max(50, cpuCount * 10) // Cloud: 50-100+ connections
+  : Math.max(20, cpuCount * 2 + 4); // Local: 20-40 connections
+
+console.log(`🔧 Database pool configuration:
+  - CPU Cores: ${cpuCount}
+  - Max Pool Size: ${optimalPoolSize}
+  - Min Pool Size: ${Math.ceil(optimalPoolSize / 10)}
+  - Remote: ${isRemote ? 'Yes' : 'No'}`);
+
+// Create PostgreSQL connection pool with optimized settings
 const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
   port: process.env.DB_PORT || 5432,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME || 'mut_study_hub',
-  max: 20, // Maximum number of clients in the pool
-  min: 2, // Minimum number of clients in the pool
+  max: optimalPoolSize, // Maximum number of clients in the pool (optimized)
+  min: Math.ceil(optimalPoolSize / 10), // Minimum number of clients (10% of max)
   idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-  connectionTimeoutMillis: 10000, // Increased from 2s to 10s for remote databases
+  connectionTimeoutMillis: 10000, // Connection timeout for remote databases
   keepAlive: true, // Keep connections alive
   keepAliveInitialDelayMillis: 10000, // Start keep-alive after 10 seconds
+  allowExitOnIdle: false, // Don't allow pool to close on idle
+  // Advanced connection settings
+  application_name: 'mut_study_hub', // Identify application in pg_stat_activity
+  statement_timeout: 30000, // Kill queries after 30 seconds
+  query_timeout: 30000, // Client-side query timeout
   ssl: isRemote ? {
     rejectUnauthorized: false // Required for managed databases like Aiven, Railway, etc.
   } : false
