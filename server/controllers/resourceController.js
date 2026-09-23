@@ -1,13 +1,16 @@
 import { query } from '../config/database.js';
 import { AppError } from '../middleware/errorHandler.js';
-import { deleteFromCloudinary } from '../config/cloudinary.js';
+import { deleteFromCloudinary, uploadBufferToCloudinary } from '../config/cloudinary.js';
 import { emitToCourse, emitToUser, emitToRole } from '../config/socket.js';
 import { getSettingValue } from '../config/settings.js';
+import path from 'path';
 
 /**
  * Upload new study material
  */
 export const uploadResource = async (req, res, next) => {
+  let cloudinaryResult; // Declare at function scope for error handling
+  
   try {
     const { title, description, type, unitCode, unitName, yearOfStudy, semester, academicYear, courseId, category } = req.body;
     const uploaderId = req.user.id;
@@ -123,7 +126,44 @@ export const uploadResource = async (req, res, next) => {
     const autoApprove = await getSettingValue('auto_approve');
     const initialStatus = autoApprove ? 'approved' : 'pending';
 
-    // Insert study material
+    // Upload file to Cloudinary (from buffer)
+    // The file is now in req.file.buffer after conversion (if it was a Word doc)
+    try {
+      // Determine resource type based on file mimetype
+      let resourceType = 'raw'; // Default for documents
+      
+      if (req.file.mimetype.startsWith('image/')) {
+        resourceType = 'image';
+      } else if (req.file.mimetype.startsWith('video/')) {
+        resourceType = 'video';
+      } else if (req.file.mimetype.startsWith('audio/')) {
+        resourceType = 'video'; // Cloudinary uses 'video' for audio files
+      }
+
+      // Generate unique filename with timestamp
+      const timestamp = Date.now();
+      const nameWithoutExt = path.parse(req.file.originalname).name.replace(/[^a-zA-Z0-9]/g, '_');
+      const extension = path.extname(req.file.originalname).substring(1).toLowerCase();
+      
+      // Upload buffer to Cloudinary
+      cloudinaryResult = await uploadBufferToCloudinary(req.file.buffer, {
+        resource_type: resourceType,
+        public_id: `${nameWithoutExt}_${timestamp}`,
+        format: resourceType === 'raw' ? extension : undefined
+      });
+
+      console.log('✅ File uploaded to Cloudinary:', cloudinaryResult.public_id);
+      
+      // Add conversion info to response if document was converted
+      if (req.fileConversion?.converted) {
+        console.log(`📄 Document was converted from Word to PDF using ${req.fileConversion.method} method`);
+      }
+    } catch (uploadError) {
+      console.error('Cloudinary upload error:', uploadError);
+      throw new AppError('Failed to upload file to cloud storage: ' + uploadError.message, 500);
+    }
+
+    // Insert study material with Cloudinary URLs
     const result = await query(
       `INSERT INTO study_materials 
        (course_id, uploader_id, title, description, category, file_url, cloudinary_public_id, file_size, file_type, status, approved_at) 
@@ -135,8 +175,8 @@ export const uploadResource = async (req, res, next) => {
         title,
         description || null,
         finalCategory,
-        req.file.path,
-        req.file.filename,
+        cloudinaryResult.secure_url,
+        cloudinaryResult.public_id,
         req.file.size,
         req.file.mimetype.substring(0, 100),
         initialStatus,
@@ -212,16 +252,26 @@ export const uploadResource = async (req, res, next) => {
       // Don't fail the request if socket emit fails
     }
 
+    // Add conversion metadata to response if applicable
+    if (req.fileConversion?.converted) {
+      responseData.conversionInfo = {
+        converted: true,
+        method: req.fileConversion.method,
+        originalFormat: req.fileConversion.originalFormat
+      };
+    }
+
     res.status(201).json({
       status: 'success',
       message: autoApprove ? 'Resource uploaded and auto-approved successfully' : 'Resource uploaded successfully and is pending approval',
       data: responseData
     });
   } catch (error) {
-    // If there was an error and file was uploaded, delete it from Cloudinary
-    if (req.file && req.file.filename) {
+    // If there was an error and file was uploaded to Cloudinary, delete it
+    if (cloudinaryResult && cloudinaryResult.public_id) {
       try {
-        await deleteFromCloudinary(req.file.filename);
+        await deleteFromCloudinary(cloudinaryResult.public_id);
+        console.log('🗑️ Cleaned up Cloudinary file after error');
       } catch (deleteError) {
         console.error('Error deleting file from Cloudinary:', deleteError);
       }

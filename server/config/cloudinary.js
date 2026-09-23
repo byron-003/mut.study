@@ -4,6 +4,7 @@ import multer from 'multer';
 import dotenv from 'dotenv';
 import { query } from './database.js';
 import { getSettingValue } from './settings.js';
+import { Readable } from 'stream';
 
 dotenv.config();
 
@@ -122,9 +123,47 @@ const storage = new CloudinaryStorage({
   }
 });
 
+// Memory storage for document conversion pipeline
+// Word documents are stored in memory, converted to PDF, then uploaded to Cloudinary
+const memoryStorage = multer.memoryStorage();
+
+/**
+ * Upload to Cloudinary from a buffer
+ * @param {Buffer} fileBuffer - File buffer
+ * @param {object} options - Cloudinary upload options
+ * @returns {Promise<object>} Cloudinary upload result
+ */
+export const uploadBufferToCloudinary = (fileBuffer, options = {}) => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: options.folder || process.env.CLOUDINARY_FOLDER || 'mut_study_hub_docs',
+        resource_type: options.resource_type || 'raw',
+        public_id: options.public_id,
+        format: options.format,
+        flags: 'attachment:false',
+        ...options
+      },
+      (error, result) => {
+        if (error) {
+          console.error('Cloudinary upload error:', error);
+          reject(error);
+        } else {
+          resolve(result);
+        }
+      }
+    );
+
+    // Create a readable stream from buffer and pipe to Cloudinary
+    const bufferStream = Readable.from(fileBuffer);
+    bufferStream.pipe(uploadStream);
+  });
+};
+
 // Configure Multer middleware with dynamic file size checking
+// Uses memory storage to enable document conversion before upload
 export const upload = multer({
-  storage: storage,
+  storage: memoryStorage, // Changed to memory storage for conversion pipeline
   limits: {
     fileSize: cachedMaxFileSize // Initial value from cache
   },

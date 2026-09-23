@@ -1097,10 +1097,18 @@ export const getCourses = async (req, res, next) => {
  */
 export const createCourse = async (req, res, next) => {
   try {
-    const { unit_code, unit_title, level, semester, credits, program_id } = req.body;
+    const { unit_code, unit_title, level, academic_year, semester, credits, program_id } = req.body;
 
     if (!unit_code || !unit_title || !program_id) {
       throw new AppError('Unit code, title, and program are required', 400);
+    }
+
+    // Use academic_year if provided, otherwise fall back to level (for backward compatibility)
+    const yearValue = academic_year || level || 1;
+
+    // Validate academic_year is between 1 and 6
+    if (yearValue < 1 || yearValue > 6) {
+      throw new AppError('Academic year must be between 1 and 6', 400);
     }
 
     // Check if unit code already exists
@@ -1114,10 +1122,10 @@ export const createCourse = async (req, res, next) => {
     }
 
     const result = await query(
-      `INSERT INTO courses (unit_code, unit_title, level, semester, credits, program_id)
+      `INSERT INTO courses (unit_code, unit_title, academic_year, semester, credits, program_id)
        VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, unit_code, unit_title, level, semester, credits, program_id`,
-      [unit_code, unit_title, level, semester, credits || 3, program_id]
+       RETURNING id, unit_code, unit_title, academic_year, semester, credits, program_id`,
+      [unit_code, unit_title, yearValue, semester || 1, credits || 3, program_id]
     );
 
     res.status(201).json({
@@ -1136,7 +1144,7 @@ export const createCourse = async (req, res, next) => {
 export const updateCourse = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { unit_code, unit_title, level, semester, credits, program_id } = req.body;
+    const { unit_code, unit_title, level, academic_year, semester, credits, program_id } = req.body;
 
     // Check if course exists
     const existingCourse = await query(
@@ -1160,17 +1168,25 @@ export const updateCourse = async (req, res, next) => {
       }
     }
 
+    // Use academic_year if provided, otherwise fall back to level (for backward compatibility)
+    const yearValue = academic_year !== undefined ? academic_year : level;
+
+    // Validate academic_year is between 1 and 6 if provided
+    if (yearValue !== undefined && yearValue !== null && (yearValue < 1 || yearValue > 6)) {
+      throw new AppError('Academic year must be between 1 and 6', 400);
+    }
+
     const result = await query(
       `UPDATE courses 
        SET unit_code = COALESCE($1, unit_code),
            unit_title = COALESCE($2, unit_title),
-           level = COALESCE($3, level),
+           academic_year = COALESCE($3, academic_year),
            semester = COALESCE($4, semester),
            credits = COALESCE($5, credits),
            program_id = COALESCE($6, program_id)
        WHERE id = $7
-       RETURNING id, unit_code, unit_title, level, semester, credits, program_id`,
-      [unit_code, unit_title, level, semester, credits, program_id, id]
+       RETURNING id, unit_code, unit_title, academic_year, semester, credits, program_id`,
+      [unit_code, unit_title, yearValue, semester, credits, program_id, id]
     );
 
     res.json({

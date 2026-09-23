@@ -86,7 +86,7 @@ const CoursesPage = () => {
     setFormData({
       unit_code: course.unit_code,
       unit_title: course.unit_title,
-      level: course.level?.toString() || '',
+      level: (course.academic_year || course.level)?.toString() || '',
       semester: course.semester?.toString() || '',
       credits: course.credits,
       program_id: course.program_id,
@@ -304,7 +304,7 @@ const CoursesPage = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded">
-                        {course.level ? `Level ${course.level}` : 'N/A'}
+                        {(course.academic_year || course.level) ? `Year ${course.academic_year || course.level}` : 'N/A'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
