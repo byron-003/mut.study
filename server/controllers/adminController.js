@@ -7,7 +7,14 @@ import {
   getSettingValue,
   saveSettings,
 } from '../config/settings.js';
-import { emitToCourse, emitToUser } from '../config/socket.js';
+import { emitToCourse, emitToUser, emitToRole } from '../config/socket.js';
+
+const emitResourceBadgeUpdate = (event, data = {}) => {
+  for (const role of ['admin', 'class_rep']) {
+    emitToRole(role, event, data);
+    emitToRole(role, 'admin:badges', { source: 'resource' });
+  }
+};
 
 /**
  * When auto-approval is enabled, immediately approve every resource that is
@@ -230,6 +237,40 @@ export const getStats = async (req, res, next) => {
             },
           })),
         },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Lightweight badge counts for admin sidebar / live updates
+ */
+export const getAdminBadges = async (req, res, next) => {
+  try {
+    const [resources, messages, feedback] = await Promise.all([
+      query(`SELECT COUNT(*)::int AS count FROM study_materials WHERE status = 'pending'`),
+      req.user.role === 'admin'
+        ? query(`SELECT COUNT(*)::int AS count FROM contact_messages WHERE status = 'unread'`)
+        : Promise.resolve({ rows: [{ count: 0 }] }),
+      req.user.role === 'admin'
+        ? query(`SELECT COUNT(*)::int AS count FROM platform_feedback WHERE status = 'new'`)
+        : Promise.resolve({ rows: [{ count: 0 }] }),
+    ]);
+
+    const pendingResources = resources.rows[0]?.count || 0;
+    const unreadMessages = messages.rows[0]?.count || 0;
+    const newFeedback = feedback.rows[0]?.count || 0;
+
+    res.json({
+      status: 'success',
+      data: {
+        pendingResources,
+        unreadMessages,
+        newFeedback,
+        totalActionable: pendingResources + unreadMessages + newFeedback,
+        updatedAt: new Date().toISOString(),
       },
     });
   } catch (error) {
@@ -664,6 +705,8 @@ export const approveResource = async (req, res, next) => {
       throw new AppError('Resource not found', 404);
     }
 
+    emitResourceBadgeUpdate('resource:approved', { id: result.rows[0].id });
+
     res.json({
       status: 'success',
       message: 'Resource approved successfully',
@@ -702,6 +745,8 @@ export const rejectResource = async (req, res, next) => {
       throw new AppError('Resource not found', 404);
     }
 
+    emitResourceBadgeUpdate('resource:rejected', { id: result.rows[0].id });
+
     res.json({
       status: 'success',
       message: 'Resource rejected successfully',
@@ -731,6 +776,7 @@ export const deleteResource = async (req, res, next) => {
 
     // Delete the record
     await query('DELETE FROM study_materials WHERE id = $1', [id]);
+    emitResourceBadgeUpdate('admin:resources', { id });
 
     res.json({
       status: 'success',
@@ -765,6 +811,8 @@ export const bulkApproveResources = async (req, res, next) => {
        RETURNING id`,
       [userId, ...ids]
     );
+
+    emitResourceBadgeUpdate('resource:approved', { ids: result.rows.map((row) => row.id) });
 
     res.json({
       status: 'success',
@@ -804,6 +852,8 @@ export const bulkRejectResources = async (req, res, next) => {
        RETURNING id`,
       [userId, reason, ...ids]
     );
+
+    emitResourceBadgeUpdate('resource:rejected', { ids: result.rows.map((row) => row.id) });
 
     res.json({
       status: 'success',

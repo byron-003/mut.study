@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../services/api';
+import { useLiveRefresh } from '../contexts/LiveUpdatesContext';
 import { useAlert, useConfirm } from '../hooks/useAlert';
 import CustomAlert from '../components/CustomAlert';
 import CustomConfirm from '../components/CustomConfirm';
@@ -47,9 +48,9 @@ const FeedbackPage = () => {
     fetchFeedback();
   }, [filter]);
 
-  const fetchFeedback = async () => {
+  const fetchFeedback = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const params = {};
       if (filter !== 'all') params.status = filter;
       if (search.trim()) params.search = search.trim();
@@ -58,11 +59,13 @@ const FeedbackPage = () => {
       setStats(response.data.data.stats);
     } catch (error) {
       console.error('Error fetching feedback:', error);
-      showAlert('Error', 'Failed to load feedback', 'error');
+      if (!silent) showAlert('Error', 'Failed to load feedback', 'error');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
+
+  useLiveRefresh(fetchFeedback, [filter, search]);
 
   const handleSearch = (e) => {
     e.preventDefault();

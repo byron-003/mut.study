@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useAlert, useConfirm } from '../hooks/useAlert';
 import CustomAlert from '../components/CustomAlert';
 import CustomConfirm from '../components/CustomConfirm';
+import { useLiveRefresh } from '../contexts/LiveUpdatesContext';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -23,7 +24,7 @@ const MessagesPage = () => {
     fetchStats();
   }, [filter]);
 
-  const fetchMessages = async () => {
+  const fetchMessages = async (silent = false) => {
     try {
       const response = await axios.get(`${API_URL}/contact/messages`, {
         params: { status: filter },
@@ -35,7 +36,7 @@ const MessagesPage = () => {
     } catch (error) {
       console.error('Error fetching messages:', error);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -51,6 +52,11 @@ const MessagesPage = () => {
       console.error('Error fetching stats:', error);
     }
   };
+
+  useLiveRefresh((silent) => {
+    fetchMessages(silent);
+    fetchStats();
+  }, [filter]);
 
   const handleViewMessage = async (id) => {
     try {

@@ -124,7 +124,7 @@ const storage = new CloudinaryStorage({
 });
 
 // Memory storage for document conversion pipeline
-// Word documents are stored in memory, converted to PDF, then uploaded to Cloudinary
+// Word and PowerPoint documents are stored in memory, converted to PDF, then uploaded to Cloudinary
 const memoryStorage = multer.memoryStorage();
 
 /**

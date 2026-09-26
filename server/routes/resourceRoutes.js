@@ -20,7 +20,7 @@ const router = express.Router();
 router.get('/course/:courseId', authenticate, getResourcesByCourse);
 
 // Upload routes - check file size dynamically before upload
-// Pipeline: authenticate -> checkFileSize -> multer upload -> convert Word to PDF -> upload to Cloudinary
+// Pipeline: authenticate -> checkFileSize -> multer upload -> convert Word/PowerPoint to PDF -> upload to Cloudinary
 router.post('/upload', 
   authenticate, 
   checkFileSize, 
@@ -39,7 +39,7 @@ router.post('/upload',
       next();
     });
   },
-  convertDocumentMiddleware, // Convert Word documents to PDF
+  convertDocumentMiddleware, // Convert Word/PowerPoint documents to PDF
   uploadResource
 );
 router.get('/my-uploads', authenticate, getMyUploads);

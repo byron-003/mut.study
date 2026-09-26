@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useLiveRefresh } from '../contexts/LiveUpdatesContext';
 import { useAlert, useConfirm } from '../hooks/useAlert';
 import CustomAlert from '../components/CustomAlert';
 import CustomConfirm from '../components/CustomConfirm';
@@ -44,9 +45,9 @@ const ResourcesPage = () => {
     fetchResources();
   }, [filters]);
 
-  const fetchResources = async () => {
+  const fetchResources = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const response = await adminAPI.getResources(filters);
       setResources(response.data.data.resources);
       setPagination(response.data.data.pagination);
@@ -54,9 +55,11 @@ const ResourcesPage = () => {
     } catch (error) {
       console.error('Error fetching resources:', error);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
+
+  useLiveRefresh(fetchResources, [filters]);
 
   const handleApprove = async (resourceId) => {
     const confirmed = await showConfirm({

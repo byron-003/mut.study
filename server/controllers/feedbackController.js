@@ -1,5 +1,6 @@
 import { query } from '../config/database.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { emitToRole } from '../config/socket.js';
 
 const FEEDBACK_CATEGORIES = ['general', 'bug', 'feature-request', 'content', 'other'];
 const FEEDBACK_STATUSES = ['new', 'reviewed', 'resolved'];
@@ -27,13 +28,14 @@ export const submitFeedback = async (req, res, next) => {
     const finalCategory = category && FEEDBACK_CATEGORIES.includes(category) ? category : 'general';
 
     const result = await query(
-      `INSERT INTO platform_feedback (user_id, rating, feedback, category)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO platform_feedback (user_id, rating, feedback, category, status)
+       VALUES ($1, $2, $3, $4, 'new')
        ON CONFLICT (user_id)
        DO UPDATE SET
          rating = EXCLUDED.rating,
          feedback = EXCLUDED.feedback,
          category = EXCLUDED.category,
+         status = 'new',
          updated_at = CURRENT_TIMESTAMP
        RETURNING id, rating, feedback, category, status, created_at, updated_at`,
       [req.user.id, parsedRating, feedback.trim(), finalCategory]
@@ -41,6 +43,18 @@ export const submitFeedback = async (req, res, next) => {
 
     const row = result.rows[0];
     const isUpdate = row.created_at.getTime() !== row.updated_at.getTime();
+
+    try {
+      emitToRole('admin', 'admin:feedback', {
+        id: row.id,
+        rating: row.rating,
+        status: row.status,
+        isUpdate,
+      });
+      emitToRole('admin', 'admin:badges', { source: 'feedback' });
+    } catch (socketError) {
+      console.error('Socket emit error (feedback):', socketError);
+    }
 
     res.status(201).json({
       status: 'success',
@@ -177,6 +191,12 @@ export const updateFeedbackStatus = async (req, res, next) => {
       throw new AppError('Feedback not found', 404);
     }
 
+    try {
+      emitToRole('admin', 'admin:badges', { source: 'feedback-status' });
+    } catch (socketError) {
+      console.error('Socket emit error (feedback status):', socketError);
+    }
+
     res.json({
       status: 'success',
       message: 'Feedback status updated',
@@ -196,6 +216,12 @@ export const deleteFeedback = async (req, res, next) => {
 
     if (result.rows.length === 0) {
       throw new AppError('Feedback not found', 404);
+    }
+
+    try {
+      emitToRole('admin', 'admin:badges', { source: 'feedback-delete' });
+    } catch (socketError) {
+      console.error('Socket emit error (feedback delete):', socketError);
     }
 
     res.json({

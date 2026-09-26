@@ -1,6 +1,7 @@
 import { query } from '../config/database.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { sendContactReply, sendContactNotification } from '../config/email.js';
+import { emitToRole } from '../config/socket.js';
 
 /**
  * Submit contact message (public)
@@ -28,13 +29,27 @@ export const submitContactMessage = async (req, res, next) => {
       [name.trim(), email.toLowerCase().trim(), subject.trim(), message.trim()]
     );
 
+    const messageRow = result.rows[0];
+
+    // Real-time notify admin panel
+    try {
+      emitToRole('admin', 'admin:message', {
+        id: messageRow.id,
+        name: messageRow.name,
+        subject: messageRow.subject,
+      });
+      emitToRole('admin', 'admin:badges', { source: 'contact' });
+    } catch (socketError) {
+      console.error('Socket emit error (contact):', socketError);
+    }
+
     // Notify all admins about the new message (best-effort, non-blocking)
     try {
       const adminResult = await query(
         `SELECT email FROM users WHERE role = 'admin' AND email IS NOT NULL AND email != ''`
       );
       const adminEmails = adminResult.rows.map((row) => row.email);
-      await sendContactNotification(adminEmails, result.rows[0]);
+      await sendContactNotification(adminEmails, messageRow);
     } catch (notifyError) {
       console.error('Contact admin notification failed:', notifyError);
     }
@@ -42,7 +57,7 @@ export const submitContactMessage = async (req, res, next) => {
     res.status(201).json({
       success: true,
       message: 'Your message has been sent successfully. We will get back to you soon!',
-      data: result.rows[0]
+      data: messageRow
     });
   } catch (error) {
     next(error);
@@ -130,6 +145,11 @@ export const getMessageById = async (req, res, next) => {
         [id]
       );
       result.rows[0].status = 'read';
+      try {
+        emitToRole('admin', 'admin:badges', { source: 'contact-read' });
+      } catch (socketError) {
+        console.error('Socket emit error (contact read):', socketError);
+      }
     }
 
     res.json({
@@ -173,6 +193,12 @@ export const replyToMessage = async (req, res, next) => {
        WHERE id = $3`,
       [reply.trim(), adminId, id]
     );
+
+    try {
+      emitToRole('admin', 'admin:badges', { source: 'contact-reply' });
+    } catch (socketError) {
+      console.error('Socket emit error (contact reply):', socketError);
+    }
 
     // Send email reply
     try {
@@ -219,6 +245,12 @@ export const updateMessageStatus = async (req, res, next) => {
       throw new AppError('Message not found', 404);
     }
 
+    try {
+      emitToRole('admin', 'admin:badges', { source: 'contact-status' });
+    } catch (socketError) {
+      console.error('Socket emit error (contact status):', socketError);
+    }
+
     res.json({
       success: true,
       message: 'Message status updated',
@@ -243,6 +275,12 @@ export const deleteMessage = async (req, res, next) => {
 
     if (result.rows.length === 0) {
       throw new AppError('Message not found', 404);
+    }
+
+    try {
+      emitToRole('admin', 'admin:badges', { source: 'contact-delete' });
+    } catch (socketError) {
+      console.error('Socket emit error (contact delete):', socketError);
     }
 
     res.json({

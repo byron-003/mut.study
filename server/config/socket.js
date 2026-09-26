@@ -8,9 +8,18 @@ let io;
  * Initialize Socket.IO server
  */
 export const initializeSocket = (server) => {
+  const allowedOrigins = [
+    'https://admin-mutstudy.onrender.com',
+    'https://mut-study.onrender.com',
+    process.env.CLIENT_URL || 'http://localhost:5173',
+    process.env.ADMIN_URL || 'http://localhost:5174',
+    'http://localhost:5173',
+    'http://localhost:5174',
+  ].filter(Boolean);
+
   io = new Server(server, {
     cors: {
-      origin: process.env.CLIENT_URL || 'http://localhost:5173',
+      origin: allowedOrigins,
       methods: ['GET', 'POST'],
       credentials: true
     },
@@ -33,7 +42,7 @@ export const initializeSocket = (server) => {
       // Fetch user details
       const userResult = await query(
         'SELECT id, first_name, last_name, email, role, program_id FROM users WHERE id = $1',
-        [decoded.id]
+        [decoded.userId]
       );
 
       if (userResult.rows.length === 0) {

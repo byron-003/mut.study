@@ -46,6 +46,7 @@ export const authAPI = {
 // Admin Statistics API
 export const adminAPI = {
   getStats: () => api.get('/admin/stats'),
+  getBadges: () => api.get('/admin/badges'),
   getAnalytics: (params) => api.get('/admin/analytics', { params }),
   getUsers: (params) => api.get('/admin/users', { params }),
   getUserById: (id) => api.get(`/admin/users/${id}`),

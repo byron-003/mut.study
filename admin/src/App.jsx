@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { LiveUpdatesProvider } from './contexts/LiveUpdatesContext';
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
@@ -136,6 +137,7 @@ function App() {
     <Router>
       <ThemeProvider>
         <AuthProvider>
+          <LiveUpdatesProvider>
           <Toaster 
             position="top-right"
             reverseOrder={false}
@@ -166,6 +168,7 @@ function App() {
             }}
           />
           <AppRoutes />
+          </LiveUpdatesProvider>
         </AuthProvider>
       </ThemeProvider>
     </Router>

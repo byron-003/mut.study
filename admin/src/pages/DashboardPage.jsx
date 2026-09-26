@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../services/api';
+import { useLiveRefresh } from '../contexts/LiveUpdatesContext';
 import {
   Users, FileText, GraduationCap, BookOpen, Download,
   TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, MessageSquare, Star
@@ -14,18 +15,20 @@ const DashboardPage = () => {
     fetchStats();
   }, []);
 
-  const fetchStats = async () => {
+  const fetchStats = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const response = await adminAPI.getStats();
       setStats(response.data.data);
     } catch (err) {
       console.error('Error fetching stats:', err);
-      setError('Failed to load statistics');
+      if (!silent) setError('Failed to load statistics');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
+
+  useLiveRefresh(fetchStats);
 
   if (loading) {
     return (

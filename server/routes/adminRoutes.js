@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   getStats,
+  getAdminBadges,
   getAnalytics,
   getUsers,
   updateUserStatus,
@@ -72,6 +73,7 @@ router.delete('/banner', authorize('admin'), clearBanner);
 
 // Statistics and analytics
 router.get('/stats', getStats);
+router.get('/badges', getAdminBadges);
 router.get('/analytics', getAnalytics);
 
 // User management

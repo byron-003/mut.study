@@ -136,17 +136,24 @@ export const getProgramById = async (req, res, next) => {
     const coursesByYear = {};
     coursesResult.rows.forEach(course => {
       const year = course.academic_year;
+      const semester = course.semester || 1;
       if (!coursesByYear[year]) {
-        coursesByYear[year] = { semester1: [], semester2: [] };
+        coursesByYear[year] = {};
       }
-      
-      const semesterKey = course.semester === 1 ? 'semester1' : 'semester2';
+
+      const semesterKey = `semester${semester}`;
+      if (!coursesByYear[year][semesterKey]) {
+        coursesByYear[year][semesterKey] = [];
+      }
+
       coursesByYear[year][semesterKey].push({
         id: course.id,
         unitCode: course.unit_code,
         unitTitle: course.unit_title,
         credits: course.credits,
-        description: course.description
+        description: course.description,
+        academicYear: course.academic_year,
+        semester: course.semester
       });
     });
 

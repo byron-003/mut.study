@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useLiveUpdates } from '../contexts/LiveUpdatesContext';
 import DarkModeToggle from './DarkModeToggle';
 import {
   LayoutDashboard, Users, FileText, BookOpen, GraduationCap,
@@ -9,6 +10,7 @@ import {
 
 const Layout = () => {
   const { user, logout, isAdmin } = useAuth();
+  const { badges, socketConnected } = useLiveUpdates();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -51,6 +53,13 @@ const Layout = () => {
     ? navItems 
     : navItems.filter(item => item.allowClassRep);
 
+  const badgeCounts = {
+    '/': badges.totalActionable,
+    '/resources': badges.pendingResources,
+    '/messages': badges.unreadMessages,
+    '/feedback': badges.newFeedback,
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       {/* Sidebar */}
@@ -91,6 +100,11 @@ const Layout = () => {
                     >
                       <Icon className="w-5 h-5 flex-shrink-0" />
                       <span className={`font-medium ${sidebarCollapsed ? 'lg:hidden' : ''}`}>{item.name}</span>
+                      {badgeCounts[item.path] > 0 && (
+                        <span className={`ml-auto min-w-5 h-5 px-1 rounded-full text-xs font-semibold inline-flex items-center justify-center ${isActive ? 'bg-white text-admin-primary' : 'bg-red-500 text-white'} ${sidebarCollapsed ? 'lg:absolute lg:translate-x-3 lg:-translate-y-3 lg:ml-0' : ''}`} aria-label={`${badgeCounts[item.path]} ${item.name} items`}>
+                          {badgeCounts[item.path] > 99 ? '99+' : badgeCounts[item.path]}
+                        </span>
+                      )}
                     </Link>
                   </li>
                 );
@@ -146,6 +160,7 @@ const Layout = () => {
 
             <div className="flex items-center gap-4">
               <DarkModeToggle />
+              <span title={socketConnected ? 'Live updates connected' : 'Live updates reconnecting'} className={`w-2 h-2 rounded-full ${socketConnected ? 'bg-green-500' : 'bg-gray-400'}`} aria-label={socketConnected ? 'Live updates connected' : 'Live updates reconnecting'} />
               <div className="text-right hidden md:block">
                 <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.firstName} {user?.lastName}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>

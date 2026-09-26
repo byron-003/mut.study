@@ -156,7 +156,7 @@ export const uploadResource = async (req, res, next) => {
       
       // Add conversion info to response if document was converted
       if (req.fileConversion?.converted) {
-        console.log(`📄 Document was converted from Word to PDF using ${req.fileConversion.method} method`);
+        console.log(`📄 Document was converted from ${req.fileConversion.originalFormat} to PDF using ${req.fileConversion.method} method`);
       }
     } catch (uploadError) {
       console.error('Cloudinary upload error:', uploadError);
@@ -239,6 +239,7 @@ export const uploadResource = async (req, res, next) => {
           uploader: responseData.uploadedBy,
           courseId: finalCourseId
         });
+        emitToRole('admin', 'admin:badges', { source: 'resource' });
 
         emitToRole('class_rep', 'resource:pending', {
           resourceId: material.id,
