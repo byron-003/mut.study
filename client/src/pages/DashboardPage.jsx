@@ -105,15 +105,17 @@ const DashboardPage = () => {
     fetchDownloadsStatus();
   }, []);
 
+  // Set initial year/semester from user profile once program is known.
+  // Depend on program id (not the whole object) so refreshing courses after add
+  // does not reset the filters away from the newly created course.
   useEffect(() => {
-    if (userProgram) {
-      // Use user's saved year/semester or default to Year 1, Semester 1
+    if (userProgram?.id) {
       const year = user?.currentYear || 1;
       const semester = user?.currentSemester || 1;
       setSelectedYear(year);
       setSelectedSemester(semester);
     }
-  }, [userProgram, user]);
+  }, [userProgram?.id, user?.currentYear, user?.currentSemester]);
 
   useEffect(() => {
     if (userProgram && selectedYear && selectedSemester) {
@@ -121,15 +123,15 @@ const DashboardPage = () => {
     }
   }, [userProgram, selectedYear, selectedSemester]);
 
-  const fetchUserProgram = async () => {
+  const fetchUserProgram = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const response = await schoolsAPI.getProgramById(user.programId);
       setUserProgram(response.data.data);
     } catch (error) {
       console.error('Error fetching user program:', error);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -1036,6 +1038,7 @@ const DashboardPage = () => {
                   >
                     <option value="1">Semester 1</option>
                     <option value="2">Semester 2</option>
+                    <option value="3">Semester 3</option>
                   </select>
                 </div>
 
@@ -1087,12 +1090,17 @@ const DashboardPage = () => {
       <AddCourseModal
         isOpen={addCourseModalOpen}
         onClose={() => setAddCourseModalOpen(false)}
-        onSuccess={() => {
+        onSuccess={(createdCourse) => {
           setAddCourseModalOpen(false);
-          // Refresh courses after adding
-          if (userProgram) {
-            fetchCourses(userProgram.id);
+          // Switch filters to the new course's year/semester so it appears immediately
+          if (createdCourse?.academicYear) {
+            setSelectedYear(Number(createdCourse.academicYear));
           }
+          if (createdCourse?.semester) {
+            setSelectedSemester(Number(createdCourse.semester));
+          }
+          // Re-fetch program (includes updated courses) without full-page loading flash
+          fetchUserProgram(true);
         }}
       />
       

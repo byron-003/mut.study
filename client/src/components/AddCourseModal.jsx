@@ -44,13 +44,21 @@ const AddCourseModal = ({ isOpen, onClose, onSuccess }) => {
     setError('');
 
     try {
-      await classRepAPI.createCourse({
+      const response = await classRepAPI.createCourse({
         unit_code: formData.unit_code.trim().toUpperCase(),
         unit_title: formData.unit_title.trim(),
         level: parseInt(formData.level),
         semester: parseInt(formData.semester),
         credits: parseInt(formData.credits)
       });
+
+      const createdCourse = response.data?.data?.course || {
+        unitCode: formData.unit_code.trim().toUpperCase(),
+        unitTitle: formData.unit_title.trim(),
+        academicYear: parseInt(formData.level),
+        semester: parseInt(formData.semester),
+        credits: parseInt(formData.credits)
+      };
       
       // Reset form
       setFormData({
@@ -62,8 +70,8 @@ const AddCourseModal = ({ isOpen, onClose, onSuccess }) => {
         description: ''
       });
       
-      // Call success callback
-      if (onSuccess) onSuccess();
+      // Call success callback with the new course so the list can refresh immediately
+      if (onSuccess) onSuccess(createdCourse);
       
       // Show success message
       showAlert('Success', 'Course created successfully! 🎉', 'success');

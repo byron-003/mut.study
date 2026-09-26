@@ -253,15 +253,15 @@ const MyUploadsPage = () => {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (resourceId) => {
     try {
-      await resourcesAPI.deleteResource(selectedResource.id);
-      setUploads(uploads.filter(u => u.id !== selectedResource.id));
+      await resourcesAPI.deleteResource(resourceId);
+      setUploads(prev => prev.filter(u => u.id !== resourceId));
       setSelectedResource(null);
       showAlert('Success', 'Resource deleted successfully!', 'success');
     } catch (error) {
       console.error('Error deleting resource:', error);
-      showAlert('Error', 'Failed to delete resource', 'error');
+      showAlert('Error', error.response?.data?.message || 'Failed to delete resource', 'error');
     }
   };
 
@@ -276,8 +276,6 @@ const MyUploadsPage = () => {
   };
 
   const openDeleteConfirm = async (resource) => {
-    setSelectedResource(resource);
-    
     const confirmed = await showConfirm({
       title: 'Delete Resource',
       message: `Are you sure you want to delete "${resource.title}"? This action cannot be undone.`,
@@ -285,9 +283,10 @@ const MyUploadsPage = () => {
       confirmText: 'Delete',
       cancelText: 'Cancel'
     });
-    
+
     if (confirmed) {
-      await handleDelete();
+      // Use resource.id directly — selectedResource state is not updated yet on first click
+      await handleDelete(resource.id);
     }
   };
 
